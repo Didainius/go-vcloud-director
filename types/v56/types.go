@@ -118,10 +118,10 @@ type DhcpService struct {
 // Description: Represents features of a network.
 // Since:
 type NetworkFeatures struct {
-	DhcpService          *DhcpService          `xml:"DhcpService,omitempty"`          // Substitute for NetworkService. DHCP service settings
-	FirewallService      *FirewallService      `xml:"FirewallService,omitempty"`      // Substitute for NetworkService. Firewall service settings
-	NatService           *NatService           `xml:"NatService,omitempty"`           // Substitute for NetworkService. NAT service settings
-	LoadBalancerService  *LoadBalancerService  `xml:"LoadBalancerService,omitempty"`  // Substitute for NetworkService. Load Balancer service settings
+	DhcpService     *DhcpService     `xml:"DhcpService,omitempty"`     // Substitute for NetworkService. DHCP service settings
+	FirewallService *FirewallService `xml:"FirewallService,omitempty"` // Substitute for NetworkService. Firewall service settings
+	NatService      *NatService      `xml:"NatService,omitempty"`      // Substitute for NetworkService. NAT service settings
+	// LoadBalancerService  *LoadBalancerService  `xml:"LoadBalancerService,omitempty"`  // Substitute for NetworkService. Load Balancer service settings
 	StaticRoutingService *StaticRoutingService `xml:"StaticRoutingService,omitempty"` // Substitute for NetworkService. Static Routing service settings
 	// TODO: Not Implemented
 	// IpsecVpnService      IpsecVpnService      `xml:"IpsecVpnService,omitempty"`      // Substitute for NetworkService. Ipsec Vpn service settings
@@ -1591,7 +1591,7 @@ type GatewayFeatures struct {
 	NatService             *NatService             `xml:"NatService,omitempty"`             // Substitute for NetworkService. NAT service settings
 	GatewayDhcpService     *GatewayDhcpService     `xml:"GatewayDhcpService,omitempty"`     // Substitute for NetworkService. Gateway DHCP service settings
 	GatewayIpsecVpnService *GatewayIpsecVpnService `xml:"GatewayIpsecVpnService,omitempty"` // Substitute for NetworkService. Gateway Ipsec VPN service settings
-	LoadBalancerService    *LoadBalancerService    `xml:"LoadBalancerService,omitempty"`    // Substitute for NetworkService. Load Balancer service settings
+	// LoadBalancerService    *LoadBalancerService    `xml:"LoadBalancerService,omitempty"`    // Substitute for NetworkService. Load Balancer service settings
 	StaticRoutingService   *StaticRoutingService   `xml:"StaticRoutingService,omitempty"`   // Substitute for NetworkService. Static Routing service settings
 }
 
@@ -1623,26 +1623,26 @@ type StaticRoute struct {
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents gateway load balancer service.
 // Since: 5.1
-type LoadBalancerService struct {
-	IsEnabled     bool                       `xml:"IsEnabled"`               // Enable or disable the service using this flag
-	Pool          *LoadBalancerPool          `xml:"Pool,omitempty"`          // List of load balancer pools.
-	VirtualServer *LoadBalancerVirtualServer `xml:"VirtualServer,omitempty"` // List of load balancer virtual servers.
-}
+// type LoadBalancerService struct {
+// 	IsEnabled     bool                       `xml:"IsEnabled"`               // Enable or disable the service using this flag
+// 	Pool          *LoadBalancerPool          `xml:"Pool,omitempty"`          // List of load balancer pools.
+// 	VirtualServer *LoadBalancerVirtualServer `xml:"VirtualServer,omitempty"` // List of load balancer virtual servers.
+// }
 
 // LoadBalancerPool represents a load balancer pool.
 // Type: LoadBalancerPoolType
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents a load balancer pool.
 // Since: 5.1
-type LoadBalancerPool struct {
-	ID           string             `xml:"Id,omitempty"`           // Load balancer pool id.
-	Name         string             `xml:"Name"`                   // Load balancer pool name.
-	Description  string             `xml:"Description,omitempty"`  // Load balancer pool description.
-	ServicePort  *LBPoolServicePort `xml:"ServicePort"`            // Load balancer pool service port.
-	Member       *LBPoolMember      `xml:"Member"`                 // Load balancer pool member.
-	Operational  bool               `xml:"Operational,omitempty"`  // True if the load balancer pool is operational.
-	ErrorDetails string             `xml:"ErrorDetails,omitempty"` // Error details for this pool.
-}
+// type LoadBalancerPool struct {
+// 	ID           string             `xml:"Id,omitempty"`           // Load balancer pool id.
+// 	Name         string             `xml:"Name"`                   // Load balancer pool name.
+// 	Description  string             `xml:"Description,omitempty"`  // Load balancer pool description.
+// 	ServicePort  *LBPoolServicePort `xml:"ServicePort"`            // Load balancer pool service port.
+// 	Member       *LBPoolMember      `xml:"Member"`                 // Load balancer pool member.
+// 	Operational  bool               `xml:"Operational,omitempty"`  // True if the load balancer pool is operational.
+// 	ErrorDetails string             `xml:"ErrorDetails,omitempty"` // Error details for this pool.
+// }
 
 // LBPoolServicePort represents a service port in a load balancer pool.
 // Type: LBPoolServicePortType
@@ -1657,6 +1657,35 @@ type LBPoolServicePort struct {
 	HealthCheckPort string     `xml:"HealthCheckPort,omitempty"` // Health check port for this profile.
 	HealthCheck     *LBMonitor `xml:"HealthCheck,omitempty"`     // Health check list.
 }
+
+// LBPool represents a load balancer server pool as per "vCloud Director API for NSX Programming Guide"
+// Type: LBPoolHealthCheckType
+type LBPool struct {
+	XMLName             xml.Name      `xml:"pool"`
+	ID                  string        `xml:"poolId"`
+	Name                string        `xml:"name"`
+	Algorithm           string        `xml:"algorithm"`
+	AlgorithmParameters string        `xml:"algorithmParameters,omitempty"`
+	Transparent         string        `xml:"transparent,omitempty"`
+	MonitorId           string        `xml:"monitorId,omitempty"` // Reference to LBMonitor.ID
+	Members             LBPoolMembers `xml:"member,omitempty"`
+}
+
+type LBPools []LBPool
+
+type LBPoolMember struct {
+	ID          string `xml:"memberId"`
+	IpAddress   string `xml:"ipAddress"`
+	Weight      string `xml:"weight"`
+	MonitorPort string `xml:"monitorPort"`
+	Port        string `xml:"port"`
+	MaxConn     string `xml:"maxConn"`
+	MinConn     string `xml:"minConn"`
+	Condition   string `xml:"condition"`
+	Name        string `xml:"name"`
+}
+
+type LBPoolMembers []LBPoolMember
 
 // LBMonitor represents a service port health check list as per "vCloud Director API for NSX Programming Guide"
 // Type: LBPoolHealthCheckType
@@ -1686,11 +1715,11 @@ type LBMonitors []LBMonitor
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents a member in a load balancer pool.
 // Since: 5.1
-type LBPoolMember struct {
-	IPAddress   string             `xml:"IpAddress"`             // Ip Address for load balancer member.
-	Weight      string             `xml:"Weight"`                // Weight of this member.
-	ServicePort *LBPoolServicePort `xml:"ServicePort,omitempty"` // Load balancer member service port.
-}
+// type LBPoolMember struct {
+// 	IPAddress   string             `xml:"IpAddress"`             // Ip Address for load balancer member.
+// 	Weight      string             `xml:"Weight"`                // Weight of this member.
+// 	ServicePort *LBPoolServicePort `xml:"ServicePort,omitempty"` // Load balancer member service port.
+// }
 
 // LoadBalancerVirtualServer represents a load balancer virtual server.
 // Type: LoadBalancerVirtualServerType

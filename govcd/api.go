@@ -295,10 +295,10 @@ func (client *Client) ExecuteRequestHTTPCodeOrTypedError(expectedHTTPStatus int,
 			return &http.Response{}, fmt.Errorf("error decoding http response to error: %s", err)
 		}
 		return &http.Response{}, fmt.Errorf(errorMessage, errParser.Error())
+	} else {
+		// log response explicitly because decodeBody() was not triggered
+		util.ProcessResponseOutput(util.FuncNameCallStack(), resp, fmt.Sprintf("%s", resp.Body))
 	}
-
-	// log response explicitly because decodeBody() was not triggered
-	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, fmt.Sprintf("%s", resp.Body))
 
 	return resp, nil
 }
