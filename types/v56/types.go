@@ -1592,7 +1592,7 @@ type GatewayFeatures struct {
 	GatewayDhcpService     *GatewayDhcpService     `xml:"GatewayDhcpService,omitempty"`     // Substitute for NetworkService. Gateway DHCP service settings
 	GatewayIpsecVpnService *GatewayIpsecVpnService `xml:"GatewayIpsecVpnService,omitempty"` // Substitute for NetworkService. Gateway Ipsec VPN service settings
 	// LoadBalancerService    *LoadBalancerService    `xml:"LoadBalancerService,omitempty"`    // Substitute for NetworkService. Load Balancer service settings
-	StaticRoutingService   *StaticRoutingService   `xml:"StaticRoutingService,omitempty"`   // Substitute for NetworkService. Static Routing service settings
+	StaticRoutingService *StaticRoutingService `xml:"StaticRoutingService,omitempty"` // Substitute for NetworkService. Static Routing service settings
 }
 
 // StaticRoutingService represents Static Routing network service.
@@ -1664,9 +1664,10 @@ type LBPool struct {
 	XMLName             xml.Name      `xml:"pool"`
 	ID                  string        `xml:"poolId"`
 	Name                string        `xml:"name"`
+	Description         string        `xml:"description,omitempty"`
 	Algorithm           string        `xml:"algorithm"`
 	AlgorithmParameters string        `xml:"algorithmParameters,omitempty"`
-	Transparent         string        `xml:"transparent,omitempty"`
+	Transparent         bool          `xml:"transparent,omitempty"`
 	MonitorId           string        `xml:"monitorId,omitempty"` // Reference to LBMonitor.ID
 	Members             LBPoolMembers `xml:"member,omitempty"`
 }
@@ -1674,15 +1675,15 @@ type LBPool struct {
 type LBPools []LBPool
 
 type LBPoolMember struct {
-	ID          string `xml:"memberId"`
-	IpAddress   string `xml:"ipAddress"`
-	Weight      string `xml:"weight"`
-	MonitorPort string `xml:"monitorPort"`
-	Port        string `xml:"port"`
-	MaxConn     string `xml:"maxConn"`
-	MinConn     string `xml:"minConn"`
-	Condition   string `xml:"condition"`
+	ID          string `xml:"memberId,omitempty"`
 	Name        string `xml:"name"`
+	IpAddress   string `xml:"ipAddress"`
+	Weight      int    `xml:"weight"`
+	MonitorPort int    `xml:"monitorPort,omitempty"`
+	Port        int    `xml:"port"`
+	MaxConn     int    `xml:"maxConn,omitempty"`
+	MinConn     int    `xml:"minConn,omitempty"`
+	Condition   string `xml:"condition"`
 }
 
 type LBPoolMembers []LBPoolMember

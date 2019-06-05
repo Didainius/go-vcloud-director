@@ -7,7 +7,6 @@
 package govcd
 
 import (
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -22,8 +21,22 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 
 	// Used for creating
 	lbPoolConfig := &types.LBPool{
-		Name:       Test_LBServerPool,
-		Algorithm:       "round-robin",
+		Name:      Test_LBServerPool,
+		Algorithm: "round-robin",
+		Members: types.LBPoolMembers{
+			types.LBPoolMember{
+				Name:      "Server_one",
+				IpAddress: "1.1.1.1",
+				Port:      8443,
+				Weight:    1,
+			},
+			types.LBPoolMember{
+				Name:      "Server_two",
+				IpAddress: "2.2.2.2",
+				Port:      8443,
+				Weight:    1,
+			},
+		},
 	}
 
 	createdLbPool, err := edge.CreateLBServerPool(lbPoolConfig)
@@ -54,7 +67,7 @@ func (vcd *TestVCD) Test_LBServerPool(check *C) {
 	updatedLBPool, err := edge.UpdateLBServerPool(lbPoolByID)
 	check.Assert(err, IsNil)
 	check.Assert(updatedLBPool.Algorithm, Equals, lbPoolByID.Algorithm)
-	
+
 	// Try to set invalid algorithm hash and excpect API to return error
 	// Invalid algorithm hash. Valid algorithms are: IP-HASH|ROUND-ROBIN|URI|LEASTCONN|URL|HTTP-HEADER.
 	lbPoolByID.Algorithm = "invalid_algorithm"
