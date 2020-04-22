@@ -124,13 +124,20 @@ func (vcdCli *VCDClient) vcdAuthorizeSamlGetAdfsServer(org string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	util.Logger.Printf("[DEBUG] SAML IdP (ADFS) lookup returned HTTP status code: %d", httpResponse.StatusCode)
+
+	_ = decodeBody(httpResponse, nil)
+
+	// util.Logger.Printf("[DEBUG] SAML IdP (ADFS) lookup returned HTTP status code: %d", httpResponse.StatusCode)
+	// body, err := ioutil.ReadAll(httpResponse.Body)
+	// if err != nil {
+	// 	return "", fmt.Errorf("[DEBUG] SAML - unable to read response body for '%s': %s", loginUrl, err)
+	// }
+	// debugShowResponse(httpResponse, body)
+
 	adfsEndpoint, err := httpResponse.Location()
 	if err != nil {
 		return "", fmt.Errorf("SAML GET request for '%s' did not return HTTP redirect. Is SAML configured? Got error: %s", loginUrl, err)
 	}
-
-	_, _ = ioutil.ReadAll(httpResponse.Body)
 
 	authEndPoint := adfsEndpoint.Scheme + "://" + adfsEndpoint.Hostname() + "/adfs/services/trust/13/usernamemixed"
 	util.Logger.Printf("[DEBUG] SAML got IdP login endpoint: %s", authEndPoint)
@@ -186,11 +193,24 @@ func (vcdCli *VCDClient) vcdAuthorizeSaml(user, pass, org string) error {
 	}
 
 	// Make SAML request and get response
-	requestBody := getSamlRequestBody(user, pass, samlEntityId)
+	requestBody := getSamlRequestBody(user, pass, samlEntityId, authEndPoint)
+	// util.Logger.Print(requestBody)
+
+	// authRequestStruct := types.SamlAuthAdfsRequest{}
+	// err = xml.Unmarshal([]byte(requestBody), &authRequestStruct)
+	// if err != nil {
+	// 	return fmt.Errorf("SAML - unable to unmarshal ADFS auth request: %s", err)
+	// }
+
+	util.Logger.Printf("[DEBUG] SAML posting login data to IdP: %s", authEndPoint)
+	util.Logger.Printf("[DEBUG] stringrequest: %s", requestBody)
+	// util.Logger.Printf("[DEBUG] %+#v", authRequestStruct)
+
+	responseStruct := types.AuthResponseEnvelope{}
+
+	// resp, err := vcdCli.Client.ExecuteRequest(authEndPoint, http.MethodPost, types.SoapXML, "SAML - error posting auth request: %s", &authRequestStruct, &responseStruct)
 
 	body := strings.NewReader(requestBody)
-	util.Logger.Printf("[DEBUG] SAML posting login data to IdP: %s", authEndPoint)
-
 	resp, err := vcdCli.Client.Http.Post(authEndPoint, types.SoapXML, body)
 	if err != nil {
 		return fmt.Errorf("SAML got error after posting login data to IdP %s: %s", authEndPoint, err)
@@ -211,7 +231,7 @@ func (vcdCli *VCDClient) vcdAuthorizeSaml(user, pass, org string) error {
 		return err
 	}
 
-	responseStruct := types.AuthResponseEnvelope{}
+	// responseStruct := types.AuthResponseEnvelope{}
 	err = xml.Unmarshal(authResponseBody, &responseStruct)
 	if err != nil {
 		return fmt.Errorf("unable to unmarshal response body: %s", err)
@@ -219,6 +239,7 @@ func (vcdCli *VCDClient) vcdAuthorizeSaml(user, pass, org string) error {
 	// EOF // Make SAML request and get response
 
 	tokenString := responseStruct.Body.RequestSecurityTokenResponseCollection.RequestSecurityTokenResponse.RequestedSecurityTokenTxt.Text
+	util.Logger.Printf("[DEBUG] SAML token from IdP '%s' for entity with ID '%s': %s", authEndPoint, samlEntityId, tokenString)
 	base64GzippedToken, err := gzipAndBase64Encode(tokenString)
 	if err != nil {
 		return fmt.Errorf("SAML error encoding SIGN token: %s", err)

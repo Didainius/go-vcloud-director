@@ -532,7 +532,8 @@ func executeRequestCustomErr(pathURL string, params map[string]string, requestTy
 		if err != nil {
 			return &http.Response{}, fmt.Errorf("error marshalling xml data %s", err)
 		}
-		body := bytes.NewBufferString(xml.Header + string(marshaledXml))
+		// body := bytes.NewBufferString(xml.Header + string(marshaledXml))
+		body := bytes.NewBufferString(string(marshaledXml))
 
 		req = client.NewRequestWithApiVersion(params, requestType, *url, body, apiVersion)
 
