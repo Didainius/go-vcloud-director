@@ -6,13 +6,17 @@ package govcd
 
 import (
 	"crypto/tls"
+	"encoding/xml"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // VCDClientOption defines signature for customizing VCDClient using
@@ -83,6 +87,173 @@ func (vcdCli *VCDClient) vcdAuthorize(user, pass, org string) (*http.Response, e
 	return resp, nil
 }
 
+// vcdAuthorizeSamlGetAdfsServer finds out Active Directory Federation Service (ADFS) server uses
+// for SAML authentication
+// It works by temporarily patching default Go's http.Client behavior to avoid following HTTP
+// redirects and searches for Location header
+// The URL to search redirect location is:
+// url.Scheme + "://" + url.Host + "/login/my-org/saml/login/alias/vcd?service=tenant:" + org
+//
+func (vcdCli *VCDClient) vcdAuthorizeSamlGetAdfsServer(org string) (string, error) {
+	url := vcdCli.Client.VCDHREF
+
+	// Backup existing http.Client redirect behavior so that it does not follow HTTP redirects
+	// automatically and restore it right after this function by using defer. A new http.Client
+	// could be spawned here, but the existing one is re-used on purpose to inherit all other
+	// settings used for client.
+	backupRedirectChecker := vcdCli.Client.Http.CheckRedirect
+	defer func() {
+		vcdCli.Client.Http.CheckRedirect = backupRedirectChecker
+	}()
+
+	// Patch http client to avoid following redirects
+	vcdCli.Client.Http.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
+	// Construct SAML login URL which should return a redirect to ADFS server
+	loginUrl := url.Scheme + "://" + url.Host + "/login/my-org/saml/login/alias/vcd?service=tenant:" + org
+	util.Logger.Printf("[DEBUG] SAML looking up IdP (ADFS) host redirect in: %s", loginUrl)
+
+	urllll, _ := url.Parse(loginUrl)
+
+	req := vcdCli.Client.NewRequestWitNotEncodedParams(nil, map[string]string{"service": "tenant:" + org}, http.MethodGet, *urllll, nil)
+	httpResponse, err := checkResp(vcdCli.Client.Http.Do(req))
+	// httpResponse, err := vcdCli.Client.ExecuteParamRequestWithCustomError(loginUrl, map[string]string{"service": "tenant:" + org}, http.MethodGet, "", "SAML - unable to lookup IdP (ADFS) host redirect %s", nil, nil)
+	// httpResponse, err := vcdCli.Client.ExecuteRequest(loginUrl, http.MethodGet, "", "SAML - unable to lookup IdP (ADFS) host redirect %s", nil, nil)
+	if err != nil {
+		return "", err
+	}
+	util.Logger.Printf("[DEBUG] SAML IdP (ADFS) lookup returned HTTP status code: %d", httpResponse.StatusCode)
+	adfsEndpoint, err := httpResponse.Location()
+	if err != nil {
+		return "", fmt.Errorf("SAML GET request for '%s' did not return HTTP redirect. Is SAML configured? Got error: %s", loginUrl, err)
+	}
+
+	_, _ = ioutil.ReadAll(httpResponse.Body)
+
+	authEndPoint := adfsEndpoint.Scheme + "://" + adfsEndpoint.Hostname() + "/adfs/services/trust/13/usernamemixed"
+	util.Logger.Printf("[DEBUG] SAML got IdP login endpoint: %s", authEndPoint)
+
+	return authEndPoint, nil
+}
+
+// vcdAuthorizeSamlGetSamlEntityId attempts to load vCD hosted SAML metadata from URL:
+// url.Scheme + "://" + url.Host + "/cloud/org/" + org + "/saml/metadata/alias/vcd"
+// Returns an error if Entity ID is empty
+func (vcdCli *VCDClient) vcdAuthorizeSamlGetSamlEntityId(org string) (string, error) {
+	url := vcdCli.Client.VCDHREF
+	samlMetadataUrl := url.Scheme + "://" + url.Host + "/cloud/org/" + org + "/saml/metadata/alias/vcd"
+
+	metadata := types.SamlMetadata{}
+	errString := fmt.Sprintf("SAML - unable to load metadata from URL %s: %%s", samlMetadataUrl)
+	_, err := vcdCli.Client.ExecuteRequest(samlMetadataUrl, http.MethodGet, "", errString, nil, &metadata)
+	if err != nil {
+		return "", err
+	}
+
+	samlEntityId := metadata.EntityID
+	util.Logger.Printf("[DEBUG] SAML got entity ID: %s", samlEntityId)
+
+	if samlEntityId == "" {
+		return "", errors.New("SAML - got empty entity ID")
+	}
+
+	return samlEntityId, nil
+}
+
+// func (vcdCli *VCDClient) vcdAuthorizeSamlGetSamlAuthResponse(authEndpoint, org string, body io.Reader) (string, error) {
+// 	errString := fmt.Sprintf("SAML - error posting to endpoint '%s': %%s", authEndpoint)
+// 	httpResponse, err := vcdCli.Client.ExecuteRequestWithCustomError(authEndpoint, http.MethodPost, types.SoapXML, errString, body, &types.SamlErrorEnvelope{})
+// 	if err != nil {
+// 		return "", err
+// 	}
+// }
+
+// vcdAuthorizeSaml handles SAML authentication on ADFS endpoint
+// "/adfs/services/trust/13/usernamemixed"
+func (vcdCli *VCDClient) vcdAuthorizeSaml(user, pass, org string) error {
+	url := vcdCli.Client.VCDHREF
+
+	authEndPoint, err := vcdCli.vcdAuthorizeSamlGetAdfsServer(org)
+	if err != nil {
+		return fmt.Errorf("SAML - error getting IdP (ADFS): %s", err)
+	}
+
+	samlEntityId, err := vcdCli.vcdAuthorizeSamlGetSamlEntityId(org)
+	if err != nil {
+		return fmt.Errorf("SAML - error getting SAML entity ID: %s", err)
+	}
+
+	// Make SAML request and get response
+	requestBody := getSamlRequestBody(user, pass, samlEntityId)
+
+	body := strings.NewReader(requestBody)
+	util.Logger.Printf("[DEBUG] SAML posting login data to IdP: %s", authEndPoint)
+
+	resp, err := vcdCli.Client.Http.Post(authEndPoint, types.SoapXML, body)
+	if err != nil {
+		return fmt.Errorf("SAML got error after posting login data to IdP %s: %s", authEndPoint, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		errorBody, _ := ioutil.ReadAll(resp.Body)
+		util.Logger.Printf("[ERROR] SAML authentication error against IdP '%s' for entity with ID '%s': %s",
+			authEndPoint, samlEntityId, errorBody)
+
+		errParse := types.SamlErrorEnvelope{}
+		_ = xml.Unmarshal(errorBody, &errParse)
+		return fmt.Errorf("could not SAML authenticate against IdP endpoint '%s' for entity with ID '%s'. Got status code %d and response %s",
+			authEndPoint, samlEntityId, resp.StatusCode, errParse.Body.Fault.Reason.Text)
+	}
+
+	authResponseBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	responseStruct := types.AuthResponseEnvelope{}
+	err = xml.Unmarshal(authResponseBody, &responseStruct)
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal response body: %s", err)
+	}
+	// EOF // Make SAML request and get response
+
+	tokenString := responseStruct.Body.RequestSecurityTokenResponseCollection.RequestSecurityTokenResponse.RequestedSecurityTokenTxt.Text
+	base64GzippedToken, err := gzipAndBase64Encode(tokenString)
+	if err != nil {
+		return fmt.Errorf("SAML error encoding SIGN token: %s", err)
+	}
+
+	util.Logger.Printf("[DEBUG] SAML got SIGN token from IdP '%s' for entity with ID '%s'",
+		authEndPoint, samlEntityId)
+
+	req, err := http.NewRequest(http.MethodPost, url.Scheme+"://"+url.Host+"/api/sessions", nil)
+	if err != nil {
+		return fmt.Errorf("error making new request with SAML SIGN token to %s: %s", req.URL.String(), err)
+	}
+	req.Header.Add("Accept", "application/*+xml;version="+vcdCli.Client.APIVersion)
+	req.Header.Add("Authorization", `SIGN token="`+base64GzippedToken+`",org="`+org+`"`)
+
+	resp, err = vcdCli.Client.Http.Do(req)
+	if err != nil {
+		return fmt.Errorf("error submitting SIGN token for authentication to %s: %s",
+			req.URL.String(), err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("got unexpected response status code %d", resp.StatusCode)
+	}
+
+	accessToken := resp.Header.Get("X-Vcloud-Authorization")
+	util.Logger.Printf("[DEBUG] SAML settings access token for further requests")
+	err = vcdCli.SetToken(org, AuthorizationHeader, accessToken)
+	if err != nil {
+		return fmt.Errorf("error during token-based authentication: %s", err)
+	}
+
+	return nil
+}
+
 // NewVCDClient initializes VMware vCloud Director client with reasonable defaults.
 // It accepts functions of type VCDClientOption for adjusting defaults.
 func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
@@ -117,7 +288,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 	return vcdClient
 }
 
-// Authenticate is an helper function that performs a login in vCloud Director.
+// Authenticate is a helper function that performs a login in vCloud Director.
 func (vcdCli *VCDClient) Authenticate(username, password, org string) error {
 	_, err := vcdCli.GetAuthResponse(username, password, org)
 	return err
@@ -132,11 +303,24 @@ func (vcdCli *VCDClient) GetAuthResponse(username, password, org string) (*http.
 	if err != nil {
 		return nil, fmt.Errorf("error finding LoginUrl: %s", err)
 	}
-	// Authorize
-	resp, err := vcdCli.vcdAuthorize(username, password, org)
-	if err != nil {
-		return nil, fmt.Errorf("error authorizing: %s", err)
+
+	// Choose correct auth mechanism based on what type of authentication is used. The end result
+	// for each of the below functions is to set authorization token vcdCli.Client.VCDToken.
+	var resp *http.Response
+	switch {
+	case vcdCli.Client.UseSamlAdfs:
+		err = vcdCli.vcdAuthorizeSaml(username, password, org)
+		if err != nil {
+			return nil, fmt.Errorf("error authorizing SAML: %s", err)
+		}
+	default:
+		// Authorize
+		resp, err = vcdCli.vcdAuthorize(username, password, org)
+		if err != nil {
+			return nil, fmt.Errorf("error authorizing: %s", err)
+		}
 	}
+
 	return resp, nil
 }
 
@@ -216,4 +400,57 @@ func WithHttpTimeout(timeout int64) VCDClientOption {
 		vcdClient.Client.Http.Timeout = time.Duration(timeout) * time.Second
 		return nil
 	}
+}
+
+// WithSamlAdfs specifies if SAML auth is used for authenticating vCD instead of local login.
+// The following conditions must be met so that SAML authentication works:
+// * SAML IdP (Identity Provider) is Active Directory Federation Service (ADFS)
+// * Authentication endpoint "/adfs/services/trust/13/usernamemixed" must be enabled on ADFS
+// server
+func WithSamlAdfs(useSaml bool) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.UseSamlAdfs = useSaml
+		return nil
+	}
+}
+
+type EntityDescriptor struct {
+	XMLName         xml.Name `xml:"EntityDescriptor"`
+	Text            string   `xml:",chardata"`
+	ID              string   `xml:"ID,attr"`
+	EntityID        string   `xml:"entityID,attr"`
+	Md              string   `xml:"md,attr"`
+	SPSSODescriptor struct {
+		Text                       string `xml:",chardata"`
+		AuthnRequestsSigned        string `xml:"AuthnRequestsSigned,attr"`
+		WantAssertionsSigned       string `xml:"WantAssertionsSigned,attr"`
+		ProtocolSupportEnumeration string `xml:"protocolSupportEnumeration,attr"`
+		KeyDescriptor              []struct {
+			Text    string `xml:",chardata"`
+			Use     string `xml:"use,attr"`
+			KeyInfo struct {
+				Text     string `xml:",chardata"`
+				Ds       string `xml:"ds,attr"`
+				X509Data struct {
+					Text            string `xml:",chardata"`
+					X509Certificate string `xml:"X509Certificate"`
+				} `xml:"X509Data"`
+			} `xml:"KeyInfo"`
+		} `xml:"KeyDescriptor"`
+		SingleLogoutService []struct {
+			Text     string `xml:",chardata"`
+			Binding  string `xml:"Binding,attr"`
+			Location string `xml:"Location,attr"`
+		} `xml:"SingleLogoutService"`
+		NameIDFormat             []string `xml:"NameIDFormat"`
+		AssertionConsumerService []struct {
+			Text            string `xml:",chardata"`
+			Binding         string `xml:"Binding,attr"`
+			Location        string `xml:"Location,attr"`
+			Index           string `xml:"index,attr"`
+			IsDefault       string `xml:"isDefault,attr"`
+			ProtocolBinding string `xml:"ProtocolBinding,attr"`
+			Hoksso          string `xml:"hoksso,attr"`
+		} `xml:"AssertionConsumerService"`
+	} `xml:"SPSSODescriptor"`
 }

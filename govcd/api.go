@@ -35,10 +35,17 @@ type Client struct {
 	// This must be >0 to avoid instant timeout errors.
 	MaxRetryTimeout int
 
+	// UseSamlAdfs specifies if SAML auth is used for authenticating vCD instead of local login.
+	// The following conditions must be met so that authentication SAML authentication works:
+	// * SAML IdP (Identity Provider) is Active Directory Federation Service (ADFS)
+	// * Authentication endpoint "/adfs/services/trust/13/usernamemixed" must be enabled on ADFS
+	// server
+	UseSamlAdfs bool
+
 	supportedVersions SupportedVersions // Versions from /api/versions endpoint
 }
 
-// The header key used by default to set the authorization token.
+// AuthorizationHeader header key used by default to set the authorization token.
 const AuthorizationHeader = "X-Vcloud-Authorization"
 
 // General purpose error to be used whenever an entity is not found from a "GET" request
@@ -259,7 +266,8 @@ func checkRespWithErrType(resp *http.Response, err, errType error) (*http.Respon
 		http.StatusOK,        // 200
 		http.StatusCreated,   // 201
 		http.StatusAccepted,  // 202
-		http.StatusNoContent: // 204
+		http.StatusNoContent, // 204
+		http.StatusFound:     // 302
 		return resp, nil
 	// Invalid request, parse the XML error returned and return it.
 	case

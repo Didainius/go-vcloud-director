@@ -1,5 +1,11 @@
 ## 2.7.0 (Unreleased)
 
+* Add configuration option `WithSamlAdfs` to `NewVCDClient()` to support SAML authentication with
+  Active Directory Federation Services (ADFS) handling SSO via endpoint
+  "/adfs/services/trust/13/usernamemixed" [#xxx]()
+
+## 2.7.0 (April 10, 2020)
+
 * Added methods `OrgVdcNetwork.Update`, `OrgVdcNetwork.UpdateAsync`, and `OrgVdcNetwork.Rename` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
 * Added methods `EdgeGateway.Update` and `EdgeGateway.UpdateAsync` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
 
@@ -14,7 +20,7 @@ BUGS FIXED:
 * Fix `vapp.RemoveNetwork`, `vapp.RemoveNetworkAsync` to use `DELETE` API call instead of update
   which can apply incorrect remaining vApp network configurations [#299](https://github.com/vmware/go-vcloud-director/pull/299)
 
-## 2.6.0 (March 13, 2010)
+## 2.6.0 (March 13, 2020)
 
 * Moved `VCDClient.supportedVersions` to `VCDClient.Client.supportedVersions` [#274](https://github.com/vmware/go-vcloud-director/pull/274)    
 * Added methods `VM.AddInternalDisk`, `VM.GetInternalDiskById`, `VM.DeleteInternalDisk`, `VM.UpdateInternalDisks` and `VM.UpdateInternalDisksAsync` [#272](https://github.com/vmware/go-vcloud-director/pull/272)

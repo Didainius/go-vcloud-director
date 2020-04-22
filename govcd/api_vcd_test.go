@@ -399,7 +399,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		util.EnableLogging = false
 	}
 	util.SetLog()
-	vcdClient, err := GetTestVCDFromYaml(config)
+	vcdClient, err := GetTestVCDFromYaml(config, WithSamlAdfs(true))
 	if vcdClient == nil || err != nil {
 		panic(err)
 	}
