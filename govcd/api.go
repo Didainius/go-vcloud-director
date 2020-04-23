@@ -214,8 +214,7 @@ func (cli *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string
 
 }
 
-// NewRequest creates a new HTTP request and applies necessary auth headers if
-// set.
+// NewRequest creates a new HTTP request and applies necessary auth headers if set.
 func (cli *Client) NewRequest(params map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
 	return cli.NewRequestWitNotEncodedParams(params, nil, method, reqUrl, body)
 }
