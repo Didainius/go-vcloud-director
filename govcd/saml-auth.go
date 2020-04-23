@@ -28,31 +28,40 @@ import (
 // override_rpt_id - override relaying party trust ID. If it is empty - vCD Entity ID will be used
 // as relaying party trust ID
 //
-// It performs 6 steps:
-// 1 -
-// 2 -
-// 3 -
-// 4 -
-// 5 -
-// 6 -
-func (vcdCli *VCDClient) vcdAuthorizeSamlAdfs(user, pass, org, override_rpt_id string) error {
-	// Step 1 - find SAML enetity ID configured in vCD metadata URL.
+// The general concept is to get a SIGN token from ADFS IdP (Identity Provider) and exchange it with
+// regular vCD token for further operations. This is achieved in the below steps:
+// 1 - Lookup vCD Entity ID to use for ADFS authentication a custom value is provided using
+// overrideRptId field
+// 2 - Find ADFS server name by querying vCD SAML URL which should respond with HTTP redirect
+// 3 - Authenticate on ADFS using vCD SAML Entity ID or custom value if overrideRptId is specified
+// Relying Party Trust Identifier
+// 4 - Process received ciphers from ADFS server (gzip and base64 encode) so that data can be used
+// as SIGN token in vCD
+// 5 - Authenticate against vCD using SIGN token in order to receive back regular
+// X-Vcloud-Authorization token
+// 6 - Set the received X-Vcloud-Authorization for further usage
+func (vcdCli *VCDClient) vcdAuthorizeSamlAdfs(user, pass, org, overrideRptId string) error {
+	// Step 1 - find SAML enetity ID configured in vCD metadata URL unless overrideRptId is provided
 	// Example URL: url.Scheme + "://" + url.Host + "/cloud/org/" + org + "/saml/metadata/alias/vcd"
-	samlEntityId, err := vcdCli.vcdAuthorizeSamlGetSamlEntityId(org)
-	if err != nil {
-		return fmt.Errorf("SAML - error getting SAML entity ID: %s", err)
+	samlEntityId := overrideRptId
+	var err error
+	if overrideRptId == "" {
+		samlEntityId, err = vcdCli.vcdAuthorizeSamlGetSamlEntityId(org)
+		if err != nil {
+			return fmt.Errorf("SAML - error getting SAML entity ID: %s", err)
+		}
 	}
 
 	// Step 2 - find ADFS server used for SAML by calling vCD SAML endpoint and hoping for a
 	// redirect to ADFS server. Example URL:
 	// url.Scheme + "://" + url.Host + "/login/my-org/saml/login/alias/vcd?service=tenant:" + org
-	authEndPoint, err := vcdCli.vcdAuthorizeSamlGetAdfsServer(org)
+	adfsAuthEndPoint, err := vcdCli.vcdAuthorizeSamlGetAdfsServer(org)
 	if err != nil {
 		return fmt.Errorf("SAML - error getting IdP (ADFS): %s", err)
 	}
 
 	// Step 3 - authenticate ADFS to receive SIGN token which can be used to authenticate to vCD.
-	signToken, err := vcdCli.vcdAuthorizeSamlGetSamlAuthToken(user, pass, samlEntityId, authEndPoint, org)
+	signToken, err := vcdCli.vcdAuthorizeSamlGetSamlAuthToken(user, pass, samlEntityId, adfsAuthEndPoint, org)
 	if err != nil {
 		return fmt.Errorf("SAML - could not extract IdP (ADFS) auth token: %s", err)
 	}
@@ -63,7 +72,7 @@ func (vcdCli *VCDClient) vcdAuthorizeSamlAdfs(user, pass, org, override_rpt_id s
 		return fmt.Errorf("SAML - error encoding SIGN token: %s", err)
 	}
 	util.Logger.Printf("[DEBUG] SAML got SIGN token from IdP '%s' for entity with ID '%s'",
-		authEndPoint, samlEntityId)
+		adfsAuthEndPoint, samlEntityId)
 
 	// Step 5 - authenticate vCD with SIGN token and expect to receive vCD regular token
 	accessToken, err := vcdCli.vcdAuthorizeSignToken(base64GzippedSignToken, org)
