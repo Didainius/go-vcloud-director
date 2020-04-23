@@ -180,9 +180,11 @@ func (vcdCli *VCDClient) vcdAuthorizeSamlGetSamlAuthToken(user, pass, samlEntity
 	authEndpointUrl, _ := url.Parse(authEndpoint)
 	req := vcdCli.Client.NewRequest(nil, http.MethodPost, *authEndpointUrl, samlTokenRequestBody)
 	req.Header.Add("Content-Type", types.SoapXML)
-	resp, err := checkResp(vcdCli.Client.Http.Do(req))
+	resp, err := vcdCli.Client.Http.Do(req)
+	resp, err = checkRespWithErrType(resp, err, &types.SamlErrorEnvelope{})
 	if err != nil {
-		return "", fmt.Errorf("SAML - ADFS token request query failed: %s", err)
+		return "", fmt.Errorf("SAML - ADFS token request query failed for RPT ID ('%s'): %s",
+			samlEntityId, err)
 	}
 
 	err = decodeBody(resp, &tokenRequestResponse)
