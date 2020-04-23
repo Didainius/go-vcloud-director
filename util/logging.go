@@ -195,8 +195,21 @@ func isBinary(data string, req *http.Request) bool {
 // and hide the contents
 func logSanitizedHeader(input_header http.Header) {
 	for key, value := range input_header {
-		if (key == "Config-Secret" || key == "authorization" || key == "Authorization" || key == "X-Vcloud-Authorization") &&
-			!LogPasswords {
+
+		// Explicitly mask only token in SIGN token so that other details are not obfuscated
+		// Header format: SIGN token="`+base64GzippedSignToken+`",org="`+org+`"
+		if (key == "authorization" || key == "Authorization") && len(value) == 1 &&
+			strings.HasPrefix(value[0], "SIGN") && !LogPasswords {
+
+			re := regexp.MustCompile(`(SIGN token=")([^"]*)(.*)`)
+			out := re.ReplaceAllString(value[0], `${1}********${3}"`)
+
+			Logger.Printf("\t%s: %s\n", key, out)
+			// Do not perform any post processing on this header
+			continue
+		}
+
+		if (key == "Config-Secret" || key == "authorization" || key == "Authorization" || key == "X-Vcloud-Authorization") && !LogPasswords {
 			value = []string{"********"}
 		}
 		Logger.Printf("\t%s: %s\n", key, value)

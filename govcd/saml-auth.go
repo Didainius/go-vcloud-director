@@ -56,7 +56,6 @@ func (vcdCli *VCDClient) vcdAuthorizeSamlAdfs(user, pass, org, override_rpt_id s
 	if err != nil {
 		return fmt.Errorf("SAML - could not extract IdP (ADFS) auth token: %s", err)
 	}
-	util.Logger.Printf("[DEBUG] SAML token from IdP '%s' for entity with ID '%s': %s", authEndPoint, samlEntityId, signToken)
 
 	// Step 4 - gzip and encode SIGN token in base64 so that vCD can accept it
 	base64GzippedSignToken, err := gzipAndBase64Encode(signToken)
@@ -190,20 +189,32 @@ func (vcdCli *VCDClient) vcdAuthorizeSamlGetSamlAuthToken(user, pass, samlEntity
 // vcdAuthorizeSignToken submits a SIGN token received from ADFS server and gets regular vCD
 // "X-Vcloud-Authorization" token for further usage
 func (vcdCli *VCDClient) vcdAuthorizeSignToken(base64GzippedSignToken, org string) (string, error) {
-	url := vcdCli.Client.VCDHREF
-
-	req, err := http.NewRequest(http.MethodPost, url.Scheme+"://"+url.Host+"/api/sessions", nil)
+	url, err := url.Parse(vcdCli.Client.VCDHREF.Scheme + "://" + vcdCli.Client.VCDHREF.Host + "/api/sessions")
 	if err != nil {
-		return "", fmt.Errorf("error making new request with SAML SIGN token to %s: %s", req.URL.String(), err)
+		return "", fmt.Errorf("SAML error - could not parse URL for posting SIGN token: %s", err)
 	}
+
+	req := vcdCli.Client.NewRequest(nil, http.MethodPost, *url, nil)
 	req.Header.Add("Accept", "application/*+xml;version="+vcdCli.Client.APIVersion)
 	req.Header.Add("Authorization", `SIGN token="`+base64GzippedSignToken+`",org="`+org+`"`)
 
+	// Avoids passing data if the logging of requests is disabled
+	if util.LogHttpRequest {
+		// Makes a safe copy of the request body, and passes it
+		// to the processing function.
+		util.ProcessRequestOutput(util.FuncNameCallStack(), req.Method, req.URL.String(), "", req)
+
+		debugShowRequest(req, "")
+	}
+
 	resp, err := checkResp(vcdCli.Client.Http.Do(req))
 	if err != nil {
-		return "", fmt.Errorf("error submitting SIGN token for authentication to %s: %s", req.URL.String(), err)
+		return "", fmt.Errorf("SAML - error submitting SIGN token for authentication to %s: %s", req.URL.String(), err)
 	}
-	defer resp.Body.Close()
+	err = decodeBody(resp, nil)
+	if err != nil {
+		return "", fmt.Errorf("SAML - error decoding body SIGN token auth response: %s", err)
+	}
 
 	accessToken := resp.Header.Get("X-Vcloud-Authorization")
 	util.Logger.Printf("[DEBUG] SAML - setting access token for further requests")
