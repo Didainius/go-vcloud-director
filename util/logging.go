@@ -138,13 +138,36 @@ func SetLog() {
 	}
 }
 
-// Hides passwords that may be used in a request
+// hidePasswords hides passwords that may be used in a request
 func hidePasswords(in string, onScreen bool) string {
 	if !onScreen && LogPasswords {
 		return in
 	}
-	re := regexp.MustCompile(`("[^\"]*[Pp]assword"\s*:\s*)"[^\"]+"`)
-	return re.ReplaceAllString(in, `${1}"********"`)
+	var out string
+	re1 := regexp.MustCompile(`("[^\"]*[Pp]assword"\s*:\s*)"[^\"]+"`)
+	out = re1.ReplaceAllString(in, `${1}"********"`)
+
+	// Replace password in ADFS SAML request
+	re2 := regexp.MustCompile(`(\s*<o:Password.*ext">)(.*)(</o:Password>)`)
+	out = re2.ReplaceAllString(out, `${1}******${3}`)
+	return out
+}
+
+// hideTokens hides SAML auth response token
+func hideTokens(in string, onScreen bool) string {
+	if !onScreen && LogPasswords {
+		return in
+	}
+	var out string
+	// Filters out the below:
+	// Token data between <e:CipherValue> </e:CipherValue>
+	re1 := regexp.MustCompile(`(.*<e:CipherValue>)(.*)(</e:CipherValue>.*)`)
+	out = re1.ReplaceAllString(in, `${1}******${3}`)
+	// Token data between <xenc:CipherValue> </xenc:CipherValue>
+	re2 := regexp.MustCompile(`(.*<xenc:CipherValue>)(.*)(</xenc:CipherValue>.*)`)
+	out = re2.ReplaceAllString(out, `${1}******${3}`)
+
+	return out
 }
 
 // Determines whether a string is likely to contain binary data
@@ -262,9 +285,9 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	dataSize := len(result)
 	outTextSize := len(outText)
 	if outTextSize != dataSize {
-		Logger.Printf("Response text: [%d -> %d] %s\n", dataSize, outTextSize, outText)
+		Logger.Printf("Response text: [%d -> %d] %s\n", dataSize, outTextSize, hideTokens(outText, false))
 	} else {
-		Logger.Printf("Response text: [%d] %s\n", dataSize, outText)
+		Logger.Printf("Response text: [%d] %s\n", dataSize, hideTokens(outText, false))
 	}
 }
 

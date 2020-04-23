@@ -256,12 +256,12 @@ type SamlAuthAdfsRequest struct {
 			Text      string `xml:",chardata"`
 			Trust     string `xml:"trust,attr"`
 			AppliesTo struct {
-				Text               string `xml:",chardata"`
-				Wsp                string `xml:"wsp,attr"`
-				SamlEntityIderence struct {
+				Text              string `xml:",chardata"`
+				Wsp               string `xml:"wsp,attr"`
+				EndpointReference struct {
 					Text    string `xml:",chardata"`
 					Address string `xml:"Address"`
-				} `xml:"samlEntityIderence"`
+				} `xml:"EndpointReference"`
 			} `xml:"AppliesTo"`
 			KeySize             string `xml:"KeySize"`
 			KeyType             string `xml:"KeyType"`

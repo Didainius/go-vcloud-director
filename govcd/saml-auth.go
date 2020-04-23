@@ -8,18 +8,257 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
 	"time"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-func getSamlRequestBody(user, pass, samlEntityIderence, adfsAuthEndpoint string) string {
-	return `<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><s:Header><a:Action s:mustUnderstand="1">http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</a:Action><a:ReplyTo><a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address></a:ReplyTo><a:To s:mustUnderstand="1">` + adfsAuthEndpoint + `</a:To><o:Security s:mustUnderstand="1" xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><u:Timestamp u:Id="_0"><u:Created>` + time.Now().Format(time.RFC3339) + `</u:Created><u:Expires>` + time.Now().Add(1*time.Minute).Format(time.RFC3339) + `</u:Expires></u:Timestamp><o:UsernameToken><o:Username>` + user + `</o:Username><o:Password o:Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">` + pass + `</o:Password></o:UsernameToken></o:Security></s:Header><s:Body><trust:RequestSecurityToken xmlns:trust="http://docs.oasis-open.org/ws-sx/ws-trust/200512"><wsp:AppliesTo xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy"><a:EndpointReference><a:Address>` + samlEntityIderence + `</a:Address></a:EndpointReference></wsp:AppliesTo><trust:KeySize>0</trust:KeySize><trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType><i:RequestDisplayToken xml:lang="en" xmlns:i="http://schemas.xmlsoap.org/ws/2005/05/identity" /><trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType><trust:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0</trust:TokenType></trust:RequestSecurityToken></s:Body></s:Envelope>`
+// vcdAuthorizeSamlAdfs is the main entry point for SAML authentication on ADFS endpoint
+// "/adfs/services/trust/13/usernamemixed"
+// Input parameters:
+// user - username for authentication against ADFS server (e.g. 'test@test-forest.net')
+// pass - password or authentication against ADFS server
+// org  - Org to authenticate to
+// override_rpt_id - override relaying party trust ID. If it is empty - vCD Entity ID will be used
+// as relaying party trust ID
+//
+// It performs 6 steps:
+// 1 -
+// 2 -
+// 3 -
+// 4 -
+// 5 -
+// 6 -
+func (vcdCli *VCDClient) vcdAuthorizeSamlAdfs(user, pass, org, override_rpt_id string) error {
+	// Step 1 - find SAML enetity ID configured in vCD metadata URL.
+	// Example URL: url.Scheme + "://" + url.Host + "/cloud/org/" + org + "/saml/metadata/alias/vcd"
+	samlEntityId, err := vcdCli.vcdAuthorizeSamlGetSamlEntityId(org)
+	if err != nil {
+		return fmt.Errorf("SAML - error getting SAML entity ID: %s", err)
+	}
+
+	// Step 2 - find ADFS server used for SAML by calling vCD SAML endpoint and hoping for a
+	// redirect to ADFS server. Example URL:
+	// url.Scheme + "://" + url.Host + "/login/my-org/saml/login/alias/vcd?service=tenant:" + org
+	authEndPoint, err := vcdCli.vcdAuthorizeSamlGetAdfsServer(org)
+	if err != nil {
+		return fmt.Errorf("SAML - error getting IdP (ADFS): %s", err)
+	}
+
+	// Step 3 - authenticate ADFS to receive SIGN token which can be used to authenticate to vCD.
+	signToken, err := vcdCli.vcdAuthorizeSamlGetSamlAuthToken(user, pass, samlEntityId, authEndPoint, org)
+	if err != nil {
+		return fmt.Errorf("SAML - could not extract IdP (ADFS) auth token: %s", err)
+	}
+	util.Logger.Printf("[DEBUG] SAML token from IdP '%s' for entity with ID '%s': %s", authEndPoint, samlEntityId, signToken)
+
+	// Step 4 - gzip and encode SIGN token in base64 so that vCD can accept it
+	base64GzippedSignToken, err := gzipAndBase64Encode(signToken)
+	if err != nil {
+		return fmt.Errorf("SAML - error encoding SIGN token: %s", err)
+	}
+	util.Logger.Printf("[DEBUG] SAML got SIGN token from IdP '%s' for entity with ID '%s'",
+		authEndPoint, samlEntityId)
+
+	// Step 5 - authenticate vCD with SIGN token and expect to receive vCD regular token
+	accessToken, err := vcdCli.vcdAuthorizeSignToken(base64GzippedSignToken, org)
+	if err != nil {
+		return fmt.Errorf("SAML - error submitting SIGN token to vCD: %s", err)
+	}
+
+	// Step 6 - set regular vCD auth token X-Vcloud-Authorization
+	err = vcdCli.SetToken(org, AuthorizationHeader, accessToken)
+	if err != nil {
+		return fmt.Errorf("error during token-based authentication: %s", err)
+	}
+
+	return nil
 }
 
-func gzipAndBase64Encode(token string) (string, error) {
+// vcdAuthorizeSamlGetAdfsServer finds out Active Directory Federation Service (ADFS) server to use
+// for SAML authentication
+// It works by temporarily patching default Go's http.Client behavior to avoid following HTTP
+// redirects and searches for Location header after the request to vCD SAML redirect
+// The URL to search redirect location is:
+// url.Scheme + "://" + url.Host + "/login/my-org/saml/login/alias/vcd?service=tenant:" + org
+func (vcdCli *VCDClient) vcdAuthorizeSamlGetAdfsServer(org string) (string, error) {
+	url := vcdCli.Client.VCDHREF
+
+	// Backup existing http.Client redirect behavior so that it does not follow HTTP redirects
+	// automatically and restore it right after this function by using defer. A new http.Client
+	// could be spawned here, but the existing one is re-used on purpose to inherit all other
+	// settings used for client (timeouts, etc).
+	backupRedirectChecker := vcdCli.Client.Http.CheckRedirect
+
+	defer func() {
+		vcdCli.Client.Http.CheckRedirect = backupRedirectChecker
+	}()
+
+	// Patch http client to avoid following redirects
+	vcdCli.Client.Http.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
+	// Construct SAML login URL which should return a redirect to ADFS server
+	loginURLString := url.Scheme + "://" + url.Host + "/login/my-org/saml/login/alias/vcd"
+	loginURL, err := url.Parse(loginURLString)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse login URL '%s': %s", loginURLString, err)
+	}
+	util.Logger.Printf("[DEBUG] SAML looking up IdP (ADFS) host redirect in: %s", loginURL.String())
+
+	// Make a request to constructed URL adding unencoded query parameters in the format:
+	// "?service=tenant:my-org"
+	req := vcdCli.Client.NewRequestWitNotEncodedParams(nil, map[string]string{"service": "tenant:" + org}, http.MethodGet, *loginURL, nil)
+	httpResponse, err := checkResp(vcdCli.Client.Http.Do(req))
+	if err != nil {
+		return "", fmt.Errorf("SAML - ADFS server query failed: %s", err)
+	}
+
+	err = decodeBody(httpResponse, nil)
+	if err != nil {
+		return "", fmt.Errorf("SAML - error decoding body: %s", err)
+	}
+
+	adfsEndpoint, err := httpResponse.Location()
+	if err != nil {
+		return "", fmt.Errorf("SAML GET request for '%s' did not return HTTP redirect. Is SAML configured? Got error: %s", loginURL, err)
+	}
+
+	authEndPoint := adfsEndpoint.Scheme + "://" + adfsEndpoint.Hostname() + "/adfs/services/trust/13/usernamemixed"
+	util.Logger.Printf("[DEBUG] SAML got IdP login endpoint: %s", authEndPoint)
+
+	return authEndPoint, nil
+}
+
+// vcdAuthorizeSamlGetSamlEntityId attempts to load vCD hosted SAML metadata from URL:
+// url.Scheme + "://" + url.Host + "/cloud/org/" + org + "/saml/metadata/alias/vcd"
+// Returns an error if Entity ID is empty
+func (vcdCli *VCDClient) vcdAuthorizeSamlGetSamlEntityId(org string) (string, error) {
+	url := vcdCli.Client.VCDHREF
+	samlMetadataUrl := url.Scheme + "://" + url.Host + "/cloud/org/" + org + "/saml/metadata/alias/vcd"
+
+	metadata := types.SamlMetadata{}
+	errString := fmt.Sprintf("SAML - unable to load metadata from URL %s: %%s", samlMetadataUrl)
+	_, err := vcdCli.Client.ExecuteRequest(samlMetadataUrl, http.MethodGet, "", errString, nil, &metadata)
+	if err != nil {
+		return "", err
+	}
+
+	samlEntityId := metadata.EntityID
+	util.Logger.Printf("[DEBUG] SAML got entity ID: %s", samlEntityId)
+
+	if samlEntityId == "" {
+		return "", errors.New("SAML - got empty entity ID")
+	}
+
+	return samlEntityId, nil
+}
+
+func (vcdCli *VCDClient) vcdAuthorizeSamlGetSamlAuthToken(user, pass, samlEntityId, authEndpoint, org string) (string, error) {
+	requestBody := getSamlTokenRequestBody(user, pass, samlEntityId, authEndpoint)
+	samlTokenRequestBody := strings.NewReader(requestBody)
+
+	tokenRequestResponse := types.AuthResponseEnvelope{}
+
+	// Making a custom request as this is going to hit ADFS server and has some specific which are
+	// not worth a custom query function
+	authEndpointUrl, _ := url.Parse(authEndpoint)
+	req := vcdCli.Client.NewRequest(nil, http.MethodPost, *authEndpointUrl, samlTokenRequestBody)
+	req.Header.Add("Content-Type", types.SoapXML)
+	resp, err := checkResp(vcdCli.Client.Http.Do(req))
+	if err != nil {
+		return "", fmt.Errorf("SAML - ADFS token request query failed: %s", err)
+	}
+
+	err = decodeBody(resp, &tokenRequestResponse)
+	if err != nil {
+		return "", fmt.Errorf("SAML - error decoding ADFS token request response: %s", err)
+	}
+
+	tokenString := tokenRequestResponse.Body.RequestSecurityTokenResponseCollection.RequestSecurityTokenResponse.RequestedSecurityTokenTxt.Text
+
+	return tokenString, nil
+}
+
+// vcdAuthorizeSignToken submits a SIGN token received from ADFS server and gets regular vCD
+// "X-Vcloud-Authorization" token for further usage
+func (vcdCli *VCDClient) vcdAuthorizeSignToken(base64GzippedSignToken, org string) (string, error) {
+	url := vcdCli.Client.VCDHREF
+
+	req, err := http.NewRequest(http.MethodPost, url.Scheme+"://"+url.Host+"/api/sessions", nil)
+	if err != nil {
+		return "", fmt.Errorf("error making new request with SAML SIGN token to %s: %s", req.URL.String(), err)
+	}
+	req.Header.Add("Accept", "application/*+xml;version="+vcdCli.Client.APIVersion)
+	req.Header.Add("Authorization", `SIGN token="`+base64GzippedSignToken+`",org="`+org+`"`)
+
+	resp, err := checkResp(vcdCli.Client.Http.Do(req))
+	if err != nil {
+		return "", fmt.Errorf("error submitting SIGN token for authentication to %s: %s", req.URL.String(), err)
+	}
+	defer resp.Body.Close()
+
+	accessToken := resp.Header.Get("X-Vcloud-Authorization")
+	util.Logger.Printf("[DEBUG] SAML - setting access token for further requests")
+	return accessToken, nil
+}
+
+// getSamlTokenRequestBody returns a SAML Token request body which is accepted by ADFS server
+// endpoint "/adfs/services/trust/13/usernamemixed".
+// The payload is not configured as a struct and unmarshalled because Go's unmarshalling changes
+// structure so that ADFS does not accept the payload
+func getSamlTokenRequestBody(user, password, samlEntityIdReference, adfsAuthEndpoint string) string {
+	return `<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" 
+	xmlns:a="http://www.w3.org/2005/08/addressing" 
+	xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+	<s:Header>
+		<a:Action s:mustUnderstand="1">http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</a:Action>
+		<a:ReplyTo>
+			<a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address>
+		</a:ReplyTo>
+		<a:To s:mustUnderstand="1">` + adfsAuthEndpoint + `</a:To>
+		<o:Security s:mustUnderstand="1" 
+			xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+			<u:Timestamp u:Id="_0">
+				<u:Created>` + time.Now().Format(time.RFC3339) + `</u:Created>
+				<u:Expires>` + time.Now().Add(1*time.Minute).Format(time.RFC3339) + `</u:Expires>
+			</u:Timestamp>
+			<o:UsernameToken>
+				<o:Username>` + user + `</o:Username>
+				<o:Password o:Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">` + password + `</o:Password>
+			</o:UsernameToken>
+		</o:Security>
+	</s:Header>
+	<s:Body>
+		<trust:RequestSecurityToken xmlns:trust="http://docs.oasis-open.org/ws-sx/ws-trust/200512">
+			<wsp:AppliesTo xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+				<a:EndpointReference>
+					<a:Address>` + samlEntityIdReference + `</a:Address>
+				</a:EndpointReference>
+			</wsp:AppliesTo>
+			<trust:KeySize>0</trust:KeySize>
+			<trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>
+			<i:RequestDisplayToken xml:lang="en" 
+				xmlns:i="http://schemas.xmlsoap.org/ws/2005/05/identity" />
+			<trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>
+			<trust:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0</trust:TokenType>
+		</trust:RequestSecurityToken>
+	</s:Body>
+</s:Envelope>`
+}
+
+// gzipAndBase64Encode accepts a string, gzip's it and encodes in base64
+func gzipAndBase64Encode(text string) (string, error) {
 	var gzipBuffer bytes.Buffer
 	gz := gzip.NewWriter(&gzipBuffer)
-	if _, err := gz.Write([]byte(token)); err != nil {
+	if _, err := gz.Write([]byte(text)); err != nil {
 		return "", fmt.Errorf("error writing to gzip buffer: %s", err)
 	}
 	if err := gz.Close(); err != nil {

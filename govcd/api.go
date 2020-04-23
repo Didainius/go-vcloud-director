@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"reflect"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -41,6 +40,9 @@ type Client struct {
 	// * Authentication endpoint "/adfs/services/trust/13/usernamemixed" must be enabled on ADFS
 	// server
 	UseSamlAdfs bool
+	// OverrideAdfsRptId allows to set custom Relaying Party Trust identifier. By default vCD Entity
+	// ID is used as Relaying Party Trust identifier.
+	CustomAdfsRptId string
 
 	supportedVersions SupportedVersions // Versions from /api/versions endpoint
 }
@@ -163,6 +165,14 @@ func (cli *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string
 		}
 	}
 
+	// If the body contains data - try to read all contents for logging and re-create another
+	// io.Reader with all contents
+	var readBody []byte
+	if body != nil {
+		readBody, _ = ioutil.ReadAll(body)
+		body = bytes.NewReader(readBody)
+	}
+
 	// Build the request, no point in checking for errors here as we're just
 	// passing a string version of an url.URL struct and http.NewRequest returns
 	// error only if can't process an url.ParseRequestURI().
@@ -191,7 +201,9 @@ func (cli *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string
 			} else {
 				// With this content, we'll know that the payload is not really empty, but
 				// it was unavailable due to the body type.
-				payload = fmt.Sprintf("<Not retrieved from type %s>", reflect.TypeOf(body))
+
+				// payload = fmt.Sprintf("<Not retrieved from type %s>", reflect.TypeOf(body))
+				payload = string(readBody)
 			}
 		}
 		util.ProcessRequestOutput(util.FuncNameCallStack(), method, reqUrl.String(), payload, req)
@@ -237,9 +249,13 @@ func decodeBody(resp *http.Response, out interface{}) error {
 	}
 
 	debugShowResponse(resp, body)
-	// Unmarshal the XML.
-	if err = xml.Unmarshal(body, &out); err != nil {
-		return err
+
+	// only attempty to unmarshal if body is not empty
+	if len(body) > 0 {
+		// Unmarshal the XML.
+		if err = xml.Unmarshal(body, &out); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -532,8 +548,7 @@ func executeRequestCustomErr(pathURL string, params map[string]string, requestTy
 		if err != nil {
 			return &http.Response{}, fmt.Errorf("error marshalling xml data %s", err)
 		}
-		// body := bytes.NewBufferString(xml.Header + string(marshaledXml))
-		body := bytes.NewBufferString(string(marshaledXml))
+		body := bytes.NewBufferString(xml.Header + string(marshaledXml))
 
 		req = client.NewRequestWithApiVersion(params, requestType, *url, body, apiVersion)
 

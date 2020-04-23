@@ -89,6 +89,8 @@ type TestConfig struct {
 		User            string `yaml:"user"`
 		Password        string `yaml:"password"`
 		Token           string `yaml:"token"`
+		UseSamlAdfs     bool   `yaml:"useSamlAdfs"`
+		CustomAdfsRptId string `yaml:"customAdfsRptId"`
 		Url             string `yaml:"url"`
 		SysOrg          string `yaml:"sysOrg"`
 		MaxRetryTimeout int    `yaml:"maxRetryTimeout,omitempty"`
@@ -360,6 +362,10 @@ func GetTestVCDFromYaml(testConfig TestConfig, options ...VCDClientOption) (*VCD
 		options = append(options, WithHttpTimeout(testConfig.Provider.HttpTimeout))
 	}
 
+	if testConfig.Provider.UseSamlAdfs {
+		options = append(options, WithSamlAdfs(true, testConfig.Provider.CustomAdfsRptId))
+	}
+
 	return NewVCDClient(*configUrl, true, options...), nil
 }
 
@@ -399,7 +405,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		util.EnableLogging = false
 	}
 	util.SetLog()
-	vcdClient, err := GetTestVCDFromYaml(config, WithSamlAdfs(true))
+	vcdClient, err := GetTestVCDFromYaml(config)
 	if vcdClient == nil || err != nil {
 		panic(err)
 	}
@@ -415,6 +421,9 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		err = vcd.client.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
 	} else {
 		err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+	}
+	if config.Provider.UseSamlAdfs {
+		authenticationMode = "SAML password"
 	}
 	if err != nil {
 		panic(err)
