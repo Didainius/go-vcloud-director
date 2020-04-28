@@ -139,7 +139,7 @@ func (vcdCli *VCDClient) vcdAuthorizeSamlGetAdfsServer(org string) (string, erro
 		return "", fmt.Errorf("SAML GET request for '%s' did not return HTTP redirect. Is SAML configured? Got error: %s", loginURL, err)
 	}
 
-	authEndPoint := adfsEndpoint.Scheme + "://" + adfsEndpoint.Hostname() + "/adfs/services/trust/13/usernamemixed"
+	authEndPoint := adfsEndpoint.Scheme + "://" + adfsEndpoint.Host + "/adfs/services/trust/13/usernamemixed"
 	util.Logger.Printf("[DEBUG] SAML got IdP login endpoint: %s", authEndPoint)
 
 	return authEndPoint, nil
