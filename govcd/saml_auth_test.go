@@ -3,6 +3,7 @@
 package govcd
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -15,7 +16,6 @@ const org = "my-org"
 var adfsServerHost string
 var vcdServerHost string
 
-// const vcdMetadataUrl = "url.Scheme + "://" + url.Host + "/cloud/org/" + org + "/saml/metadata/alias/vcd"
 const vcdMetadataEndpoint = "/cloud/org/" + org + "/saml/metadata/alias/vcd"
 const vcdLoginEndpoint = "/api/sessions"
 const vcdVersions = "/api/versions"
@@ -25,6 +25,28 @@ const vcdOrgs = "/api/org"
 const vcdAdfsRedirectEndpoint = "/login/my-org/saml/login/alias/vcd"
 
 // https://192.168.1.109/login/my-org/saml/login/alias/vcd?&service=tenant:my-org
+
+func TestSamlAdfsAuthenticate(t *testing.T) {
+	// Spawn mock ADFS server
+	adfsServer := spawnAdfsServer()
+	adfsServerHost = adfsServer.URL
+	defer adfsServer.Close()
+
+	// Run a mock vCD instance just enough to cover login details
+	vcdServer := spawnvCDServer()
+	vcdServerHost = vcdServer.URL
+	defer vcdServer.Close()
+
+	// Setup vCD client pointing to mock API
+	vcdUrl, err := url.Parse(vcdServerHost + "/api")
+	vcdCli := NewVCDClient(*vcdUrl, true, WithSamlAdfs(true, ""))
+
+	err = vcdCli.Authenticate("fakeUser", "fakePass", "my-org")
+	if err != nil {
+		t.Errorf("got errors: %s", err)
+	}
+	fmt.Println(vcdCli.Client.VCDToken)
+}
 
 func TestVcdAuthorizeSamlGetSamlEntityId(t *testing.T) {
 	// Run a mock vCD server serving metadata endpoint
@@ -124,11 +146,11 @@ func TestSamlAdfs(t *testing.T) {
 // spawnvCDServer establishes a mock vCD server
 func spawnvCDServer() *httptest.Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc(vcdMetadataEndpoint, vCDMetadataResponse)
-	mux.HandleFunc(vcdAdfsRedirectEndpoint, vCDAdfsRedirector)
+	mux.HandleFunc(vcdMetadataEndpoint, vCDSamlMetadataHandler)
+	mux.HandleFunc(vcdAdfsRedirectEndpoint, vCDAdfsRedirectHandler)
 	mux.HandleFunc(vcdLoginEndpoint, vCDLoginHandler)
-	mux.HandleFunc(vcdVersions, vCDApiVersions)
-	mux.HandleFunc(vcdOrgs, vCDApiOrg)
+	mux.HandleFunc(vcdVersions, vCDApiVersionHandler)
+	mux.HandleFunc(vcdOrgs, vCDApiOrgHandler)
 	return httptest.NewTLSServer(mux)
 
 }
@@ -169,7 +191,7 @@ func vCDLoginHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(resp)
 }
 
-func vCDApiVersions(w http.ResponseWriter, r *http.Request) {
+func vCDApiVersionHandler(w http.ResponseWriter, r *http.Request) {
 	// We expect GET method and not anything else
 	if r.Method != http.MethodGet {
 		w.WriteHeader(500)
@@ -1224,7 +1246,7 @@ func vCDApiVersions(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(resp)
 }
 
-func vCDApiOrg(w http.ResponseWriter, r *http.Request) {
+func vCDApiOrgHandler(w http.ResponseWriter, r *http.Request) {
 	// We expect GET method and not anything else
 	if r.Method != http.MethodGet {
 		w.WriteHeader(500)
@@ -1238,7 +1260,7 @@ func vCDApiOrg(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(resp)
 }
 
-func vCDMetadataResponse(w http.ResponseWriter, r *http.Request) {
+func vCDSamlMetadataHandler(w http.ResponseWriter, r *http.Request) {
 	re := []byte(`<?xml version="1.0" encoding="UTF-8"?>
 	<md:EntityDescriptor ID="https___192.168.1.109_cloud_org_my-org_saml_metadata_alias_vcd" entityID="https://192.168.1.109/cloud/org/my-org/saml/metadata/alias/vcd" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"><md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol"><md:KeyDescriptor use="signing"><ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:X509Data><ds:X509Certificate>MIIC4jCCAcqgAwIBAgIEP4rcAjANBgkqhkiG9w0BAQUFADAzMTEwLwYDVQQDEyh2Q2xvdWQgRGly
 	ZWN0b3Igb3JnYW5pemF0aW9uIENlcnRpZmljYXRlMB4XDTIwMDMxOTA3MjkwOFoXDTIxMDMxOTA3
@@ -1270,7 +1292,7 @@ func vCDMetadataResponse(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(re)
 }
 
-func vCDAdfsRedirector(w http.ResponseWriter, r *http.Request) {
+func vCDAdfsRedirectHandler(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
 	headers.Add("Location", adfsServerHost+"/adfs/ls/?SAMLRequest=lZJBT8MwDIXv%2FIoq9zZpt3UjWjsNJsQkEBMtHLhlqdsFtcmI0wL%2Fnm5lYlyQOFmW7M9P73m%2B%2BGhqrwOLyuiEhAEjHmhpCqWrhDzlN%2F6MLNKLOYqmjvZ82bqdfoS3FtB5S0Swrt%2B7NhrbBmwGtlMSnh7vErJzbo%2Bc0vAyCsJ4FoRByC6prE1bUGMr2nz6h3Lg0ix7oKJWAmknC%2BKterjSwh0VnTjvSvsxq2IWaybKKnD9kF8a25dAg6OiKJHWSIl3Y6yEo9CElKJGIN56lRBRFmxaxFs2epXAKgC5VbvxbBqqSdUfXeNGIKoOfpYQW1hrdEK7hEQsYj4b%2B9E0ZzFnEz4ZBaMJeyHexhpnpKmvlB5ca63mRqBCrkUDyJ3k2fL%2BjkcB49thCPltnm%2F8zUOWE%2B%2F55H50cL%2FPQyMf%2FP6btf8%2BTNIhHn5UbM8JfwPEKUCS%2FieuBpwohBM%2Fmc3puYD0u%2F39LukX&RelayState=aHR0cHM6Ly8xOTIuMTY4LjEuMTA5L3RlbmFudC9teS1vcmc%3D&SigAlg=http%3A%2F%2Fwww.w3.org%2F2000%2F09%2Fxmldsig%23rsa-sha1&Signature=EXL0%2BO1aLhXKAMCKTaqduTW5tWsg94ANZ8hC60MtT4kwitvFUQ7VsQT3qtPj8MFbz0tvN9lX79R0yRwMPilP0zb50uuaVpaJy7qUpHiPyBa5HHA2xG2beyNjlUmC%2BOJSBjfx3k6YMkEzRqfKY6KD%2BKxSMsnSJuazBrWdzihoe4dMgWDS5Dpl2YOC0Ychc1huqedCD2WlE4QRfmtXq0oXlydPVSIYCtHXF1pwYq1j9%2B2q0oK9%2BEEoha0mCMWD74t5hei0kVJldFTcSXx0kgqPi6Rih7aP8%2BlKxnUFu4%2Bo7u9n9Oh8SLV3Tz%2Ba9A9cq4OxdCzyQCOwPRYs3GCb8iIB8g%3D%3D")
 
@@ -1279,14 +1301,14 @@ func vCDAdfsRedirector(w http.ResponseWriter, r *http.Request) {
 
 func spawnAdfsServer() *httptest.Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/adfs/services/trust/13/usernamemixed", adfsSamlAuth)
+	mux.HandleFunc("/adfs/services/trust/13/usernamemixed", adfsSamlAuthHandler)
 	log.Printf("Now listening on %s...\n", adfsServerHost)
 
 	server := httptest.NewTLSServer(mux)
 	return server
 }
 
-func adfsSamlAuth(w http.ResponseWriter, r *http.Request) {
+func adfsSamlAuthHandler(w http.ResponseWriter, r *http.Request) {
 
 	// We expect POST method and not anything else
 	if r.Method != http.MethodPost {

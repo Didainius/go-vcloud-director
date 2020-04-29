@@ -40,7 +40,7 @@ type Client struct {
 	// * Authentication endpoint "/adfs/services/trust/13/usernamemixed" must be enabled on ADFS
 	// server
 	UseSamlAdfs bool
-	// OverrideAdfsRptId allows to set custom Relaying Party Trust identifier. By default vCD Entity
+	// CustomAdfsRptId allows to set custom Relaying Party Trust identifier. By default vCD Entity
 	// ID is used as Relaying Party Trust identifier.
 	CustomAdfsRptId string
 
