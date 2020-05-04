@@ -187,6 +187,9 @@ func (cli *Client) newRequest(params map[string]string, notEncodedParams map[str
 	if cli.VCDAuthHeader != "" && cli.VCDToken != "" {
 		// Add the authorization header
 		req.Header.Add(cli.VCDAuthHeader, cli.VCDToken)
+	}
+	if (cli.VCDAuthHeader != "" && cli.VCDToken != "") ||
+		(additionalHeader != nil && additionalHeader.Get("Authorization") != "") {
 		// Add the Accept header for VCD
 		req.Header.Add("Accept", "application/*+xml;version="+apiVersion)
 	}
