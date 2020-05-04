@@ -149,6 +149,12 @@ func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEn
 // * body - request body
 // * apiVersion - provided Api version overrides default Api version value used in request parameter
 func (cli *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
+	return cli.newRequest(params, notEncodedParams, method, reqUrl, body, apiVersion, nil)
+}
+
+// newRequest is kept as a private should be the parent of all "specific" "NewRequest" functions.
+// Note. It is kept private to avoid breaking public API on every new field addition.
+func (cli *Client) newRequest(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string, additionalHeader http.Header) *http.Request {
 	reqValues := url.Values{}
 
 	// Build up our request parameters
@@ -183,6 +189,15 @@ func (cli *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string
 		req.Header.Add(cli.VCDAuthHeader, cli.VCDToken)
 		// Add the Accept header for VCD
 		req.Header.Add("Accept", "application/*+xml;version="+apiVersion)
+	}
+
+	// Merge in additional headers before logging if any where specified
+	if additionalHeader != nil && len(additionalHeader) > 0 {
+		for headerName, headerValueSlice := range additionalHeader {
+			for _, singleHeaderValue := range headerValueSlice {
+				req.Header.Add(headerName, singleHeaderValue)
+			}
+		}
 	}
 
 	// Avoids passing data if the logging of requests is disabled
