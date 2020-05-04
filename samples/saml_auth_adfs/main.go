@@ -1,16 +1,6 @@
 /*
  * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
-
-// Package main is an example how to use Active Directory Federation Services as SAML IdP for vCD.
-// main() function has an example how to setup vCD client with SAML auth
-// To run this command please supply parameters as below
-// go run main.go --username test@test-forest.net --password my-password --org my-org --endpoint
-// https://192.168.1.160/api
-//
-// Results should look similar to:
-// Found 1 Edge Gateways
-// my-edge-gw
 package main
 
 import (
@@ -63,7 +53,7 @@ func main() {
 	// user - username for authentication against ADFS server (e.g. 'test@test-forest.net' or
 	// 'test-forest.net\test')
 	// password - password for authentication against ADFS server
-	// org  - Org to authenticate to. Can be 'System' to authenticate as administrator
+	// org  - Org to authenticate to. Can be 'System'.
 	// customAdfsRptId - override relaying party trust ID. If it is empty - vCD Entity ID will be used
 	// as relaying party trust ID
 	vcdCli := govcd.NewVCDClient(*vcdURL, true, govcd.WithSamlAdfs(true, customAdfsRptId))
@@ -86,5 +76,4 @@ func main() {
 	for _, v := range edgeGatewayResults.Results.EdgeGatewayRecord {
 		fmt.Println(v.Name)
 	}
-
 }
