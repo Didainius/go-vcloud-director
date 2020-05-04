@@ -3,37 +3,29 @@
 package govcd
 
 import (
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"regexp"
 	"testing"
 )
 
-const org = "my-org"
-
-var adfsServerHost string
-var vcdServerHost string
-
-const vcdMetadataEndpoint = "/cloud/org/" + org + "/saml/metadata/alias/vcd"
-const vcdLoginEndpoint = "/api/sessions"
-const vcdVersions = "/api/versions"
-const vcdOrgs = "/api/org"
-
-const vcdAdfsRedirectEndpoint = "/login/my-org/saml/login/alias/vcd"
-
+// testVcdMockAuthToken is the expected vcdCli.Client.VCDToken value after `Authentication()`
+// function passes mock SAML authentication process
 const testVcdMockAuthToken = "e3b02b30b8ff4e87ac38db785b0172b5"
 
 func TestSamlAdfsAuthenticate(t *testing.T) {
 	// Spawn mock ADFS server
 	adfsServer := testSpawnAdfsServer()
-	adfsServerHost = adfsServer.URL
+	adfsServerHost := adfsServer.URL
 	defer adfsServer.Close()
 
 	// Spawn mock vCD instance just enough to cover login details
-	vcdServer := spawnVcdServer()
-	vcdServerHost = vcdServer.URL
+	vcdServer := spawnVcdServer(adfsServerHost, "my-org")
+	vcdServerHost := vcdServer.URL
 	defer vcdServer.Close()
 
 	// Setup vCD client pointing to mock API
@@ -53,14 +45,14 @@ func TestSamlAdfsAuthenticate(t *testing.T) {
 	}
 }
 
-// spawnVcdServer establishes a mock vCD server
-func spawnVcdServer() *httptest.Server {
+// spawnVcdServer establishes a mock vCD server with endpoints required to satisfy authentication
+func spawnVcdServer(adfsServerHost, org string) *httptest.Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc(vcdMetadataEndpoint, vCDSamlMetadataHandler)
-	mux.HandleFunc(vcdAdfsRedirectEndpoint, vCDAdfsRedirectHandler)
-	mux.HandleFunc(vcdLoginEndpoint, vCDLoginHandler)
-	mux.HandleFunc(vcdVersions, vCDApiVersionHandler)
-	mux.HandleFunc(vcdOrgs, vCDApiOrgHandler)
+	mux.HandleFunc("/cloud/org/"+org+"/saml/metadata/alias/vcd", vCDSamlMetadataHandler)
+	mux.HandleFunc("/login/"+org+"/saml/login/alias/vcd", getVcdAdfsRedirectHandler(adfsServerHost))
+	mux.HandleFunc("/api/sessions", vCDLoginHandler)
+	mux.HandleFunc("/api/versions", vCDApiVersionHandler)
+	mux.HandleFunc("/api/org", vCDApiOrgHandler)
 
 	server := httptest.NewTLSServer(mux)
 	if os.Getenv("GOVCD_DEBUG") != "" {
@@ -1209,12 +1201,13 @@ func vCDSamlMetadataHandler(w http.ResponseWriter, r *http.Request) {
 	5Q==</ds:X509Certificate></ds:X509Data></ds:KeyInfo></md:KeyDescriptor><md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://192.168.1.109/cloud/org/my-org/saml/SingleLogout/alias/vcd"/><md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://192.168.1.109/cloud/org/my-org/saml/SingleLogout/alias/vcd"/><md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat><md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</md:NameIDFormat><md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</md:NameIDFormat><md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</md:NameIDFormat><md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName</md:NameIDFormat><md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://192.168.1.109/cloud/org/my-org/saml/SSO/alias/vcd" index="0" isDefault="true"/><md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:profiles:holder-of-key:SSO:browser" Location="https://192.168.1.109/cloud/org/my-org/saml/HoKSSO/alias/vcd" hoksso:ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" index="1" xmlns:hoksso="urn:oasis:names:tc:SAML:2.0:profiles:holder-of-key:SSO:browser"/></md:SPSSODescriptor></md:EntityDescriptor>`)
 	_, _ = w.Write(re)
 }
+func getVcdAdfsRedirectHandler(adfsServerHost string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		headers := w.Header()
+		headers.Add("Location", adfsServerHost+"/adfs/ls/?SAMLRequest=lZJBT8MwDIXv%2FIoq9zZpt3UjWjsNJsQkEBMtHLhlqdsFtcmI0wL%2Fnm5lYlyQOFmW7M9P73m%2B%2BGhqrwOLyuiEhAEjHmhpCqWrhDzlN%2F6MLNKLOYqmjvZ82bqdfoS3FtB5S0Swrt%2B7NhrbBmwGtlMSnh7vErJzbo%2Bc0vAyCsJ4FoRByC6prE1bUGMr2nz6h3Lg0ix7oKJWAmknC%2BKterjSwh0VnTjvSvsxq2IWaybKKnD9kF8a25dAg6OiKJHWSIl3Y6yEo9CElKJGIN56lRBRFmxaxFs2epXAKgC5VbvxbBqqSdUfXeNGIKoOfpYQW1hrdEK7hEQsYj4b%2B9E0ZzFnEz4ZBaMJeyHexhpnpKmvlB5ca63mRqBCrkUDyJ3k2fL%2BjkcB49thCPltnm%2F8zUOWE%2B%2F55H50cL%2FPQyMf%2FP6btf8%2BTNIhHn5UbM8JfwPEKUCS%2FieuBpwohBM%2Fmc3puYD0u%2F39LukX&RelayState=aHR0cHM6Ly8xOTIuMTY4LjEuMTA5L3RlbmFudC9teS1vcmc%3D&SigAlg=http%3A%2F%2Fwww.w3.org%2F2000%2F09%2Fxmldsig%23rsa-sha1&Signature=EXL0%2BO1aLhXKAMCKTaqduTW5tWsg94ANZ8hC60MtT4kwitvFUQ7VsQT3qtPj8MFbz0tvN9lX79R0yRwMPilP0zb50uuaVpaJy7qUpHiPyBa5HHA2xG2beyNjlUmC%2BOJSBjfx3k6YMkEzRqfKY6KD%2BKxSMsnSJuazBrWdzihoe4dMgWDS5Dpl2YOC0Ychc1huqedCD2WlE4QRfmtXq0oXlydPVSIYCtHXF1pwYq1j9%2B2q0oK9%2BEEoha0mCMWD74t5hei0kVJldFTcSXx0kgqPi6Rih7aP8%2BlKxnUFu4%2Bo7u9n9Oh8SLV3Tz%2Ba9A9cq4OxdCzyQCOwPRYs3GCb8iIB8g%3D%3D")
 
-func vCDAdfsRedirectHandler(w http.ResponseWriter, r *http.Request) {
-	headers := w.Header()
-	headers.Add("Location", adfsServerHost+"/adfs/ls/?SAMLRequest=lZJBT8MwDIXv%2FIoq9zZpt3UjWjsNJsQkEBMtHLhlqdsFtcmI0wL%2Fnm5lYlyQOFmW7M9P73m%2B%2BGhqrwOLyuiEhAEjHmhpCqWrhDzlN%2F6MLNKLOYqmjvZ82bqdfoS3FtB5S0Swrt%2B7NhrbBmwGtlMSnh7vErJzbo%2Bc0vAyCsJ4FoRByC6prE1bUGMr2nz6h3Lg0ix7oKJWAmknC%2BKterjSwh0VnTjvSvsxq2IWaybKKnD9kF8a25dAg6OiKJHWSIl3Y6yEo9CElKJGIN56lRBRFmxaxFs2epXAKgC5VbvxbBqqSdUfXeNGIKoOfpYQW1hrdEK7hEQsYj4b%2B9E0ZzFnEz4ZBaMJeyHexhpnpKmvlB5ca63mRqBCrkUDyJ3k2fL%2BjkcB49thCPltnm%2F8zUOWE%2B%2F55H50cL%2FPQyMf%2FP6btf8%2BTNIhHn5UbM8JfwPEKUCS%2FieuBpwohBM%2Fmc3puYD0u%2F39LukX&RelayState=aHR0cHM6Ly8xOTIuMTY4LjEuMTA5L3RlbmFudC9teS1vcmc%3D&SigAlg=http%3A%2F%2Fwww.w3.org%2F2000%2F09%2Fxmldsig%23rsa-sha1&Signature=EXL0%2BO1aLhXKAMCKTaqduTW5tWsg94ANZ8hC60MtT4kwitvFUQ7VsQT3qtPj8MFbz0tvN9lX79R0yRwMPilP0zb50uuaVpaJy7qUpHiPyBa5HHA2xG2beyNjlUmC%2BOJSBjfx3k6YMkEzRqfKY6KD%2BKxSMsnSJuazBrWdzihoe4dMgWDS5Dpl2YOC0Ychc1huqedCD2WlE4QRfmtXq0oXlydPVSIYCtHXF1pwYq1j9%2B2q0oK9%2BEEoha0mCMWD74t5hei0kVJldFTcSXx0kgqPi6Rih7aP8%2BlKxnUFu4%2Bo7u9n9Oh8SLV3Tz%2Ba9A9cq4OxdCzyQCOwPRYs3GCb8iIB8g%3D%3D")
-
-	w.WriteHeader(http.StatusFound)
+		w.WriteHeader(http.StatusFound)
+	}
 }
 
 // testSpawnAdfsServer spawns mock HTTPS server to server ADFS auth endpoint
@@ -1230,9 +1223,67 @@ func testSpawnAdfsServer() *httptest.Server {
 }
 
 func adfsSamlAuthHandler(w http.ResponseWriter, r *http.Request) {
+
 	// We expect POST method and not anything else
 	if r.Method != http.MethodPost {
 		w.WriteHeader(500)
+		return
+	}
+
+	// This is the expected body with dynamic strings replaced to 'REPLACED' word
+	expectedBody := `<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" 
+	xmlns:a="http://www.w3.org/2005/08/addressing" 
+	xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+	<s:Header>
+		<a:Action s:mustUnderstand="1">http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</a:Action>
+		<a:ReplyTo>
+			<a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address>
+		</a:ReplyTo>
+		<a:To s:mustUnderstand="1">REPLACED</a:To>
+		<o:Security s:mustUnderstand="1" 
+			xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+			<u:Timestamp u:Id="_0">
+				<u:Created>REPLACED</u:Created>
+				<u:Expires>REPLACED</u:Expires>
+			</u:Timestamp>
+			<o:UsernameToken>
+				<o:Username>fakeUser</o:Username>
+				<o:Password o:Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">fakePass</o:Password>
+			</o:UsernameToken>
+		</o:Security>
+	</s:Header>
+	<s:Body>
+		<trust:RequestSecurityToken xmlns:trust="http://docs.oasis-open.org/ws-sx/ws-trust/200512">
+			<wsp:AppliesTo xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+				<a:EndpointReference>
+					<a:Address>https://192.168.1.109/cloud/org/my-org/saml/metadata/alias/vcd</a:Address>
+				</a:EndpointReference>
+			</wsp:AppliesTo>
+			<trust:KeySize>0</trust:KeySize>
+			<trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>
+			<i:RequestDisplayToken xml:lang="en" 
+				xmlns:i="http://schemas.xmlsoap.org/ws/2005/05/identity" />
+			<trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>
+			<trust:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0</trust:TokenType>
+		</trust:RequestSecurityToken>
+	</s:Body>
+</s:Envelope>`
+
+	// Replace known dynamic strings to 'REPLACED' string
+	gotBody, _ := ioutil.ReadAll(r.Body)
+	gotBodyString := string(gotBody)
+	re := regexp.MustCompile(`(<a:To s:mustUnderstand="1">).*(</a:To>)`)
+	gotBodyString = re.ReplaceAllString(gotBodyString, `${1}REPLACED${2}`)
+
+	re2 := regexp.MustCompile(`(<u:Created>).*(</u:Created>)`)
+	gotBodyString = re2.ReplaceAllString(gotBodyString, `${1}REPLACED${2}`)
+
+	re3 := regexp.MustCompile(`(<u:Expires>).*(</u:Expires>)`)
+	gotBodyString = re3.ReplaceAllString(gotBodyString, `${1}REPLACED${2}`)
+
+	if gotBodyString != expectedBody {
+		w.WriteHeader(500)
+		return
 	}
 
 	resp := []byte(`<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><s:Header><a:Action s:mustUnderstand="1">http://docs.oasis-open.org/ws-sx/ws-trust/200512/RSTRC/IssueFinal</a:Action><o:Security s:mustUnderstand="1" xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><u:Timestamp u:Id="_0"><u:Created>2020-04-27T06:05:53.281Z</u:Created><u:Expires>2020-04-27T06:10:53.281Z</u:Expires></u:Timestamp></o:Security></s:Header><s:Body><trust:RequestSecurityTokenResponseCollection xmlns:trust="http://docs.oasis-open.org/ws-sx/ws-trust/200512"><trust:RequestSecurityTokenResponse><trust:Lifetime><wsu:Created xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">2020-04-27T06:05:53.281Z</wsu:Created><wsu:Expires xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">2020-04-27T07:05:53.281Z</wsu:Expires></trust:Lifetime><wsp:AppliesTo xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy"><wsa:EndpointReference xmlns:wsa="http://www.w3.org/2005/08/addressing"><wsa:Address>https://192.168.1.109/cloud/org/my-org/saml/metadata/alias/vcd</wsa:Address></wsa:EndpointReference></wsp:AppliesTo><trust:RequestedSecurityToken><EncryptedAssertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion"><xenc:EncryptedData Type="http://www.w3.org/2001/04/xmlenc#Element" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#"><xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/><KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><e:EncryptedKey xmlns:e="http://www.w3.org/2001/04/xmlenc#"><e:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/></e:EncryptionMethod><KeyInfo><ds:X509Data xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:X509IssuerSerial><ds:X509IssuerName>CN=vCloud Director organization Certificate</ds:X509IssuerName><ds:X509SerialNumber>1066064898</ds:X509SerialNumber></ds:X509IssuerSerial></ds:X509Data></KeyInfo><e:CipherData><e:CipherValue>******</e:CipherValue></e:CipherData></e:EncryptedKey></KeyInfo><xenc:CipherData><xenc:CipherValue>******</xenc:CipherValue></xenc:CipherData></xenc:EncryptedData></EncryptedAssertion></trust:RequestedSecurityToken><i:RequestedDisplayToken xmlns:i="http://schemas.xmlsoap.org/ws/2005/05/identity"><i:DisplayToken xml:lang="en"><i:DisplayClaim Uri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"><i:DisplayTag>E-Mail Address</i:DisplayTag><i:Description>The e-mail address of the user</i:Description><i:DisplayValue>test@test-forest.net</i:DisplayValue></i:DisplayClaim><i:DisplayClaim Uri="groups"><i:DisplayValue>Domain Users</i:DisplayValue></i:DisplayClaim><i:DisplayClaim Uri="groups"><i:DisplayValue>VCDUsers</i:DisplayValue></i:DisplayClaim></i:DisplayToken></i:RequestedDisplayToken><trust:RequestedAttachedReference><SecurityTokenReference b:TokenType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:b="http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd"><KeyIdentifier ValueType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLID">_83958fe2-1b12-4706-a6e5-af2143616c23</KeyIdentifier></SecurityTokenReference></trust:RequestedAttachedReference><trust:RequestedUnattachedReference><SecurityTokenReference b:TokenType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:b="http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd"><KeyIdentifier ValueType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLID">_83958fe2-1b12-4706-a6e5-af2143616c23</KeyIdentifier></SecurityTokenReference></trust:RequestedUnattachedReference><trust:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0</trust:TokenType><trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType><trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType></trust:RequestSecurityTokenResponse></trust:RequestSecurityTokenResponseCollection></s:Body></s:Envelope>`)
