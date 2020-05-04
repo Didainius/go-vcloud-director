@@ -67,6 +67,13 @@ func vCDLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// We expect POST method and not anything else
 	if r.Method != http.MethodPost {
 		w.WriteHeader(500)
+		return
+	}
+
+	exectedHeader := `SIGN token="H4sIAAAAAAAA/5xTTY+bMBD9K4jeKiV20l20sRxLEdnDaru5bFX16jUTsIRtZJsS+usrPhdCD6jcPPZ7b95jhj5rYevCQ3JyDqyXRgc3lWt3DEurieFOOqK5Ake8IO+nt+9kv8WED49DRm+gBRlpztzz4EddwDHMvC8IQlVVbatvW2NTtMd4h/ADuqkctPjynIMC7cNOkTREK1B3ktLoN/CZSYJTnhorfaZWkHBw+8doIz5EiBh9hfpFX83g/J9ojPChQSdOpk0P8On5FerewhrXU+z/NW8d3xgOxUal110RMnqWKTi/kmlmxGV81ySAli2NsTCaOPLrER/af9sZTdbG1ENfnCvBvoOVPL8rXrgCFl+Ov+PclElwlhaENzYwNuVa/uHtTMbNuF2l4B4oWsIHxk7gUqoPsGyHowhHD0+HpxEyu78jGppDE7eMojEEILEsMrBdfTj95HkJ7Gv7NSlOq5/nnms+M1PydqKnbyeFucTiYlbqhZY7ySharjr7GwAA///dRZE6/wMAAA==",org="my-org"`
+	if r.Header.Get("Authorization") != exectedHeader {
+		w.WriteHeader(500)
+		return
 	}
 
 	headers := w.Header()
@@ -95,7 +102,10 @@ func vCDLoginHandler(w http.ResponseWriter, r *http.Request) {
 		</AuthorizedLocations>
 	</Session>`)
 
-	_, _ = w.Write(resp)
+	_, err := w.Write(resp)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // vCDApiVersionHandler server mock "/api/versions"
@@ -103,6 +113,7 @@ func vCDApiVersionHandler(w http.ResponseWriter, r *http.Request) {
 	// We expect GET method and not anything else
 	if r.Method != http.MethodGet {
 		w.WriteHeader(500)
+		return
 	}
 
 	resp := []byte(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -1151,7 +1162,10 @@ func vCDApiVersionHandler(w http.ResponseWriter, r *http.Request) {
 		</VersionInfo>
 	</SupportedVersions>`)
 
-	_, _ = w.Write(resp)
+	_, err := w.Write(resp)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // vCDApiOrgHandler serves mock "/api/org"
@@ -1159,6 +1173,7 @@ func vCDApiOrgHandler(w http.ResponseWriter, r *http.Request) {
 	// We expect GET method and not anything else
 	if r.Method != http.MethodGet {
 		w.WriteHeader(500)
+		return
 	}
 
 	resp := []byte(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -1166,7 +1181,10 @@ func vCDApiOrgHandler(w http.ResponseWriter, r *http.Request) {
 		<Org href="https://192.168.1.109/api/org/c196c6f0-5c31-4929-a626-b29b2c9ff5ab" name="my-org" type="application/vnd.vmware.vcloud.org+xml"/>
 	</OrgList>`)
 
-	_, _ = w.Write(resp)
+	_, err := w.Write(resp)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // vCDSamlMetadataHandler serves mock "/cloud/org/" + org + "/saml/metadata/alias/vcd"
@@ -1203,6 +1221,10 @@ func vCDSamlMetadataHandler(w http.ResponseWriter, r *http.Request) {
 }
 func getVcdAdfsRedirectHandler(adfsServerHost string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(500)
+			return
+		}
 		headers := w.Header()
 		headers.Add("Location", adfsServerHost+"/adfs/ls/?SAMLRequest=lZJBT8MwDIXv%2FIoq9zZpt3UjWjsNJsQkEBMtHLhlqdsFtcmI0wL%2Fnm5lYlyQOFmW7M9P73m%2B%2BGhqrwOLyuiEhAEjHmhpCqWrhDzlN%2F6MLNKLOYqmjvZ82bqdfoS3FtB5S0Swrt%2B7NhrbBmwGtlMSnh7vErJzbo%2Bc0vAyCsJ4FoRByC6prE1bUGMr2nz6h3Lg0ix7oKJWAmknC%2BKterjSwh0VnTjvSvsxq2IWaybKKnD9kF8a25dAg6OiKJHWSIl3Y6yEo9CElKJGIN56lRBRFmxaxFs2epXAKgC5VbvxbBqqSdUfXeNGIKoOfpYQW1hrdEK7hEQsYj4b%2B9E0ZzFnEz4ZBaMJeyHexhpnpKmvlB5ca63mRqBCrkUDyJ3k2fL%2BjkcB49thCPltnm%2F8zUOWE%2B%2F55H50cL%2FPQyMf%2FP6btf8%2BTNIhHn5UbM8JfwPEKUCS%2FieuBpwohBM%2Fmc3puYD0u%2F39LukX&RelayState=aHR0cHM6Ly8xOTIuMTY4LjEuMTA5L3RlbmFudC9teS1vcmc%3D&SigAlg=http%3A%2F%2Fwww.w3.org%2F2000%2F09%2Fxmldsig%23rsa-sha1&Signature=EXL0%2BO1aLhXKAMCKTaqduTW5tWsg94ANZ8hC60MtT4kwitvFUQ7VsQT3qtPj8MFbz0tvN9lX79R0yRwMPilP0zb50uuaVpaJy7qUpHiPyBa5HHA2xG2beyNjlUmC%2BOJSBjfx3k6YMkEzRqfKY6KD%2BKxSMsnSJuazBrWdzihoe4dMgWDS5Dpl2YOC0Ychc1huqedCD2WlE4QRfmtXq0oXlydPVSIYCtHXF1pwYq1j9%2B2q0oK9%2BEEoha0mCMWD74t5hei0kVJldFTcSXx0kgqPi6Rih7aP8%2BlKxnUFu4%2Bo7u9n9Oh8SLV3Tz%2Ba9A9cq4OxdCzyQCOwPRYs3GCb8iIB8g%3D%3D")
 
@@ -1287,5 +1309,8 @@ func adfsSamlAuthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := []byte(`<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><s:Header><a:Action s:mustUnderstand="1">http://docs.oasis-open.org/ws-sx/ws-trust/200512/RSTRC/IssueFinal</a:Action><o:Security s:mustUnderstand="1" xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><u:Timestamp u:Id="_0"><u:Created>2020-04-27T06:05:53.281Z</u:Created><u:Expires>2020-04-27T06:10:53.281Z</u:Expires></u:Timestamp></o:Security></s:Header><s:Body><trust:RequestSecurityTokenResponseCollection xmlns:trust="http://docs.oasis-open.org/ws-sx/ws-trust/200512"><trust:RequestSecurityTokenResponse><trust:Lifetime><wsu:Created xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">2020-04-27T06:05:53.281Z</wsu:Created><wsu:Expires xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">2020-04-27T07:05:53.281Z</wsu:Expires></trust:Lifetime><wsp:AppliesTo xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy"><wsa:EndpointReference xmlns:wsa="http://www.w3.org/2005/08/addressing"><wsa:Address>https://192.168.1.109/cloud/org/my-org/saml/metadata/alias/vcd</wsa:Address></wsa:EndpointReference></wsp:AppliesTo><trust:RequestedSecurityToken><EncryptedAssertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion"><xenc:EncryptedData Type="http://www.w3.org/2001/04/xmlenc#Element" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#"><xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/><KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><e:EncryptedKey xmlns:e="http://www.w3.org/2001/04/xmlenc#"><e:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/></e:EncryptionMethod><KeyInfo><ds:X509Data xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:X509IssuerSerial><ds:X509IssuerName>CN=vCloud Director organization Certificate</ds:X509IssuerName><ds:X509SerialNumber>1066064898</ds:X509SerialNumber></ds:X509IssuerSerial></ds:X509Data></KeyInfo><e:CipherData><e:CipherValue>******</e:CipherValue></e:CipherData></e:EncryptedKey></KeyInfo><xenc:CipherData><xenc:CipherValue>******</xenc:CipherValue></xenc:CipherData></xenc:EncryptedData></EncryptedAssertion></trust:RequestedSecurityToken><i:RequestedDisplayToken xmlns:i="http://schemas.xmlsoap.org/ws/2005/05/identity"><i:DisplayToken xml:lang="en"><i:DisplayClaim Uri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"><i:DisplayTag>E-Mail Address</i:DisplayTag><i:Description>The e-mail address of the user</i:Description><i:DisplayValue>test@test-forest.net</i:DisplayValue></i:DisplayClaim><i:DisplayClaim Uri="groups"><i:DisplayValue>Domain Users</i:DisplayValue></i:DisplayClaim><i:DisplayClaim Uri="groups"><i:DisplayValue>VCDUsers</i:DisplayValue></i:DisplayClaim></i:DisplayToken></i:RequestedDisplayToken><trust:RequestedAttachedReference><SecurityTokenReference b:TokenType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:b="http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd"><KeyIdentifier ValueType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLID">_83958fe2-1b12-4706-a6e5-af2143616c23</KeyIdentifier></SecurityTokenReference></trust:RequestedAttachedReference><trust:RequestedUnattachedReference><SecurityTokenReference b:TokenType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:b="http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd"><KeyIdentifier ValueType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLID">_83958fe2-1b12-4706-a6e5-af2143616c23</KeyIdentifier></SecurityTokenReference></trust:RequestedUnattachedReference><trust:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0</trust:TokenType><trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType><trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType></trust:RequestSecurityTokenResponse></trust:RequestSecurityTokenResponseCollection></s:Body></s:Envelope>`)
-	_, _ = w.Write(resp)
+	_, err := w.Write(resp)
+	if err != nil {
+		panic(err)
+	}
 }
