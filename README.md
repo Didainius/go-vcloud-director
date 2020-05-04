@@ -114,11 +114,13 @@ func main() {
 
 ## Authentication
 
-You can authenticate to the vCD in three ways:
+You can authenticate to the vCD in four ways:
 
 * With a System Administration user and password (`administrator@system`)
 * With an Organization user and password (`tenant-admin@org-name`)
 * With an authorization token
+* SAML user and password (works with ADFS as IdP using WS-TRUST endpoint
+  "/adfs/services/trust/13/usernamemixed"). You can find usage example in `samples/saml_auth_adfs`
 
 For the first two methods, you use:
 
