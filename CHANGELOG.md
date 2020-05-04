@@ -1,4 +1,8 @@
-## 2.7.0 (Unreleased)
+## 2.8.0 (Unreleased)
+
+*  Removed code that handled specific cases for API 29.0 and 30.0. This library now supports VCD versions from 9.5 to 10.1 included.
+
+## 2.7.0 (April 10, 2020)
 
 * Add configuration option `WithSamlAdfs` to `NewVCDClient()` to support SAML authentication with
   Active Directory Federation Services (ADFS) handling SSO via endpoint
@@ -9,8 +13,9 @@
 * Added methods `OrgVdcNetwork.Update`, `OrgVdcNetwork.UpdateAsync`, and `OrgVdcNetwork.Rename` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
 * Added methods `EdgeGateway.Update` and `EdgeGateway.UpdateAsync` [#292](https://github.com/vmware/go-vcloud-director/pull/292)
 * Increment vCD API version used from 29.0 to 31.0
-    * Add fields `AdminVdc.UniversalNetworkPoolReference and VM.Media`
-    
+    * Add fields `AdminVdc.UniversalNetworkPoolReference and VM.Media`    
+* Added methods `vapp.AddEmptyVm`, `vapp.AddEmptyVmAsync` and `vdc.QueryAllMedia` [#296](https://github.com/vmware/go-vcloud-director/pull/296)
+
 NOTES:
 
 * Improved testinf function `deleteVapp()` to avoid deletion errors during test suite run
