@@ -1224,7 +1224,7 @@ func testSpawnAdfsServer() *httptest.Server {
 
 func adfsSamlAuthHandler(w http.ResponseWriter, r *http.Request) {
 
-	// We expect POST method and not anything else
+	// it must be POST method and not anything else
 	if r.Method != http.MethodPost {
 		w.WriteHeader(500)
 		return

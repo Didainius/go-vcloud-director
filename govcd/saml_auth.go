@@ -24,7 +24,7 @@ import (
 // Input parameters:
 // user - username for authentication against ADFS server (e.g. 'test@test-forest.net' or
 // 'test-forest.net\test')
-// pass - password or authentication against ADFS server
+// pass - password for authentication against ADFS server
 // org  - Org to authenticate to
 // override_rpt_id - override relaying party trust ID. If it is empty - vCD Entity ID will be used
 // as relaying party trust ID
