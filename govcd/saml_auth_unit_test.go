@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 )
 
@@ -20,10 +21,7 @@ const vcdLoginEndpoint = "/api/sessions"
 const vcdVersions = "/api/versions"
 const vcdOrgs = "/api/org"
 
-// const vcdAdfsRedirectEndpoint = "/login/my-org/saml/login/alias/vcd?&service=tenant:" + org
 const vcdAdfsRedirectEndpoint = "/login/my-org/saml/login/alias/vcd"
-
-// https://192.168.1.109/login/my-org/saml/login/alias/vcd?&service=tenant:my-org
 
 const testVcdMockAuthToken = "e3b02b30b8ff4e87ac38db785b0172b5"
 
@@ -65,8 +63,9 @@ func spawnVcdServer() *httptest.Server {
 	mux.HandleFunc(vcdOrgs, vCDApiOrgHandler)
 
 	server := httptest.NewTLSServer(mux)
-	log.Printf("vCD mock server now listening on %s...\n", server.URL)
-
+	if os.Getenv("GOVCD_DEBUG") != "" {
+		log.Printf("vCD mock server now listening on %s...\n", server.URL)
+	}
 	return server
 
 }
@@ -1224,9 +1223,9 @@ func testSpawnAdfsServer() *httptest.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/adfs/services/trust/13/usernamemixed", adfsSamlAuthHandler)
 	server := httptest.NewTLSServer(mux)
-
-	log.Printf("ADFS mock server now listening on %s...\n", server.URL)
-
+	if os.Getenv("GOVCD_DEBUG") != "" {
+		log.Printf("ADFS mock server now listening on %s...\n", server.URL)
+	}
 	return server
 }
 

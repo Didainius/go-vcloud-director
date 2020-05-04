@@ -178,7 +178,7 @@ func vcdAuthorizeSamlGetSamlAuthToken(vcdCli *VCDClient, user, pass, samlEntityI
 	requestBody := getSamlTokenRequestBody(user, pass, samlEntityId, authEndpoint)
 	samlTokenRequestBody := strings.NewReader(requestBody)
 
-	tokenRequestResponse := types.AuthResponseEnvelope{}
+	tokenRequestResponse := types.AdfsAuthResponseEnvelope{}
 
 	// Making a custom request as this is going to hit ADFS server and has some specific which are
 	// not worth a custom query function
@@ -186,7 +186,7 @@ func vcdAuthorizeSamlGetSamlAuthToken(vcdCli *VCDClient, user, pass, samlEntityI
 	req := vcdCli.Client.NewRequest(nil, http.MethodPost, *authEndpointUrl, samlTokenRequestBody)
 	req.Header.Add("Content-Type", types.SoapXML)
 	resp, err := vcdCli.Client.Http.Do(req)
-	resp, err = checkRespWithErrType(resp, err, &types.SamlErrorEnvelope{})
+	resp, err = checkRespWithErrType(resp, err, &types.AdfsAuthErrorEnvelope{})
 	if err != nil {
 		return "", fmt.Errorf("SAML - ADFS token request query failed for RPT ID ('%s'): %s",
 			samlEntityId, err)
