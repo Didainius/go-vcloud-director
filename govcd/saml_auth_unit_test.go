@@ -3,7 +3,6 @@
 package govcd
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -26,144 +25,61 @@ const vcdAdfsRedirectEndpoint = "/login/my-org/saml/login/alias/vcd"
 
 // https://192.168.1.109/login/my-org/saml/login/alias/vcd?&service=tenant:my-org
 
+const testVcdMockAuthToken = "e3b02b30b8ff4e87ac38db785b0172b5"
+
 func TestSamlAdfsAuthenticate(t *testing.T) {
 	// Spawn mock ADFS server
-	adfsServer := spawnAdfsServer()
+	adfsServer := testSpawnAdfsServer()
 	adfsServerHost = adfsServer.URL
 	defer adfsServer.Close()
 
-	// Run a mock vCD instance just enough to cover login details
-	vcdServer := spawnvCDServer()
+	// Spawn mock vCD instance just enough to cover login details
+	vcdServer := spawnVcdServer()
 	vcdServerHost = vcdServer.URL
 	defer vcdServer.Close()
 
 	// Setup vCD client pointing to mock API
 	vcdUrl, err := url.Parse(vcdServerHost + "/api")
+	if err != nil {
+		t.Errorf("got errors: %s", err)
+	}
 	vcdCli := NewVCDClient(*vcdUrl, true, WithSamlAdfs(true, ""))
-
 	err = vcdCli.Authenticate("fakeUser", "fakePass", "my-org")
 	if err != nil {
 		t.Errorf("got errors: %s", err)
 	}
-	fmt.Println(vcdCli.Client.VCDToken)
-}
 
-func TestVcdAuthorizeSamlGetSamlEntityId(t *testing.T) {
-	// Run a mock vCD server serving metadata endpoint
-	vcdServer := spawnvCDServer()
-	vcdServerHost = vcdServer.URL
-	defer vcdServer.Close()
-
-	// Setup vCD client pointing to mock API
-	vcdUrl, err := url.Parse(vcdServerHost + "/api")
-	if err != nil {
-		t.Errorf("error parsing VCD URL: %s", err)
-	}
-	vcdCli := NewVCDClient(*vcdUrl, true, WithSamlAdfs(true, ""))
-
-	// retrieve SAML entity ID using a fake API
-	samlEntityId, err := vcdCli.vcdAuthorizeSamlGetSamlEntityId(org)
-	if err != nil {
-		t.Errorf("error getting SAML entity ID: %s", err)
-	}
-
-	wantedSamlEntityId := "https://192.168.1.109/cloud/org/my-org/saml/metadata/alias/vcd"
-	if samlEntityId != wantedSamlEntityId {
-		t.Errorf("wanted SAML Entity ID to be %s, got %s", wantedSamlEntityId, samlEntityId)
+	// After authentication
+	if vcdCli.Client.VCDToken != testVcdMockAuthToken {
+		t.Errorf("received token does not match specified one")
 	}
 }
 
-func TestSamlAdfs(t *testing.T) {
-
-	adfsServer := spawnAdfsServer()
-	adfsServerHost = adfsServer.URL
-	defer adfsServer.Close()
-
-	// Run a mock vCD http listener on custom port
-	vcdServer := spawnvCDServer()
-	vcdServerHost = vcdServer.URL
-	defer vcdServer.Close()
-
-	// Setup vCD client pointing to mock API
-	vcdUrl, err := url.Parse(vcdServerHost + "/api")
-	vcdCli := NewVCDClient(*vcdUrl, true, WithSamlAdfs(true, ""))
-
-	// Test step 1
-	samlEntityId, err := vcdCli.vcdAuthorizeSamlGetSamlEntityId(org)
-	if err != nil {
-		t.Errorf("got error: %s", err)
-	}
-	if samlEntityId != "https://192.168.1.109/cloud/org/my-org/saml/metadata/alias/vcd" {
-		t.Fail()
-	}
-	log.Printf("saml entity %s", samlEntityId)
-
-	// Test step 2
-	adfsAuthEndPoint, err := vcdCli.vcdAuthorizeSamlGetAdfsServer(org)
-	if err != nil {
-		t.Errorf("got error: %s", err)
-	}
-	log.Printf("ADFS auth endpoint %s", adfsAuthEndPoint)
-
-	// Test step 3
-	signToken, err := vcdCli.vcdAuthorizeSamlGetSamlAuthToken("fakeUser", "fakePass", samlEntityId, adfsAuthEndPoint, org)
-	if err != nil {
-		t.Errorf("got error: %s", err)
-	}
-	log.Printf("SIGN token response: %s", signToken)
-
-	// Test step 4
-	// Step 4 - gzip and encode SIGN token in base64 so that vCD can accept it
-	base64GzippedSignToken, err := gzipAndBase64Encode(signToken)
-	if err != nil {
-		t.Errorf("got error: %s", err)
-	}
-
-	wantedBase64GzippedToken := "H4sIAAAAAAAA/5xTTY+bMBD9K4jeKiV20l20sRxLEdnDaru5bFX16jUTsIRtZJsS+usrPhdCD6jcPPZ7b95jhj5rYevCQ3JyDqyXRgc3lWt3DEurieFOOqK5Ake8IO+nt+9kv8WED49DRm+gBRlpztzz4EddwDHMvC8IQlVVbatvW2NTtMd4h/ADuqkctPjynIMC7cNOkTREK1B3ktLoN/CZSYJTnhorfaZWkHBw+8doIz5EiBh9hfpFX83g/J9ojPChQSdOpk0P8On5FerewhrXU+z/NW8d3xgOxUal110RMnqWKTi/kmlmxGV81ySAli2NsTCaOPLrER/af9sZTdbG1ENfnCvBvoOVPL8rXrgCFl+Ov+PclElwlhaENzYwNuVa/uHtTMbNuF2l4B4oWsIHxk7gUqoPsGyHowhHD0+HpxEyu78jGppDE7eMojEEILEsMrBdfTj95HkJ7Gv7NSlOq5/nnms+M1PydqKnbyeFucTiYlbqhZY7ySharjr7GwAA///dRZE6/wMAAA=="
-	if base64GzippedSignToken != wantedBase64GzippedToken {
-		t.Errorf("wanted %s, got %s", wantedBase64GzippedToken, base64GzippedSignToken)
-	}
-
-	// Testp step 5
-	// Step 5 - authenticate vCD with SIGN token and expect to receive vCD regular token
-	vcdAccessToken, err := vcdCli.vcdAuthorizeSignToken(base64GzippedSignToken, org)
-	if err != nil {
-		t.Errorf("got error: %s", err)
-	}
-
-	// Step 6
-	err = vcdCli.SetToken(org, AuthorizationHeader, vcdAccessToken)
-	if err != nil {
-		t.Errorf("got error: %s", err)
-	}
-
-	if vcdCli.Client.VCDToken != vcdAccessToken {
-		t.Errorf("expected %s, got %s", vcdAccessToken, vcdCli.Client.VCDToken)
-	}
-
-}
-
-// spawnvCDServer establishes a mock vCD server
-func spawnvCDServer() *httptest.Server {
+// spawnVcdServer establishes a mock vCD server
+func spawnVcdServer() *httptest.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc(vcdMetadataEndpoint, vCDSamlMetadataHandler)
 	mux.HandleFunc(vcdAdfsRedirectEndpoint, vCDAdfsRedirectHandler)
 	mux.HandleFunc(vcdLoginEndpoint, vCDLoginHandler)
 	mux.HandleFunc(vcdVersions, vCDApiVersionHandler)
 	mux.HandleFunc(vcdOrgs, vCDApiOrgHandler)
-	return httptest.NewTLSServer(mux)
+
+	server := httptest.NewTLSServer(mux)
+	log.Printf("vCD mock server now listening on %s...\n", server.URL)
+
+	return server
 
 }
 
+// vcdLoginHandler serves mock "/api/sessions"
 func vCDLoginHandler(w http.ResponseWriter, r *http.Request) {
-
 	// We expect POST method and not anything else
 	if r.Method != http.MethodPost {
 		w.WriteHeader(500)
 	}
 
 	headers := w.Header()
-	headers.Add("X-Vcloud-Authorization", "e3b02b30b8ff4e87ac38db785b0172b5")
+	headers.Add("X-Vcloud-Authorization", testVcdMockAuthToken)
 
 	resp := []byte(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 	<Session xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:common="http://schemas.dmtf.org/wbem/wscim/1/common" xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:vmw="http://www.vmware.com/schema/ovf" xmlns:ovfenv="http://schemas.dmtf.org/ovf/environment/1" xmlns:vmext="http://www.vmware.com/vcloud/extension/v1.5" xmlns:ns9="http://www.vmware.com/vcloud/versions" locationId="c196c6f0-5c31-4929-a626-b29b2c9ff5ab@cb33a646-6652-4628-95b0-24bd981783b6" org="my-org" roles="Organization Administrator" user="test@test-forest.net" userId="urn:vcloud:user:8fd38079-b31c-4dfd-99f2-7073b3f7ec90" href="https://192.168.1.109/api/session" type="application/vnd.vmware.vcloud.session+xml">
@@ -191,6 +107,7 @@ func vCDLoginHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(resp)
 }
 
+// vCDApiVersionHandler server mock "/api/versions"
 func vCDApiVersionHandler(w http.ResponseWriter, r *http.Request) {
 	// We expect GET method and not anything else
 	if r.Method != http.MethodGet {
@@ -1246,6 +1163,7 @@ func vCDApiVersionHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(resp)
 }
 
+// vCDApiOrgHandler serves mock "/api/org"
 func vCDApiOrgHandler(w http.ResponseWriter, r *http.Request) {
 	// We expect GET method and not anything else
 	if r.Method != http.MethodGet {
@@ -1260,6 +1178,7 @@ func vCDApiOrgHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(resp)
 }
 
+// vCDSamlMetadataHandler serves mock "/cloud/org/" + org + "/saml/metadata/alias/vcd"
 func vCDSamlMetadataHandler(w http.ResponseWriter, r *http.Request) {
 	re := []byte(`<?xml version="1.0" encoding="UTF-8"?>
 	<md:EntityDescriptor ID="https___192.168.1.109_cloud_org_my-org_saml_metadata_alias_vcd" entityID="https://192.168.1.109/cloud/org/my-org/saml/metadata/alias/vcd" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"><md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol"><md:KeyDescriptor use="signing"><ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:X509Data><ds:X509Certificate>MIIC4jCCAcqgAwIBAgIEP4rcAjANBgkqhkiG9w0BAQUFADAzMTEwLwYDVQQDEyh2Q2xvdWQgRGly
@@ -1299,17 +1218,19 @@ func vCDAdfsRedirectHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusFound)
 }
 
-func spawnAdfsServer() *httptest.Server {
+// testSpawnAdfsServer spawns mock HTTPS server to server ADFS auth endpoint
+// "/adfs/services/trust/13/usernamemixed"
+func testSpawnAdfsServer() *httptest.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/adfs/services/trust/13/usernamemixed", adfsSamlAuthHandler)
-	log.Printf("Now listening on %s...\n", adfsServerHost)
-
 	server := httptest.NewTLSServer(mux)
+
+	log.Printf("ADFS mock server now listening on %s...\n", server.URL)
+
 	return server
 }
 
 func adfsSamlAuthHandler(w http.ResponseWriter, r *http.Request) {
-
 	// We expect POST method and not anything else
 	if r.Method != http.MethodPost {
 		w.WriteHeader(500)
@@ -1317,5 +1238,4 @@ func adfsSamlAuthHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp := []byte(`<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing" xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><s:Header><a:Action s:mustUnderstand="1">http://docs.oasis-open.org/ws-sx/ws-trust/200512/RSTRC/IssueFinal</a:Action><o:Security s:mustUnderstand="1" xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><u:Timestamp u:Id="_0"><u:Created>2020-04-27T06:05:53.281Z</u:Created><u:Expires>2020-04-27T06:10:53.281Z</u:Expires></u:Timestamp></o:Security></s:Header><s:Body><trust:RequestSecurityTokenResponseCollection xmlns:trust="http://docs.oasis-open.org/ws-sx/ws-trust/200512"><trust:RequestSecurityTokenResponse><trust:Lifetime><wsu:Created xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">2020-04-27T06:05:53.281Z</wsu:Created><wsu:Expires xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">2020-04-27T07:05:53.281Z</wsu:Expires></trust:Lifetime><wsp:AppliesTo xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy"><wsa:EndpointReference xmlns:wsa="http://www.w3.org/2005/08/addressing"><wsa:Address>https://192.168.1.109/cloud/org/my-org/saml/metadata/alias/vcd</wsa:Address></wsa:EndpointReference></wsp:AppliesTo><trust:RequestedSecurityToken><EncryptedAssertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion"><xenc:EncryptedData Type="http://www.w3.org/2001/04/xmlenc#Element" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#"><xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/><KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><e:EncryptedKey xmlns:e="http://www.w3.org/2001/04/xmlenc#"><e:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/></e:EncryptionMethod><KeyInfo><ds:X509Data xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:X509IssuerSerial><ds:X509IssuerName>CN=vCloud Director organization Certificate</ds:X509IssuerName><ds:X509SerialNumber>1066064898</ds:X509SerialNumber></ds:X509IssuerSerial></ds:X509Data></KeyInfo><e:CipherData><e:CipherValue>******</e:CipherValue></e:CipherData></e:EncryptedKey></KeyInfo><xenc:CipherData><xenc:CipherValue>******</xenc:CipherValue></xenc:CipherData></xenc:EncryptedData></EncryptedAssertion></trust:RequestedSecurityToken><i:RequestedDisplayToken xmlns:i="http://schemas.xmlsoap.org/ws/2005/05/identity"><i:DisplayToken xml:lang="en"><i:DisplayClaim Uri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"><i:DisplayTag>E-Mail Address</i:DisplayTag><i:Description>The e-mail address of the user</i:Description><i:DisplayValue>test@test-forest.net</i:DisplayValue></i:DisplayClaim><i:DisplayClaim Uri="groups"><i:DisplayValue>Domain Users</i:DisplayValue></i:DisplayClaim><i:DisplayClaim Uri="groups"><i:DisplayValue>VCDUsers</i:DisplayValue></i:DisplayClaim></i:DisplayToken></i:RequestedDisplayToken><trust:RequestedAttachedReference><SecurityTokenReference b:TokenType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:b="http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd"><KeyIdentifier ValueType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLID">_83958fe2-1b12-4706-a6e5-af2143616c23</KeyIdentifier></SecurityTokenReference></trust:RequestedAttachedReference><trust:RequestedUnattachedReference><SecurityTokenReference b:TokenType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0" xmlns="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:b="http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd"><KeyIdentifier ValueType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLID">_83958fe2-1b12-4706-a6e5-af2143616c23</KeyIdentifier></SecurityTokenReference></trust:RequestedUnattachedReference><trust:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0</trust:TokenType><trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType><trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType></trust:RequestSecurityTokenResponse></trust:RequestSecurityTokenResponseCollection></s:Body></s:Envelope>`)
 	_, _ = w.Write(resp)
-
 }
