@@ -1,6 +1,6 @@
 # SAML authentication with ADFS as IdP
 This is an example how to use Active Directory Federation Services as SAML IdP for vCD.
-`main()` function has an example how to setup vCD client with SAML auth. On succesful login it will
+`main()` function has an example how to setup vCD client with SAML auth. On successful login it will
 list Edge Gateways.
 To run this command please supply parameters as per below example:
 ```

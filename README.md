@@ -118,23 +118,27 @@ You can authenticate to the vCD in four ways:
 
 * With a System Administration user and password (`administrator@system`)
 * With an Organization user and password (`tenant-admin@org-name`)
-* With an authorization token
-* SAML user and password (works with ADFS as IdP using WS-TRUST endpoint
-  "/adfs/services/trust/13/usernamemixed"). You can find usage example in `samples/saml_auth_adfs`
 
-For the first two methods, you use:
-
+For the above two methods, you use: 
 ```go
 	err := vcdClient.Authenticate(User, Password, Org)
 	// or
 	resp, err := vcdClient.GetAuthResponse(User, Password, Org)
 ```
 
-For the token, you use:
-
+* With an authorization token
 ```go
 	err := vcdClient.SetToken(Org, govcd.AuthorizationHeader, Token)
 ```
+The file `scripts/get_token.sh` provides a handy method of extracting the token
+(`x-vcloud-authorization` value) for future use.
 
-The file `scripts/get_token.sh` provides a handy method of extracting the token (`x-vcloud-authorization` value) for future use.
+* SAML user and password (works with ADFS as IdP using WS-TRUST endpoint
+  "/adfs/services/trust/13/usernamemixed"). One must pass `govcd.WithSamlAdfs(true,customAdfsRptId)`
+   You can find usage example in [samples/saml_auth_adfs](/samples/saml_auth_adfs).
+```go
+vcdCli := govcd.NewVCDClient(*vcdURL, true, govcd.WithSamlAdfs(true, customAdfsRptId))
+err = vcdCli.Authenticate(username, password, org)
+```
+
 

@@ -56,7 +56,6 @@ func main() {
 	// customAdfsRptId - override relaying party trust ID. If it is empty - vCD Entity ID will be used
 	// as Relaying Party Trust ID.
 	vcdCli := govcd.NewVCDClient(*vcdURL, true, govcd.WithSamlAdfs(true, customAdfsRptId))
-	// vcdCli.
 	err = vcdCli.Authenticate(username, password, org)
 	if err != nil {
 
