@@ -22,8 +22,8 @@ import (
 // vcdAuthorizeSamlAdfs is the main entry point for SAML authentication on ADFS endpoint
 // "/adfs/services/trust/13/usernamemixed"
 // Input parameters:
-// user - username for authentication to ADFS server (e.g. 'test@test-forest.net' or
-// 'test-forest.net\test')
+// user - username for authentication to ADFS server (e.g. 'test@contoso.com' or
+// 'contoso.com\test')
 // pass - password for authentication to ADFS server
 // org  - Org to authenticate to
 // override_rpt_id - override relaying party trust ID. If it is empty - vCD Entity ID will be used
@@ -33,7 +33,7 @@ import (
 // regular vCD token for further operations. This is achieved with the following steps:
 // 1 - Lookup vCD Entity ID to use for ADFS authentication or use custom value if overrideRptId
 // field is provided
-// 2 - Find ADFS server name by querying vCD SAML URL which responds with HTTP redirect
+// 2 - Find ADFS server name by querying vCD SAML URL which responds with HTTP redirect (302)
 // 3 - Authenticate to ADFS server using vCD SAML Entity ID or custom value if overrideRptId is
 // specified Relying Party Trust Identifier
 // 4 - Process received ciphers from ADFS server (gzip and base64 encode) so that data can be used
@@ -116,7 +116,7 @@ func vcdAuthorizeSamlGetAdfsServer(vcdCli *VCDClient, org string) (string, error
 	}
 
 	// Construct SAML login URL which should return a redirect to ADFS server
-	loginURLString := url.Scheme + "://" + url.Host + "/login/my-org/saml/login/alias/vcd"
+	loginURLString := url.Scheme + "://" + url.Host + "/login/" + org + "/saml/login/alias/vcd"
 	loginURL, err := url.Parse(loginURLString)
 	if err != nil {
 		return "", fmt.Errorf("unable to parse login URL '%s': %s", loginURLString, err)
@@ -180,11 +180,9 @@ func vcdAuthorizeSamlGetSamlEntityId(vcdCli *VCDClient, org string) (string, err
 func vcdAuthorizeSamlGetSamlAuthToken(vcdCli *VCDClient, user, pass, samlEntityId, authEndpoint, org string) (string, error) {
 	requestBody := getSamlTokenRequestBody(user, pass, samlEntityId, authEndpoint)
 	samlTokenRequestBody := strings.NewReader(requestBody)
-
 	tokenRequestResponse := types.AdfsAuthResponseEnvelope{}
 
-	// Making a custom request as this is going to hit ADFS server and has some specific which are
-	// not worth a custom query function
+	// Post to ADFS endpoint "/adfs/services/trust/13/usernamemixed"
 	authEndpointUrl, err := url.Parse(authEndpoint)
 	if err != nil {
 		return "", fmt.Errorf("SAML - error parsing authentication endpoint %s: %s", authEndpoint, err)

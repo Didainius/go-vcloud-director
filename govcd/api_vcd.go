@@ -231,7 +231,7 @@ func WithHttpTimeout(timeout int64) VCDClientOption {
 	}
 }
 
-// WithSamlAdfs specifies if SAML auth is used for authenticating vCD instead of local login.
+// WithSamlAdfs specifies if SAML auth is used for authenticating to vCD instead of local login.
 // The following conditions must be met so that SAML authentication works:
 // * SAML IdP (Identity Provider) is Active Directory Federation Service (ADFS)
 // * WS-Trust authentication endpoint "/adfs/services/trust/13/usernamemixed" must be enabled on
