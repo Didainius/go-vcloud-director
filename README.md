@@ -136,7 +136,7 @@ The file `scripts/get_token.sh` provides a handy method of extracting the token
 * SAML user and password (works with ADFS as IdP using WS-TRUST endpoint
   "/adfs/services/trust/13/usernamemixed"). One must pass `govcd.WithSamlAdfs(true,customAdfsRptId)`
   and username must be formatted so that ADFS understands it('user@contoso.com' or
-  'contoso.com\\user') You can find usage example in
+  'contoso.com\user') You can find usage example in
   [samples/saml_auth_adfs](/samples/saml_auth_adfs).
 ```go
 vcdCli := govcd.NewVCDClient(*vcdURL, true, govcd.WithSamlAdfs(true, customAdfsRptId))
