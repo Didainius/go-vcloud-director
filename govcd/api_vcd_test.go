@@ -91,6 +91,14 @@ type TestConfig struct {
 		Token           string `yaml:"token"`
 		UseSamlAdfs     bool   `yaml:"useSamlAdfs"`
 		CustomAdfsRptId string `yaml:"customAdfsRptId"`
+
+		// The below `SamlUser`, `SamlPassword` and `SamlCustomRptId` variables are optional and are
+		// related to additional test run specifically with SAML user/password. It can be useful in
+		// case local user is used for test run (defined by above 'User', 'Password' variables).
+		SamlUser        string `yaml:"samlUser,omitempty"`
+		SamlPassword    string `yaml:"samlPassword,omitempty"`
+		SamlCustomRptId string `yaml:"samlCustomRptId,omitempty"`
+
 		Url             string `yaml:"url"`
 		SysOrg          string `yaml:"sysOrg"`
 		MaxRetryTimeout int    `yaml:"maxRetryTimeout,omitempty"`
