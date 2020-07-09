@@ -7,6 +7,7 @@ package govcd
 
 import (
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -144,8 +145,8 @@ func ContainsNotFound(err error) bool {
 }
 
 // NewRequestWitNotEncodedParams allows passing complex values params that shouldn't be encoded like for queries. e.g. /query?filter=name=foo
-func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
-	return cli.NewRequestWitNotEncodedParamsWithApiVersion(params, notEncodedParams, method, reqUrl, body, cli.APIVersion)
+func (client *Client) NewRequestWitNotEncodedParams(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
+	return client.NewRequestWitNotEncodedParamsWithApiVersion(params, notEncodedParams, method, reqUrl, body, client.APIVersion)
 }
 
 // NewRequestWitNotEncodedParamsWithApiVersion allows passing complex values params that shouldn't be encoded like for queries. e.g. /query?filter=name=foo
@@ -155,13 +156,13 @@ func (cli *Client) NewRequestWitNotEncodedParams(params map[string]string, notEn
 // * reqUrl - request url
 // * body - request body
 // * apiVersion - provided Api version overrides default Api version value used in request parameter
-func (cli *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
-	return cli.newRequest(params, notEncodedParams, method, reqUrl, body, apiVersion, nil)
+func (client *Client) NewRequestWitNotEncodedParamsWithApiVersion(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
+	return client.newRequest(params, notEncodedParams, method, reqUrl, body, apiVersion, nil)
 }
 
 // newRequest is the parent of many "specific" "NewRequest" functions.
 // Note. It is kept private to avoid breaking public API on every new field addition.
-func (cli *Client) newRequest(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string, additionalHeader http.Header) *http.Request {
+func (client *Client) newRequest(params map[string]string, notEncodedParams map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string, additionalHeader http.Header) *http.Request {
 	reqValues := url.Values{}
 
 	// Build up our request parameters
@@ -191,11 +192,11 @@ func (cli *Client) newRequest(params map[string]string, notEncodedParams map[str
 	// error only if can't process an url.ParseRequestURI().
 	req, _ := http.NewRequest(method, reqUrl.String(), body)
 
-	if cli.VCDAuthHeader != "" && cli.VCDToken != "" {
+	if client.VCDAuthHeader != "" && client.VCDToken != "" {
 		// Add the authorization header
-		req.Header.Add(cli.VCDAuthHeader, cli.VCDToken)
+		req.Header.Add(client.VCDAuthHeader, client.VCDToken)
 	}
-	if (cli.VCDAuthHeader != "" && cli.VCDToken != "") ||
+	if (client.VCDAuthHeader != "" && client.VCDToken != "") ||
 		(additionalHeader != nil && additionalHeader.Get("Authorization") != "") {
 		// Add the Accept header for VCD
 		req.Header.Add("Accept", "application/*+xml;version="+apiVersion)
@@ -226,14 +227,14 @@ func (cli *Client) newRequest(params map[string]string, notEncodedParams map[str
 }
 
 // NewRequest creates a new HTTP request and applies necessary auth headers if set.
-func (cli *Client) NewRequest(params map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
-	return cli.NewRequestWitNotEncodedParams(params, nil, method, reqUrl, body)
+func (client *Client) NewRequest(params map[string]string, method string, reqUrl url.URL, body io.Reader) *http.Request {
+	return client.NewRequestWitNotEncodedParams(params, nil, method, reqUrl, body)
 }
 
 // NewRequestWithApiVersion creates a new HTTP request and applies necessary auth headers if set.
 // Allows to override default request API Version
-func (cli *Client) NewRequestWithApiVersion(params map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
-	return cli.NewRequestWitNotEncodedParamsWithApiVersion(params, nil, method, reqUrl, body, apiVersion)
+func (client *Client) NewRequestWithApiVersion(params map[string]string, method string, reqUrl url.URL, body io.Reader, apiVersion string) *http.Request {
+	return client.NewRequestWitNotEncodedParamsWithApiVersion(params, nil, method, reqUrl, body, apiVersion)
 }
 
 // ParseErr takes an error XML resp, error interface for unmarshaling and returns a single string for
@@ -264,6 +265,28 @@ func decodeBody(resp *http.Response, out interface{}) error {
 	if len(body) > 0 {
 		// Unmarshal the XML.
 		if err = xml.Unmarshal(body, &out); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func decodeBodyJson(resp *http.Response, out interface{}) error {
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, fmt.Sprintf("%s", body))
+	if err != nil {
+		return err
+	}
+
+	debugShowResponse(resp, body)
+
+	// only attempty to unmarshal if body is not empty
+	if len(body) > 0 {
+		// Unmarshal the XML.
+		if err = json.Unmarshal(body, &out); err != nil {
 			return err
 		}
 	}

@@ -131,6 +131,12 @@ type TestConfig struct {
 			StorageProfile string `yaml:"storage_profile"`
 			NetworkPool    string `yaml:"network_pool"`
 		} `yaml:"provider_vdc"`
+		NsxtVdc         string `yaml:"nsxt_vdc"`
+		NsxtProviderVdc struct {
+			Name           string `yaml:"name"`
+			StorageProfile string `yaml:"storage_profile"`
+			NetworkPool    string `yaml:"network_pool"`
+		} `yaml:"nsxt_provider_vdc"`
 		Catalog struct {
 			Name                    string `yaml:"name,omitempty"`
 			Description             string `yaml:"description,omitempty"`

@@ -22,6 +22,8 @@ const (
 	Version = Version511
 	// SoapXML mime type
 	SoapXML = "application/soap+xml"
+	// JSONMime
+	JSONMime = "application/json"
 )
 
 const (

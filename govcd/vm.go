@@ -143,11 +143,11 @@ func (vm *VM) UpdateNetworkConnectionSection(networks *types.NetworkConnectionSe
 }
 
 // Deprecated: use client.GetVMByHref instead
-func (cli *Client) FindVMByHREF(vmHREF string) (VM, error) {
+func (client *Client) FindVMByHREF(vmHREF string) (VM, error) {
 
-	newVm := NewVM(cli)
+	newVm := NewVM(client)
 
-	_, err := cli.ExecuteRequest(vmHREF, http.MethodGet,
+	_, err := client.ExecuteRequest(vmHREF, http.MethodGet,
 		"", "error retrieving VM: %s", nil, newVm.VM)
 
 	return *newVm, err
