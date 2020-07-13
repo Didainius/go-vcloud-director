@@ -26,6 +26,17 @@ const (
 	JSONMime = "application/json"
 )
 
+// BodyType allows to define API body types where applicable
+type BodyType int
+
+const (
+	// BodyTypeXML
+	BodyTypeXML BodyType = iota
+
+	// BodyTypeJson
+	BodyTypeJson
+)
+
 const (
 	// MimeOrgList mime for org list
 	MimeOrgList = "application/vnd.vmware.vcloud.orgList+xml"

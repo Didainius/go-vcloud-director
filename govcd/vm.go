@@ -734,12 +734,12 @@ func (vm *VM) GetQuestion() (types.VmPendingQuestion, error) {
 	}
 
 	if http.StatusOK != resp.StatusCode {
-		return types.VmPendingQuestion{}, fmt.Errorf("error getting question: %s", ParseErr(resp, &types.Error{}))
+		return types.VmPendingQuestion{}, fmt.Errorf("error getting question: %s", ParseErr(resp, &types.Error{}, types.BodyTypeXML))
 	}
 
 	question := &types.VmPendingQuestion{}
 
-	if err = decodeBody(resp, question); err != nil {
+	if err = decodeBody(resp, question, types.BodyTypeXML); err != nil {
 		return types.VmPendingQuestion{}, fmt.Errorf("error decoding question response: %s", err)
 	}
 

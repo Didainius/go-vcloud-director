@@ -67,7 +67,7 @@ func (task *Task) Refresh() error {
 	// elements in slices.
 	task.Task = &types.Task{}
 
-	if err = decodeBody(resp, task.Task); err != nil {
+	if err = decodeBody(resp, task.Task, types.BodyTypeXML); err != nil {
 		return fmt.Errorf("error decoding task response: %s", task.getErrorMessage(err))
 	}
 

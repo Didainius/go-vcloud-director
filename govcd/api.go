@@ -203,7 +203,7 @@ func (client *Client) newRequest(params map[string]string, notEncodedParams map[
 	}
 
 	// Merge in additional headers before logging if any where specified in additionalHeader
-	// paramter
+	// parameter
 	if additionalHeader != nil && len(additionalHeader) > 0 {
 		for headerName, headerValueSlice := range additionalHeader {
 			for _, singleHeaderValue := range headerValueSlice {
@@ -237,11 +237,11 @@ func (client *Client) NewRequestWithApiVersion(params map[string]string, method 
 	return client.NewRequestWitNotEncodedParamsWithApiVersion(params, nil, method, reqUrl, body, apiVersion)
 }
 
-// ParseErr takes an error XML resp, error interface for unmarshaling and returns a single string for
+// ParseErr takes an error XML resp, error interface for unmarshalling and returns a single string for
 // use in error messages.
-func ParseErr(resp *http.Response, errType error) error {
+func ParseErr(resp *http.Response, errType error, bodyType types.BodyType) error {
 	// if there was an error decoding the body, just return that
-	if err := decodeBody(resp, errType); err != nil {
+	if err := decodeBody(resp, errType, bodyType); err != nil {
 		util.Logger.Printf("[ParseErr]: unhandled response <--\n%+v\n-->\n", resp)
 		return fmt.Errorf("[ParseErr]: error parsing error body for non-200 request: %s (%+v)", err, resp)
 	}
@@ -250,7 +250,7 @@ func ParseErr(resp *http.Response, errType error) error {
 }
 
 // decodeBody is used to XML decode a response body
-func decodeBody(resp *http.Response, out interface{}) error {
+func decodeBody(resp *http.Response, out interface{}, bodyType types.BodyType) error {
 
 	body, err := ioutil.ReadAll(resp.Body)
 
@@ -261,33 +261,22 @@ func decodeBody(resp *http.Response, out interface{}) error {
 
 	debugShowResponse(resp, body)
 
-	// only attempty to unmarshal if body is not empty
+	// only attempts to unmarshal if body is not empty
 	if len(body) > 0 {
-		// Unmarshal the XML.
-		if err = xml.Unmarshal(body, &out); err != nil {
-			return err
-		}
-	}
+		switch bodyType {
+		case types.BodyTypeXML:
+			// Unmarshal the XML.
+			if err = xml.Unmarshal(body, &out); err != nil {
+				return err
+			}
+		case types.BodyTypeJson:
+			// Unmarshal the XML.
+			if err = json.Unmarshal(body, &out); err != nil {
+				return err
+			}
 
-	return nil
-}
-
-func decodeBodyJson(resp *http.Response, out interface{}) error {
-
-	body, err := ioutil.ReadAll(resp.Body)
-
-	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, fmt.Sprintf("%s", body))
-	if err != nil {
-		return err
-	}
-
-	debugShowResponse(resp, body)
-
-	// only attempty to unmarshal if body is not empty
-	if len(body) > 0 {
-		// Unmarshal the XML.
-		if err = json.Unmarshal(body, &out); err != nil {
-			return err
+		default:
+			panic(fmt.Sprintf("unknown body type: %d", bodyType))
 		}
 	}
 
@@ -299,12 +288,12 @@ func decodeBodyJson(resp *http.Response, out interface{}) error {
 // parses the resultant XML error and returns a descriptive error, if the
 // status code is not handled it returns a generic error with the status code.
 func checkResp(resp *http.Response, err error) (*http.Response, error) {
-	return checkRespWithErrType(resp, err, &types.Error{})
+	return checkRespWithErrType(resp, err, &types.Error{}, types.BodyTypeXML)
 }
 
-// checkRespWithErrType allows to specify custom error errType for checkResp unmarshaling
+// checkRespWithErrType allows to specify custom error errType for checkResp unmarshalling
 // the error.
-func checkRespWithErrType(resp *http.Response, err, errType error) (*http.Response, error) {
+func checkRespWithErrType(resp *http.Response, err, errType error, bodyType types.BodyType) (*http.Response, error) {
 	if err != nil {
 		return resp, err
 	}
@@ -345,7 +334,7 @@ func checkRespWithErrType(resp *http.Response, err, errType error) (*http.Respon
 		http.StatusInternalServerError,         // 500
 		http.StatusServiceUnavailable,          // 503
 		http.StatusGatewayTimeout:              // 504
-		return nil, ParseErr(resp, errType)
+		return nil, ParseErr(resp, errType, bodyType)
 	// Unhandled response.
 	default:
 		return nil, fmt.Errorf("unhandled API response, please report this issue, status code: %s", resp.Status)
@@ -396,7 +385,7 @@ func (client *Client) executeTaskRequest(pathURL, requestType, contentType, erro
 
 	task := NewTask(client)
 
-	if err = decodeBody(resp, task.Task); err != nil {
+	if err = decodeBody(resp, task.Task, types.BodyTypeXML); err != nil {
 		return Task{}, fmt.Errorf("error decoding Task response: %s", err)
 	}
 
@@ -512,7 +501,7 @@ func (client *Client) executeRequest(pathURL, requestType, contentType, errorMes
 		return resp, fmt.Errorf(errorMessage, err)
 	}
 
-	if err = decodeBody(resp, out); err != nil {
+	if err = decodeBody(resp, out, types.BodyTypeXML); err != nil {
 		return resp, fmt.Errorf("error decoding response: %s", err)
 	}
 
@@ -526,7 +515,7 @@ func (client *Client) executeRequest(pathURL, requestType, contentType, errorMes
 }
 
 // ExecuteRequestWithCustomError sends the request and checks for 2xx response. If the returned status code
-// was not as expected - the returned error will be unmarshaled to `errType` which implements Go's standard `error`
+// was not as expected - the returned error will be unmarshalled to `errType` which implements Go's standard `error`
 // interface.
 func (client *Client) ExecuteRequestWithCustomError(pathURL, requestType, contentType, errorMessage string,
 	payload interface{}, errType error) (*http.Response, error) {
@@ -569,7 +558,7 @@ func executeRequestWithApiVersion(pathURL, requestType, contentType string, payl
 	return executeRequestCustomErr(pathURL, map[string]string{}, requestType, contentType, payload, client, &types.Error{}, apiVersion)
 }
 
-// executeRequestCustomErr performs request and unmarshals API error to errType if not 2xx status was returned
+// executeRequestCustomErr performs request and unmarshall API error to errType if not 2xx status was returned
 func executeRequestCustomErr(pathURL string, params map[string]string, requestType, contentType string, payload interface{}, client *Client, errType error, apiVersion string) (*http.Response, error) {
 	url, _ := url.ParseRequestURI(pathURL)
 
@@ -598,7 +587,7 @@ func executeRequestCustomErr(pathURL string, params map[string]string, requestTy
 		return resp, err
 	}
 
-	return checkRespWithErrType(resp, err, errType)
+	return checkRespWithErrType(resp, err, errType, types.BodyTypeXML)
 }
 
 func isMessageWithPlaceHolder(message string) bool {

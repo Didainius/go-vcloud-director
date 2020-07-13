@@ -41,8 +41,8 @@ func (vdc *Vdc) GetCloudAPIEdgeGateways(queryParameters url.Values) ([]*types.Cl
 
 	response := make([]*types.CloudAPIEdgeGateway, 1)
 
-	// err := vdc.client.cloudApiGetItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
-	err := vdc.client.cloudApiGetItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
+	// err := vdc.client.cloudApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
+	err := vdc.client.cloudApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
 	if err != nil {
 		return nil, err
 	}

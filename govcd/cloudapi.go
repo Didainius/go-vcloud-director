@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -17,8 +18,9 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// This file contains generalised methods to interact with VCD CloudAPI REST endpoints as documented in
-// https://{VCD_HOST}/api-explorer/tenant/dainius and https://{VCD_HOST}/api-explorer/provider documentation
+// This file contains generalised low level methods to interact with VCD CloudAPI REST endpoints as documented in
+// https://{VCD_HOST}/api-explorer/tenant/dainius and https://{VCD_HOST}/api-explorer/provider documentation. It has
+// functions supporting below methods:
 // GET /items
 // POST /items
 // GET /items/urn
@@ -27,29 +29,37 @@ import (
 //
 // GET endpoints support FIQL for filtering in field `filter`. (FIQL IETF doc - https://tools.ietf.org/html/draft-nottingham-atompub-fiql-00)
 
-// cloudApiGetItems retrieves and accumulates all pages then parsing them to a single object. It works by at first
+// cloudApiGetAllItems retrieves and accumulates all pages then parsing them to a single object. It works by at first
 // crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there are no intermediate
-// unmarshalling to exact `outType` for every page it can actually outType must be a slice of object (e.g.
-// []*types.CloudAPIEdgeGateway) because
-func (client *Client) cloudApiGetItems(urlRef *url.URL, queryParams url.Values, errorMessage string, payload, outType interface{}) error {
+// unmarshalling to exact `outType` for every page it can actually unmarshal into response struct in one go. outType
+// must be a slice of object (e.g. []*types.CloudAPIEdgeGateway) because this response contains list of structs
+func (client *Client) cloudApiGetAllItems(urlRef *url.URL, queryParams url.Values, errorMessage string, payload, outType interface{}) error {
+	util.Logger.Printf("[TRACE] Getting all items from endpoint %s for parsing into %s\n", urlRef.String(), reflect.TypeOf(outType))
+
+	// a := *[]string{}
+	// if _, ok := outType.([]interface{}); !ok {
+	// 	return fmt.Errorf("expected type to by slice of types, got %s", reflect.TypeOf(outType))
+	// }
 
 	// check if outType is slice of interfaces
+	// fmt.Println(reflect.TypeOf(outType))
 
 	responses, err := client.cloudApiGetAllPages(takeIntAddress(1), urlRef, queryParams, errorMessage, payload, outType, nil)
 	if err != nil {
 		return fmt.Errorf("error pulling pages: %s", err)
 	}
 
-	rrrr := []string{}
+	var rawJsonBodies []string
 	for _, v := range responses {
-		b, _ := v.MarshalJSON()
-		rrrr = append(rrrr, string(b))
+		jsonBody, _ := v.MarshalJSON()
+		rawJsonBodies = append(rawJsonBodies, string(jsonBody))
 	}
 
-	// we have a slice of all response objects and need to format them as json list
-	allResponses := `[` + strings.Join(rrrr, ",") + `]`
+	// we have a slice of all response objects and need to format them as json list so that it can be unmarshalled to
+	// outType in one go
+	allResponses := `[` + strings.Join(rawJsonBodies, ",") + `]`
 
-	println(allResponses)
+	// println(allResponses)
 	// Marshal all accumulated responses into `outType`
 
 	// After pages are unwrapped one can marshal response into specified type
@@ -59,7 +69,10 @@ func (client *Client) cloudApiGetItems(urlRef *url.URL, queryParams url.Values, 
 
 	return nil
 }
-func (client *Client) cloudApiPostItem(urlRef *url.URL, params url.Values, errorMessage string, payload, out interface{}) error {
+func (client *Client) cloudApiPostItem(urlRef *url.URL, params url.Values, errorMessage string, payload, outType interface{}) error {
+	util.Logger.Printf("[TRACE] Posting %s item to endpoint %s with expected response of type %s",
+		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
+
 	if !isMessageWithPlaceHolder(errorMessage) {
 		return fmt.Errorf("error message has to include place holder for error")
 	}
@@ -72,7 +85,7 @@ func (client *Client) cloudApiPostItem(urlRef *url.URL, params url.Values, error
 		if err != nil {
 			return fmt.Errorf("error marshalling JSON data %s", err)
 		}
-		fmt.Println(string(marshaledJson))
+		// fmt.Println(string(marshaledJson))
 		body = bytes.NewBufferString(string(marshaledJson))
 	}
 
@@ -86,7 +99,7 @@ func (client *Client) cloudApiPostItem(urlRef *url.URL, params url.Values, error
 	}
 
 	// resp is ignore below because it is the same as above
-	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{})
+	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeXML)
 	if err != nil {
 		return fmt.Errorf("error in HTTP POST request: %s", err)
 	}
@@ -125,7 +138,7 @@ func (client *Client) cloudApiPostItem(urlRef *url.URL, params url.Values, error
 
 	// Here we have to find the resource once more to return it populated
 	newObjectUrl, _ := url.ParseRequestURI(urlRef.String() + "/" + newObjectId)
-	err = client.cloudApiGetItem(newObjectUrl, nil, "%s", out)
+	err = client.cloudApiGetItem(newObjectUrl, nil, "%s", outType)
 	if err != nil {
 		return fmt.Errorf("error retrieving item after creation: %s", err)
 	}
@@ -133,7 +146,8 @@ func (client *Client) cloudApiPostItem(urlRef *url.URL, params url.Values, error
 	// The request was successful
 	return nil
 }
-func (client *Client) cloudApiGetItem(urlRef *url.URL, params url.Values, errorMessage string, out interface{}) error {
+func (client *Client) cloudApiGetItem(urlRef *url.URL, params url.Values, errorMessage string, outType interface{}) error {
+	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s", urlRef.String(), reflect.TypeOf(outType))
 
 	if !isMessageWithPlaceHolder(errorMessage) {
 		return fmt.Errorf("error message has to include place holder for error")
@@ -151,12 +165,12 @@ func (client *Client) cloudApiGetItem(urlRef *url.URL, params url.Values, errorM
 	}
 
 	// resp is ignore below because it is the same as above
-	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{})
+	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeXML)
 	if err != nil {
 		return fmt.Errorf("error in HTTP GET request: %s", err)
 	}
 
-	if err = decodeBodyJson(resp, out); err != nil {
+	if err = decodeBody(resp, outType, types.BodyTypeJson); err != nil {
 		return fmt.Errorf("error decoding JSON response: %s", err)
 	}
 
@@ -171,7 +185,10 @@ func (client *Client) cloudApiGetItem(urlRef *url.URL, params url.Values, errorM
 
 // cloudApiPutItem handles the PUT method for CloudAPI (PUT /items/urn)
 //
-func (client *Client) cloudApiPutItem(urlRef *url.URL, params url.Values, errorMessage string, payload, out interface{}) error {
+func (client *Client) cloudApiPutItem(urlRef *url.URL, params url.Values, errorMessage string, payload, outType interface{}) error {
+	util.Logger.Printf("[TRACE] Putting item of type %s at endpoint %s with expected response of type %s",
+		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
+
 	if !isMessageWithPlaceHolder(errorMessage) {
 		return fmt.Errorf("error message has to include place holder for error")
 	}
@@ -196,7 +213,7 @@ func (client *Client) cloudApiPutItem(urlRef *url.URL, params url.Values, errorM
 	}
 
 	// resp is ignored below because it is the same as above
-	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{})
+	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeXML)
 	if err != nil {
 		return fmt.Errorf("error in HTTP PUT request: %s", err)
 	}
@@ -228,7 +245,7 @@ func (client *Client) cloudApiPutItem(urlRef *url.URL, params url.Values, errorM
 
 	// Here we have to find the resource once more to return it populated
 	newObjectUrl, _ := url.ParseRequestURI(urlRef.String())
-	err = client.cloudApiGetItem(newObjectUrl, nil, "%s", out)
+	err = client.cloudApiGetItem(newObjectUrl, nil, "%s", outType)
 	if err != nil {
 		return fmt.Errorf("error retrieving item after PUT operation: %s", err)
 	}
@@ -239,6 +256,8 @@ func (client *Client) cloudApiPutItem(urlRef *url.URL, params url.Values, errorM
 
 // cloudApiDeleteItem
 func (client *Client) cloudApiDeleteItem(urlRef *url.URL, params url.Values, errorMessage string) error {
+	util.Logger.Printf("[TRACE] Deleting item at endpoint %s", urlRef.String())
+
 	if !isMessageWithPlaceHolder(errorMessage) {
 		return fmt.Errorf("error message has to include place holder for error")
 	}
@@ -253,7 +272,7 @@ func (client *Client) cloudApiDeleteItem(urlRef *url.URL, params url.Values, err
 	}
 
 	// resp is ignored below because it is the same as above
-	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{})
+	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeXML)
 	if err != nil {
 		return fmt.Errorf("error in HTTP DELETE request: %s", err)
 	}
@@ -314,7 +333,7 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 	}
 
 	// resp is ignored below because it is the same as above
-	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{})
+	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeXML)
 	if err != nil {
 		return nil, fmt.Errorf("error in HTTP GET request: %s", err)
 	}
@@ -322,7 +341,7 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 	// Pages will unwrap pagination and keep a slice of raw json message to marshal to specific types
 	pages := &types.CloudApiPages{}
 
-	if err = decodeBodyJson(resp, pages); err != nil {
+	if err = decodeBody(resp, pages, types.BodyTypeJson); err != nil {
 		return nil, fmt.Errorf("error decoding JSON page response: %s", err)
 	}
 
@@ -345,7 +364,6 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 	// If there is a "nextPage" link in headers - follow it:
 	links := link.ParseHeader(resp.Header)
 	nextPage, _ := links["nextPage"]
-	// spew.Dump(links)
 
 	for k, v := range links {
 		if strings.Contains(k, "nextPage") {

@@ -80,7 +80,7 @@ func getResult(client *Client, request *http.Request) (Results, error) {
 
 	results := NewResults(client)
 
-	if err = decodeBody(resp, results.Results); err != nil {
+	if err = decodeBody(resp, results.Results, types.BodyTypeXML); err != nil {
 		return Results{}, fmt.Errorf("error decoding query results: %s", err)
 	}
 
