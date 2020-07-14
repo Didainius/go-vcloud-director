@@ -339,15 +339,12 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 
 	// If there is a "nextPage" link in headers - follow it:
 	links := link.ParseHeader(resp.Header)
-	nextPage, _ := links["nextPage"]
-
+	var nextPage *link.Link
 	for k, v := range links {
 		if strings.Contains(k, "nextPage") {
 			nextPage = v
 		}
 	}
-
-	// This must be tuned with proper checks
 
 	// nextPage exists, follow it recursively and continue accumulating responses into single variable
 	if nextPage != nil && nextPage.URI != "" {

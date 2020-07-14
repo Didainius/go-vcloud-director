@@ -68,8 +68,9 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructAudiTrail(check *C) {
 	queryParams := url.Values{}
 
 	// Find audi trail logs for the last 12 hours
-	filterTime := time.Now().Add(-4 * time.Hour).Format(types.FiqlQueryTimestampFormat)
-	queryParams.Add("filter", "timestamp=gt="+filterTime+";"+"user.name==administrator")
+	filterTime := time.Now().Add(-12 * time.Hour).Format(types.FiqlQueryTimestampFormat)
+	// queryParams.Add("filter", "timestamp=gt="+filterTime+";"+"user.name==administrator")
+	queryParams.Add("filter", "timestamp=gt="+filterTime)
 	// queryParams.Add("filter", "user.name==administrator")
 	// queryParams.Add("filter", "description=administrator")
 	// queryParams.Add("filter", "timestamp=gt="+filterTime+";"+"title==foo*;(updated=lt=-P1D,title==*bar)")
