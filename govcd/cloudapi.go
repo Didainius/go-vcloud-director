@@ -99,7 +99,6 @@ func (client *Client) CloudApiPostItem(urlRef *url.URL, params url.Values, paylo
 	}
 
 	req := client.newCloudApiRequest(params, http.MethodPost, urlRef, body, "34.0")
-	req.Header.Add("Content-Type", types.JSONMime)
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -154,7 +153,6 @@ func (client *Client) CloudApiGetItem(urlRef *url.URL, params url.Values, outTyp
 	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s", urlRef.String(), reflect.TypeOf(outType))
 
 	req := client.newCloudApiRequest(params, http.MethodGet, urlRef, nil, "34.0")
-	req.Header.Add("Content-Type", types.JSONMime)
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -195,7 +193,6 @@ func (client *Client) CloudApiPutItem(urlRef *url.URL, params url.Values, payloa
 	}
 
 	req := client.newCloudApiRequest(params, http.MethodPut, urlRef, body, "34.0")
-	req.Header.Add("Content-Type", types.JSONMime)
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -221,7 +218,7 @@ func (client *Client) CloudApiPutItem(urlRef *url.URL, params url.Values, payloa
 			return fmt.Errorf("error waiting completion of task (%s): %s", taskUrl, err)
 		}
 
-		// Here we have to find the resource once more to return it populated.
+		// Here we have to find the resource once more to return it populated. Provided params ir ignored for retrieval.
 		err = client.CloudApiGetItem(urlRef, nil, outType)
 		if err != nil {
 			return fmt.Errorf("error retrieving item after creation: %s", err)
@@ -236,7 +233,7 @@ func (client *Client) CloudApiPutItem(urlRef *url.URL, params url.Values, payloa
 
 	err = resp.Body.Close()
 	if err != nil {
-		return fmt.Errorf("error closing PUT response body: %s", err)
+		return fmt.Errorf("error closing HTTP PUT response body: %s", err)
 	}
 
 	return nil
@@ -249,7 +246,6 @@ func (client *Client) CloudApiDeleteItem(urlRef *url.URL, params url.Values) err
 
 	// Exec request
 	req := client.newCloudApiRequest(params, http.MethodDelete, urlRef, nil, "34.0")
-	req.Header.Add("Content-Type", types.JSONMime)
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -269,7 +265,7 @@ func (client *Client) CloudApiDeleteItem(urlRef *url.URL, params url.Values) err
 
 	// CloudAPI may work synchronously or asynchronously. When working asynchronously - it will return HTTP 202 and
 	// `Location` header will contain reference to task so that it can be tracked. In DELETE case we do not care about any
-	// ID so if DELETE operation is synchronous (returns HTTP 201) - the request has succeeded.
+	// ID so if DELETE operation is synchronous (returns HTTP 201) - the request has already succeeded.
 	if resp.StatusCode == http.StatusAccepted {
 		taskUrl := resp.Header.Get("Location")
 		task := NewTask(client)
@@ -283,11 +279,10 @@ func (client *Client) CloudApiDeleteItem(urlRef *url.URL, params url.Values) err
 	return nil
 }
 
-// cloudApiGetAllPages helps to accumulate responses from multiple pages for GET query. It works by at first crawling
-// pages and accumulating all responses into []json.RawMessage (as strings). Because there are no intermediate
-// unmarshalling to exact `outType` for every page it can actually unmarshal into direct type passed.
-// outType must be a slice of object (e.g. []*types.CloudAPIEdgeGateway) because accumulated responses are wrapped into
-// JSON slice
+// cloudApiGetAllPages is a recursive function that helps to accumulate responses from multiple pages for GET query. It
+// works by at first crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is
+// no intermediate unmarshalling to exact `outType` for every page it can unmarshal into direct `outType` supplied.
+// outType must be a slice of object (e.g. []*types.CloudAPIEdgeGateway) because accumulated responses are in JSON list
 func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryParams url.Values, outType interface{}, responses []*json.RawMessage) ([]*json.RawMessage, error) {
 	if responses == nil {
 		responses = []*json.RawMessage{}
@@ -307,9 +302,8 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 		queryParameters.Set("pageSize", strconv.Itoa(*pageSize))
 	}
 
-	// Execute request
+	// Perform request
 	req := client.newCloudApiRequest(queryParams, http.MethodGet, urlRef, nil, "34.0")
-	req.Header.Add("Content-Type", types.JSONMime)
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -397,6 +391,9 @@ func (client *Client) newCloudApiRequest(params url.Values, method string, reqUr
 		acceptMime := types.JSONMime + ";version=" + apiVersion
 		req.Header.Add("Accept", acceptMime)
 	}
+
+	// Inject JSON mime type
+	req.Header.Add("Content-Type", types.JSONMime)
 
 	// Avoids passing data if the logging of requests is disabled
 	if util.LogHttpRequest {
