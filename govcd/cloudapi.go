@@ -28,9 +28,21 @@ import (
 // DELETE /items/urn
 //
 // GET endpoints support FIQL for filtering in field `filter`. (FIQL IETF doc - https://tools.ietf.org/html/draft-nottingham-atompub-fiql-00)
-
+//
 // CloudAPI versioning.
-// Versions in path (e.g. 1.0.0) should guarantee behavior while header versions shouldn't matter in long term
+// Versions in path (e.g. 1.0.0) should guarantee behavior while header versions shouldn't matter in long term.
+
+// BuildCloudAPIEndpoint helps to construct CloudAPI endpoint by using already configured VCD HREF while requiring only
+// the last bit for endpoint.
+//
+func (client *Client) BuildCloudAPIEndpoint(endpoint string) (*url.URL, error) {
+	endpointString := client.VCDHREF.Scheme + "://" + client.VCDHREF.Host + "/cloudapi/" + endpoint
+	urlRef, err := url.ParseRequestURI(endpointString)
+	if err != nil {
+		return nil, fmt.Errorf("error formatting CloudAPI: %s", err)
+	}
+	return urlRef, nil
+}
 
 // CloudApiGetAllItems retrieves and accumulates all pages then parsing them to a single object. It works by at first
 // crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is no intermediate
@@ -69,23 +81,23 @@ func (client *Client) CloudApiGetAllItems(urlRef *url.URL, queryParams url.Value
 
 	return nil
 }
-func (client *Client) cloudApiPostItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
+
+// CloudApiPostItem is a low level CloudAPI client function to perform any task.
+// The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways')
+func (client *Client) CloudApiPostItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Posting %s item to endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
 
 	// Marshal payload if we have one
 	var body *bytes.Buffer
-	// Check if we have body
 	if payload != nil {
 		marshaledJson, err := json.MarshalIndent(payload, "", "  ")
 		if err != nil {
-			return fmt.Errorf("error marshalling JSON data %s", err)
+			return fmt.Errorf("error marshalling JSON data for POST request %s", err)
 		}
-		// fmt.Println(string(marshaledJson))
-		body = bytes.NewBufferString(string(marshaledJson))
+		body = bytes.NewBuffer(marshaledJson)
 	}
 
-	// Exec request
 	req := client.newCloudApiRequest(params, http.MethodPost, urlRef, body, "34.0")
 	req.Header.Add("Content-Type", types.JSONMime)
 
@@ -94,32 +106,17 @@ func (client *Client) cloudApiPostItem(urlRef *url.URL, params url.Values, paylo
 		return err
 	}
 
-	// resp is ignore below because it is the same as above
+	// resp is ignored below because it is the same the one above
 	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeJSON)
 	if err != nil {
 		return fmt.Errorf("error in HTTP POST request: %s", err)
 	}
 
-	// log response explicitly because decodeBody() was not triggered here
-	bd, _ := ioutil.ReadAll(resp.Body)
-	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, fmt.Sprintf("%s", bd))
-
-	debugShowResponse(resp, bd)
-
-	err = resp.Body.Close()
-	if err != nil {
-		return fmt.Errorf("error closing response body: %s", err)
-	}
-
-	// Placeholder for newly created object ID
-	var newObjectId string
-
-	// if we have task - track it
-
-	// CloudAPI may work synchronously or asynchronously. When working asynchronously - it will return HTTP 202 and
-	// `Location` header will contain reference to task so that it can be tracked. Task tracking itself is in the legacy
-	// XML API.
-	if resp.StatusCode == http.StatusAccepted {
+	// Handle two cases of API behaviour - synchronous (response status code is 201) and asynchronous (response status
+	// code 202)
+	switch resp.StatusCode {
+	// Asynchronous case - must track task and get item HREF from there
+	case http.StatusAccepted:
 		taskUrl := resp.Header.Get("Location")
 		task := NewTask(client)
 		task.Task.HREF = taskUrl
@@ -127,43 +124,22 @@ func (client *Client) cloudApiPostItem(urlRef *url.URL, params url.Values, paylo
 		if err != nil {
 			return fmt.Errorf("error waiting completion of task (%s): %s", taskUrl, err)
 		}
-		// Task Owner ID is the ID of created object
-		newObjectId = task.Task.Owner.ID
 
-	}
+		// Here we have to find the resource once more to return it populated.
+		// Task Owner ID is the ID of created object. ID must be used (although HREF exists in task) because HREF points to
+		// old XML API and here we need to pull data from CloudAPI.
 
-	// Here we have to find the resource once more to return it populated
-	newObjectUrl, _ := url.ParseRequestURI(urlRef.String() + "/" + newObjectId)
-	err = client.cloudApiGetItem(newObjectUrl, nil, outType)
-	if err != nil {
-		return fmt.Errorf("error retrieving item after creation: %s", err)
-	}
+		newObjectUrl, _ := url.ParseRequestURI(urlRef.String() + "/" + task.Task.Owner.ID)
+		err = client.CloudApiGetItem(newObjectUrl, nil, outType)
+		if err != nil {
+			return fmt.Errorf("error retrieving item after creation: %s", err)
+		}
 
-	// The request was successful
-	return nil
-}
-func (client *Client) cloudApiGetItem(urlRef *url.URL, params url.Values, outType interface{}) error {
-	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s", urlRef.String(), reflect.TypeOf(outType))
-
-	// Exec request
-	req := client.newCloudApiRequest(params, http.MethodGet, urlRef, nil, "34.0")
-	// acceptMime := types.JSONMime + ";version=" + "34.0"
-	// req.Header.Add("Accept", acceptMime)
-	req.Header.Add("Content-Type", types.JSONMime)
-
-	resp, err := client.Http.Do(req)
-	if err != nil {
-		return err
-	}
-
-	// resp is ignore below because it is the same as above
-	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeJSON)
-	if err != nil {
-		return fmt.Errorf("error in HTTP GET request: %s", err)
-	}
-
-	if err = decodeBody(resp, outType, types.BodyTypeJSON); err != nil {
-		return fmt.Errorf("error decoding JSON response: %s", err)
+		// Synchronous task - new item body is returned in response of HTTP POST request
+	case http.StatusCreated:
+		if err = decodeBody(resp, outType, types.BodyTypeJSON); err != nil {
+			return fmt.Errorf("error decoding JSON response after POST: %s", err)
+		}
 	}
 
 	err = resp.Body.Close()
@@ -171,27 +147,53 @@ func (client *Client) cloudApiGetItem(urlRef *url.URL, params url.Values, outTyp
 		return fmt.Errorf("error closing response body: %s", err)
 	}
 
-	// The request was successful
 	return nil
 }
 
-// cloudApiPutItem handles the PUT method for CloudAPI (PUT /items/urn)
+func (client *Client) CloudApiGetItem(urlRef *url.URL, params url.Values, outType interface{}) error {
+	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s", urlRef.String(), reflect.TypeOf(outType))
+
+	req := client.newCloudApiRequest(params, http.MethodGet, urlRef, nil, "34.0")
+	req.Header.Add("Content-Type", types.JSONMime)
+
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		return fmt.Errorf("error performing GET request to %s: %s", urlRef.String(), err)
+	}
+
+	// resp is ignored below because it is the same as above
+	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeJSON)
+	if err != nil {
+		return fmt.Errorf("error in HTTP GET request: %s", err)
+	}
+
+	if err = decodeBody(resp, outType, types.BodyTypeJSON); err != nil {
+		return fmt.Errorf("error decoding JSON response after GET: %s", err)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("error closing response body: %s", err)
+	}
+
+	return nil
+}
+
+// CloudApiPutItem handles the PUT method for CloudAPI and tracks the task before returning if the response is HTTP 202
 //
-func (client *Client) cloudApiPutItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
-	util.Logger.Printf("[TRACE] Putting item of type %s at endpoint %s with expected response of type %s",
+func (client *Client) CloudApiPutItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
+	util.Logger.Printf("[TRACE] Performing HTTP PUT request for item of type %s at endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
 
-	// Marshal payload if we have one
 	var body *bytes.Buffer
 	if payload != nil {
 		marshaledJson, err := json.MarshalIndent(payload, "", "  ")
 		if err != nil {
-			return fmt.Errorf("error marshalling JSON data %s", err)
+			return fmt.Errorf("error marshalling JSON data for PUT request %s", err)
 		}
 		body = bytes.NewBuffer(marshaledJson)
 	}
 
-	// Exec request
 	req := client.newCloudApiRequest(params, http.MethodPut, urlRef, body, "34.0")
 	req.Header.Add("Content-Type", types.JSONMime)
 
@@ -206,22 +208,11 @@ func (client *Client) cloudApiPutItem(urlRef *url.URL, params url.Values, payloa
 		return fmt.Errorf("error in HTTP PUT request: %s", err)
 	}
 
-	// log response explicitly because decodeBody() was not triggered here
-	bd, _ := ioutil.ReadAll(resp.Body)
-	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, fmt.Sprintf("%s", bd))
-	debugShowResponse(resp, bd)
-
-	err = resp.Body.Close()
-	if err != nil {
-		return fmt.Errorf("error closing PUT response body: %s", err)
-	}
-
-	// if we have task - track it
-
-	// CloudAPI may work synchronously or asynchronously. When working asynchronously - it will return HTTP 202 and
-	// `Location` header will contain reference to task so that it can be tracked. Task tracking itself is in the legacy
-	// XML API.
-	if resp.StatusCode == http.StatusAccepted {
+	// Handle two cases of API behaviour - synchronous (response status code is 201) and asynchronous (response status
+	// code 202)
+	switch resp.StatusCode {
+	// Asynchronous case - must track task and get item HREF from there
+	case http.StatusAccepted:
 		taskUrl := resp.Header.Get("Location")
 		task := NewTask(client)
 		task.Task.HREF = taskUrl
@@ -229,21 +220,31 @@ func (client *Client) cloudApiPutItem(urlRef *url.URL, params url.Values, payloa
 		if err != nil {
 			return fmt.Errorf("error waiting completion of task (%s): %s", taskUrl, err)
 		}
+
+		// Here we have to find the resource once more to return it populated.
+		err = client.CloudApiGetItem(urlRef, nil, outType)
+		if err != nil {
+			return fmt.Errorf("error retrieving item after creation: %s", err)
+		}
+
+		// Synchronous task - new item body is returned in response of HTTP POST request
+	case http.StatusCreated:
+		if err = decodeBody(resp, outType, types.BodyTypeJSON); err != nil {
+			return fmt.Errorf("error decoding JSON response after POST: %s", err)
+		}
 	}
 
-	// Here we have to find the resource once more to return it populated
-	newObjectUrl, _ := url.ParseRequestURI(urlRef.String())
-	err = client.cloudApiGetItem(newObjectUrl, nil, outType)
+	err = resp.Body.Close()
 	if err != nil {
-		return fmt.Errorf("error retrieving item after PUT operation: %s", err)
+		return fmt.Errorf("error closing PUT response body: %s", err)
 	}
 
-	// The request was successful
 	return nil
 }
 
-// cloudApiDeleteItem
-func (client *Client) cloudApiDeleteItem(urlRef *url.URL, params url.Values) error {
+// CloudApiDeleteItem performs HTTP DELETE request for a specified endpoint in given urlRef. If the task is asynchronous
+// - it will track the task until it is finished.
+func (client *Client) CloudApiDeleteItem(urlRef *url.URL, params url.Values) error {
 	util.Logger.Printf("[TRACE] Deleting item at endpoint %s", urlRef.String())
 
 	// Exec request
@@ -255,7 +256,7 @@ func (client *Client) cloudApiDeleteItem(urlRef *url.URL, params url.Values) err
 		return err
 	}
 
-	// resp is ignored below because it is the same as above
+	// resp is ignored below because it would be the same as above
 	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeJSON)
 	if err != nil {
 		return fmt.Errorf("error in HTTP DELETE request: %s", err)
@@ -266,10 +267,9 @@ func (client *Client) cloudApiDeleteItem(urlRef *url.URL, params url.Values) err
 		return fmt.Errorf("error closing response body: %s", err)
 	}
 
-	// TODO add trace logging to see which HTTP status code was returned
-
 	// CloudAPI may work synchronously or asynchronously. When working asynchronously - it will return HTTP 202 and
-	// `Location` header will contain reference to task so that it can be tracked
+	// `Location` header will contain reference to task so that it can be tracked. In DELETE case we do not care about any
+	// ID so if DELETE operation is synchronous (returns HTTP 201) - the request has succeeded.
 	if resp.StatusCode == http.StatusAccepted {
 		taskUrl := resp.Header.Get("Location")
 		task := NewTask(client)
@@ -280,7 +280,6 @@ func (client *Client) cloudApiDeleteItem(urlRef *url.URL, params url.Values) err
 		}
 	}
 
-	// The request was successful
 	return nil
 }
 
@@ -410,14 +409,4 @@ func (client *Client) newCloudApiRequest(params url.Values, method string, reqUr
 	}
 
 	return req
-
-}
-
-func (client *Client) BuildCloudAPIEndpoint(endpoint string) (*url.URL, error) {
-	endpointString := client.VCDHREF.Scheme + "://" + client.VCDHREF.Host + "/cloudapi/" + endpoint
-	urlRef, err := url.ParseRequestURI(endpointString)
-	if err != nil {
-		return nil, fmt.Errorf("error formatting CloudAPI: %s", err)
-	}
-	return urlRef, nil
 }

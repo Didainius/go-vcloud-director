@@ -27,7 +27,7 @@ func (vdc *Vdc) GetCloudAPIEdgeGatewayId(id string) (*CloudAPIEdgeGateway, error
 	// acceptMime := types.JSONMime + ";version=" + vdc.client.APIVersion
 	// acceptMime := types.JSONMime + ";version=34.0"
 
-	err := vdc.client.cloudApiGetItem(url, nil, edge.EdgeGateway)
+	err := vdc.client.CloudApiGetItem(url, nil, edge.EdgeGateway)
 
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (egw *CloudAPIEdgeGateway) Create(e *types.CloudAPIEdgeGateway) (*CloudAPIE
 		client:      egw.client,
 	}
 
-	err := egw.client.cloudApiPostItem(url, nil, e, returnEdge.EdgeGateway)
+	err := egw.client.CloudApiPostItem(url, nil, e, returnEdge.EdgeGateway)
 
 	if err != nil {
 		return nil, fmt.Errorf("error creating edge gateway: %s", err)
@@ -77,10 +77,10 @@ func (egw *CloudAPIEdgeGateway) Update(e *types.CloudAPIEdgeGateway) (*CloudAPIE
 		client:      egw.client,
 	}
 
-	err := egw.client.cloudApiPutItem(url, nil, e, returnEdge.EdgeGateway)
+	err := egw.client.CloudApiPutItem(url, nil, e, returnEdge.EdgeGateway)
 
 	if err != nil {
-		return nil, fmt.Errorf("error creating updating gateway: %s", err)
+		return nil, fmt.Errorf("error updating gateway: %s", err)
 	}
 
 	return returnEdge, nil
@@ -90,7 +90,7 @@ func (egw *CloudAPIEdgeGateway) Delete() error {
 	urlString := egw.client.VCDHREF.Scheme + "://" + egw.client.VCDHREF.Host + "/cloudapi/1.0.0/edgeGateways/" + egw.EdgeGateway.ID
 	url, _ := url.ParseRequestURI(urlString)
 
-	err := egw.client.cloudApiDeleteItem(url, nil)
+	err := egw.client.CloudApiDeleteItem(url, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting edge gateway: %s", err)

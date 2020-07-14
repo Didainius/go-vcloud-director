@@ -19,7 +19,7 @@ func (vcd *TestVCD) Test_CloudAPIRawJsonAudiTrail(check *C) {
 	urlRef, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
 
-	responses := []json.RawMessage{}
+	responses := []json.RawMessage{{}}
 	err = vcd.vdc.client.CloudApiGetAllItems(urlRef, nil, &responses)
 	check.Assert(err, IsNil)
 
@@ -62,7 +62,7 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructAudiTrail(check *C) {
 		} `json:"additionalProperties"`
 	}
 
-	respp := []*AudiTrail{}
+	respp := []*AudiTrail{{}}
 
 	// FIQL filtering test
 	queryParams := url.Values{}
