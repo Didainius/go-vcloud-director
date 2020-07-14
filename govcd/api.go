@@ -265,12 +265,10 @@ func decodeBody(resp *http.Response, out interface{}, bodyType types.BodyType) e
 	if len(body) > 0 {
 		switch bodyType {
 		case types.BodyTypeXML:
-			// Unmarshal the XML.
 			if err = xml.Unmarshal(body, &out); err != nil {
 				return err
 			}
-		case types.BodyTypeJson:
-			// Unmarshal the XML.
+		case types.BodyTypeJSON:
 			if err = json.Unmarshal(body, &out); err != nil {
 				return err
 			}

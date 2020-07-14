@@ -33,8 +33,8 @@ const (
 	// BodyTypeXML
 	BodyTypeXML BodyType = iota
 
-	// BodyTypeJson
-	BodyTypeJson
+	// BodyTypeJSON
+	BodyTypeJSON
 )
 
 const (
@@ -285,4 +285,9 @@ const (
 	LdapModeNone   = "NONE"
 	LdapModeSystem = "SYSTEM"
 	LdapModeCustom = "CUSTOM"
+)
+
+const (
+	// FiqlQueryTimestampFormat is the format accepted by Cloud API time comparison operator in FIQL query filters
+	FiqlQueryTimestampFormat = "2006-01-02T15:04:05.000Z"
 )
