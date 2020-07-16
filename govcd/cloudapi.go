@@ -28,6 +28,7 @@ import (
 // DELETE /items/urn
 //
 // GET endpoints support FIQL for filtering in field `filter`. (FIQL IETF doc - https://tools.ietf.org/html/draft-nottingham-atompub-fiql-00)
+// Not all API fields are supported for FIQL filtering and sometimes they return odd errors when filtering is unsupported.
 //
 // CloudAPI versioning.
 // Versions in path (e.g. 1.0.0) should guarantee behavior while header versions shouldn't matter in long term.
@@ -328,7 +329,7 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 		return nil, fmt.Errorf("error closing response body: %s", err)
 	}
 
-	// Accumulate all responses in a single query
+	// Accumulate all responses in a single page as JSON text using json.RawMessage
 	// After pages are unwrapped one can marshal response into specified type
 	// singleQueryResponses := &json.RawMessage{}
 	var singleQueryResponses []*json.RawMessage
@@ -337,20 +338,14 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 	}
 	responses = append(responses, singleQueryResponses...)
 
-	// If there is a "nextPage" link in headers - follow it:
-	links := link.ParseHeader(resp.Header)
-	var nextPage *link.Link
-	for k, v := range links {
-		if strings.Contains(k, "nextPage") {
-			nextPage = v
-		}
+	// Check if there is still 'nextPage' linked and continue accumulating responses if so
+	nextPageUrlRef, err := findRelLink("nextPage", resp.Header)
+	if err != nil && !IsNotFound(err) {
+		return nil, fmt.Errorf("error looking for 'nextPage' in 'Link' header: %s", err)
 	}
 
-	// nextPage exists, follow it recursively and continue accumulating responses into single variable
-	if nextPage != nil && nextPage.URI != "" {
-		urlRef, _ = url.Parse(nextPage.String())
-
-		responses, err = client.cloudApiGetAllPages(nil, urlRef, url.Values{}, outType, responses)
+	if nextPageUrlRef != nil {
+		responses, err = client.cloudApiGetAllPages(nil, nextPageUrlRef, url.Values{}, outType, responses)
 		if err != nil {
 			return nil, fmt.Errorf("got error on page %d: %s", pages.Page, err)
 		}
@@ -403,4 +398,37 @@ func (client *Client) newCloudApiRequest(params url.Values, method string, reqUr
 	}
 
 	return req
+}
+
+// findRelLink looks for link to "nextPage" in "Link" header. It will return when first occurence is found.
+// Sample Link header:
+// Link: [<https://HOSTNAME/cloudapi/1.0.0/auditTrail?sortAsc=&pageSize=25&sortDesc=&page=7>;rel="lastPage";type="application/json";model="AuditTrailEvents" <https://HOSTNAME/cloudapi/1.0.0/auditTrail?sortAsc=&pageSize=25&sortDesc=&page=2>;rel="nextPage";type="application/json";model="AuditTrailEvents"]
+// Returns *url.Url or ErrorEntityNotFound
+func findRelLink(relFieldName string, header http.Header) (*url.URL, error) {
+	headerLinks := link.ParseHeader(header)
+	var foundAddress *link.Link
+
+	for relKeyName, link := range headerLinks {
+		switch {
+		// When map key has more than one name (separated by space). In such cases it can have map key as
+		// "lastPage nextPage" when nextPage==lastPage or similar and one specific field needs to be matched.
+		case strings.Contains(relKeyName, " "):
+			relNameSlice := strings.Split(relKeyName, " ")
+			for _, oneRelName := range relNameSlice {
+				if oneRelName == relFieldName {
+					foundAddress = link
+				}
+			}
+			break
+		case relKeyName == relFieldName:
+			foundAddress = link
+			break
+		}
+	}
+
+	if foundAddress == nil {
+		return nil, ErrorEntityNotFound
+	}
+
+	return url.Parse(foundAddress.String())
 }
