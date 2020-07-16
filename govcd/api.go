@@ -261,7 +261,7 @@ func decodeBody(resp *http.Response, out interface{}, bodyType types.BodyType) e
 
 	debugShowResponse(resp, body)
 
-	// only attempts to unmarshal if body is not empty
+	// only attempt to unmarshal if body is not empty
 	if len(body) > 0 {
 		switch bodyType {
 		case types.BodyTypeXML:
