@@ -150,6 +150,9 @@ func (client *Client) CloudApiPostItem(urlRef *url.URL, params url.Values, paylo
 	return nil
 }
 
+// CloudApiGetItem
+// Responds with HTTP 403: Forbidden - If the user is not authorized or the entity does not exist. When HTTP 403 is
+// returned this function returns
 func (client *Client) CloudApiGetItem(urlRef *url.URL, params url.Values, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s", urlRef.String(), reflect.TypeOf(outType))
 
@@ -160,8 +163,18 @@ func (client *Client) CloudApiGetItem(urlRef *url.URL, params url.Values, outTyp
 		return fmt.Errorf("error performing GET request to %s: %s", urlRef.String(), err)
 	}
 
+	// Bypassing the regular path using function checkRespWithErrType and returning parsed error directly
+	// HTTP 403: Forbidden - is returned if the user is not authorized or the entity does not exist.
+	if resp.StatusCode == http.StatusForbidden {
+		err := ParseErr(resp, &types.CloudApiError{}, types.BodyTypeJSON)
+		resp.Body.Close()
+		return fmt.Errorf("%s : %s", ErrorEntityNotFound, err)
+	}
+
 	// resp is ignored below because it is the same as above
 	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeJSON)
+
+	// Any other error occured
 	if err != nil {
 		return fmt.Errorf("error in HTTP GET request: %s", err)
 	}
@@ -295,10 +308,6 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 		queryParameters = queryParams
 	}
 
-	// if page != nil {
-	// 	queryParameters.Set("page", strconv.Itoa(*page))
-	// }
-
 	if pageSize != nil {
 		queryParameters.Set("pageSize", strconv.Itoa(*pageSize))
 	}
@@ -400,7 +409,7 @@ func (client *Client) newCloudApiRequest(params url.Values, method string, reqUr
 	return req
 }
 
-// findRelLink looks for link to "nextPage" in "Link" header. It will return when first occurence is found.
+// findRelLink looks for link to "nextPage" in "Link" header. It will return when first occurrence is found.
 // Sample Link header:
 // Link: [<https://HOSTNAME/cloudapi/1.0.0/auditTrail?sortAsc=&pageSize=25&sortDesc=&page=7>;rel="lastPage";type="application/json";model="AuditTrailEvents" <https://HOSTNAME/cloudapi/1.0.0/auditTrail?sortAsc=&pageSize=25&sortDesc=&page=2>;rel="nextPage";type="application/json";model="AuditTrailEvents"]
 // Returns *url.Url or ErrorEntityNotFound
@@ -408,7 +417,7 @@ func findRelLink(relFieldName string, header http.Header) (*url.URL, error) {
 	headerLinks := link.ParseHeader(header)
 	var foundAddress *link.Link
 
-	for relKeyName, link := range headerLinks {
+	for relKeyName, linkAddress := range headerLinks {
 		switch {
 		// When map key has more than one name (separated by space). In such cases it can have map key as
 		// "lastPage nextPage" when nextPage==lastPage or similar and one specific field needs to be matched.
@@ -416,12 +425,12 @@ func findRelLink(relFieldName string, header http.Header) (*url.URL, error) {
 			relNameSlice := strings.Split(relKeyName, " ")
 			for _, oneRelName := range relNameSlice {
 				if oneRelName == relFieldName {
-					foundAddress = link
+					foundAddress = linkAddress
 				}
 			}
 			break
 		case relKeyName == relFieldName:
-			foundAddress = link
+			foundAddress = linkAddress
 			break
 		}
 	}

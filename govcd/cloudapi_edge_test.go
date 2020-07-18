@@ -120,3 +120,18 @@ func (vcd *TestVCD) Test_NsxtEdgeGetPages(check *C) {
 	// check.Assert(copyEdge.EdgeGateway.Name, Equals, edge.EdgeGateway.Name)
 	// check.Assert(copyEdge.EdgeGateway.HREF, Equals, edge.EdgeGateway.HREF)
 }
+
+// func (vdc *Vdc) GetCloudAPIEdgeGateways(queryParameters url.Values) ([]*types.CloudAPIEdgeGateway, error) {
+// 	urlString := vdc.client.VCDHREF.Scheme + "://" + vdc.client.VCDHREF.Host + "/cloudapi/1.0.0/edgeGateways"
+// 	url, _ := url.ParseRequestURI(urlString)
+//
+// 	response := make([]*types.CloudAPIEdgeGateway, 1)
+//
+// 	// err := vdc.client.CloudApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
+// 	err := vdc.client.CloudApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	return response, nil
+// }
