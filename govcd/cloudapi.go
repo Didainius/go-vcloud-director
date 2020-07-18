@@ -21,11 +21,11 @@ import (
 // This file contains generalised low level methods to interact with VCD CloudAPI REST endpoints as documented in
 // https://{VCD_HOST}/api-explorer/tenant/tenant-name and https://{VCD_HOST}/api-explorer/provider documentation. It has
 // functions supporting below methods:
-// GET /items (gets a slice of types like `[]*types.CloudAPIEdgeGateway` or even `[]*json.RawMessage` to process JSON as text.
-// POST /items
-// GET /items/urn
-// PUT /items/urn
-// DELETE /items/urn
+// GET /items (gets a slice of types like `[]types.CloudAPIEdgeGateway` or even `[]json.RawMessage` to process JSON as text.
+// POST /items - creates an item
+// GET /items/URN - retrieves an item with specified URN
+// PUT /items/URN - updates an item with specified URN
+// DELETE /items/URN - deletes an item with specified URN
 //
 // GET endpoints support FIQL for filtering in field `filter`. (FIQL IETF doc - https://tools.ietf.org/html/draft-nottingham-atompub-fiql-00)
 // Not all API fields are supported for FIQL filtering and sometimes they return odd errors when filtering is unsupported.
@@ -58,6 +58,10 @@ func (client *Client) CloudApiGetAllItems(urlRef *url.URL, queryParams url.Value
 	util.Logger.Printf("[TRACE] Getting all items from endpoint %s for parsing into %s type\n",
 		urlRef.String(), reflect.TypeOf(outType))
 
+	if !client.CloudApiIsSupported() {
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
+	}
+
 	// Perform API call to initial endpoint. The function call recursively follows pages using Link headers "nextPage"
 	// until it crawls all results
 	responses, err := client.cloudApiGetAllPages(nil, urlRef, queryParams, outType, nil)
@@ -89,6 +93,10 @@ func (client *Client) CloudApiGetAllItems(urlRef *url.URL, queryParams url.Value
 func (client *Client) CloudApiPostItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Posting %s item to endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
+
+	if !client.CloudApiIsSupported() {
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
+	}
 
 	// Marshal payload if we have one
 	var body *bytes.Buffer
@@ -158,8 +166,11 @@ func (client *Client) CloudApiPostItem(urlRef *url.URL, params url.Values, paylo
 func (client *Client) CloudApiGetItem(urlRef *url.URL, params url.Values, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s", urlRef.String(), reflect.TypeOf(outType))
 
-	req := client.newCloudApiRequest(params, http.MethodGet, urlRef, nil, "34.0")
+	if !client.CloudApiIsSupported() {
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
+	}
 
+	req := client.newCloudApiRequest(params, http.MethodGet, urlRef, nil, "34.0")
 	resp, err := client.Http.Do(req)
 	if err != nil {
 		return fmt.Errorf("error performing GET request to %s: %s", urlRef.String(), err)
@@ -198,6 +209,10 @@ func (client *Client) CloudApiGetItem(urlRef *url.URL, params url.Values, outTyp
 func (client *Client) CloudApiPutItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Performing HTTP PUT request for item of type %s at endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
+
+	if !client.CloudApiIsSupported() {
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
+	}
 
 	var body *bytes.Buffer
 	if payload != nil {
@@ -259,6 +274,10 @@ func (client *Client) CloudApiPutItem(urlRef *url.URL, params url.Values, payloa
 // - it will track the task until it is finished.
 func (client *Client) CloudApiDeleteItem(urlRef *url.URL, params url.Values) error {
 	util.Logger.Printf("[TRACE] Deleting item at endpoint %s", urlRef.String())
+
+	if !client.CloudApiIsSupported() {
+		return fmt.Errorf("OpenAPI is not supported on this VCD version")
+	}
 
 	// Exec request
 	req := client.newCloudApiRequest(params, http.MethodDelete, urlRef, nil, "34.0")
