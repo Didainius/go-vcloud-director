@@ -55,11 +55,14 @@ func main() {
 
 }
 
-// cloudAPIGetRawAuditTrail is an example function how to use low level function to interact with CloudAPI in VCD
-func cloudAPIGetRawAuditTrail(vcdClient *govcd.VCDClient) {
-	urlRef, err := BuildCloudAPIEndpoint(vcdClient, "1.0.0/auditTrail")
+// cloudAPIGetRawJsonAuditTrail is an example function how to use low level function to interact with CloudAPI in VCD
+func cloudAPIGetRawJsonAuditTrail(vcdClient *govcd.VCDClient) {
+	urlRef, err := vcdClient.BuildCloudAPIEndpoint(vcdClient, "1.0.0/auditTrail")
+	if err != nil {
+		panic(fmt.Errorf("error building CloudAPI endoint: %s", err))
+	}
 
-	response := []json.RawMessage{}
+	response := []json.RawMessage{{}}
 	err = vcdClient.CloudApiGetAllItems(urlRef, nil, &response)
 	if err != nil {
 		panic(err)
@@ -79,7 +82,7 @@ func cloudAPIGetRawAuditTrail(vcdClient *govcd.VCDClient) {
 // cloudAPIGetStructAuditTrail is an example function how to use low level function to interact with CloudAPI in VCD and
 // marshal responses into defined struct with tags.
 func cloudAPIGetStructAuditTrail(vcdClient *govcd.VCDClient) {
-	urlRef, err := BuildCloudAPIEndpoint(vcdClient, "1.0.0/auditTrail")
+	urlRef, err := vcdClient.BuildCloudAPIEndpoint(vcdClient, "1.0.0/auditTrail")
 
 	// Inline type
 	type AudiTrail struct {
@@ -113,7 +116,7 @@ func cloudAPIGetStructAuditTrail(vcdClient *govcd.VCDClient) {
 		} `json:"additionalProperties"`
 	}
 
-	response := []*AudiTrail{}
+	response := []*AudiTrail{{}}
 
 	err = vcdClient.CloudApiGetAllItems(urlRef, nil, &response)
 	if err != nil {

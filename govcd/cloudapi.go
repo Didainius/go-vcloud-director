@@ -33,14 +33,19 @@ import (
 // CloudAPI versioning.
 // Versions in path (e.g. 1.0.0) should guarantee behavior while header versions shouldn't matter in long term.
 
+// CloudApiIsSupported allows to check whether VCD supports CloudAPI
+func (client *Client) CloudApiIsSupported() bool {
+	return client.APIVCDMaxVersionIs(">= 33")
+}
+
 // BuildCloudAPIEndpoint helps to construct CloudAPI endpoint by using already configured VCD HREF while requiring only
 // the last bit for endpoint.
-//
-func (client *Client) BuildCloudAPIEndpoint(endpoint string) (*url.URL, error) {
-	endpointString := client.VCDHREF.Scheme + "://" + client.VCDHREF.Host + "/cloudapi/" + endpoint
+// Sample URL construct: https://HOST/cloudapi/endpoint
+func (client *Client) BuildCloudAPIEndpoint(endpoint ...string) (*url.URL, error) {
+	endpointString := client.VCDHREF.Scheme + "://" + client.VCDHREF.Host + "/cloudapi/" + strings.Join(endpoint, "")
 	urlRef, err := url.ParseRequestURI(endpointString)
 	if err != nil {
-		return nil, fmt.Errorf("error formatting CloudAPI: %s", err)
+		return nil, fmt.Errorf("error formatting CloudAPI endpoint: %s", err)
 	}
 	return urlRef, nil
 }
@@ -48,13 +53,13 @@ func (client *Client) BuildCloudAPIEndpoint(endpoint string) (*url.URL, error) {
 // CloudApiGetAllItems retrieves and accumulates all pages then parsing them to a single object. It works by at first
 // crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is no intermediate
 // unmarshalling to exact `outType` for every page it can actually unmarshal into response struct in one go. outType
-// must be a slice of object (e.g. []*types.CloudAPIEdgeGateway) because this response contains list of structs
+// must be a slice of object (e.g. []*types.CloudAPIEdgeGateway) because this response contains slice of structs
 func (client *Client) CloudApiGetAllItems(urlRef *url.URL, queryParams url.Values, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Getting all items from endpoint %s for parsing into %s type\n",
 		urlRef.String(), reflect.TypeOf(outType))
 
-	// Perform API call to initial endpoint. The function call below is expected to follow pages using Link headers
-	// "nextPage" until it crawls all results
+	// Perform API call to initial endpoint. The function call recursively follows pages using Link headers "nextPage"
+	// until it crawls all results
 	responses, err := client.cloudApiGetAllPages(nil, urlRef, queryParams, outType, nil)
 	if err != nil {
 		return fmt.Errorf("error getting all pages for endpoint %s: %s", urlRef.String(), err)
@@ -64,11 +69,7 @@ func (client *Client) CloudApiGetAllItems(urlRef *url.URL, queryParams url.Value
 	// calls are executed
 	var rawJsonBodies []string
 	for _, singleObject := range responses {
-		jsonBody, err := singleObject.MarshalJSON()
-		if err != nil {
-			return fmt.Errorf("error marshalling single response object into raw JSON message: %s", err)
-		}
-		rawJsonBodies = append(rawJsonBodies, string(jsonBody))
+		rawJsonBodies = append(rawJsonBodies, string(singleObject))
 	}
 
 	// rawJsonBodies contains a slice of all response objects and they must be formatted as a JSON slice (wrapped
@@ -152,7 +153,8 @@ func (client *Client) CloudApiPostItem(urlRef *url.URL, params url.Values, paylo
 
 // CloudApiGetItem
 // Responds with HTTP 403: Forbidden - If the user is not authorized or the entity does not exist. When HTTP 403 is
-// returned this function returns
+// returned this function returns "ErrorEntityNotFound: API_ERROR" so that one can use ContainsNotFound(err) to validate
+// error
 func (client *Client) CloudApiGetItem(urlRef *url.URL, params url.Values, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s", urlRef.String(), reflect.TypeOf(outType))
 
@@ -168,7 +170,7 @@ func (client *Client) CloudApiGetItem(urlRef *url.URL, params url.Values, outTyp
 	if resp.StatusCode == http.StatusForbidden {
 		err := ParseErr(resp, &types.CloudApiError{}, types.BodyTypeJSON)
 		resp.Body.Close()
-		return fmt.Errorf("%s : %s", ErrorEntityNotFound, err)
+		return fmt.Errorf("%s: %s", ErrorEntityNotFound, err)
 	}
 
 	// resp is ignored below because it is the same as above
@@ -297,9 +299,9 @@ func (client *Client) CloudApiDeleteItem(urlRef *url.URL, params url.Values) err
 // works by at first crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is
 // no intermediate unmarshalling to exact `outType` for every page it can unmarshal into direct `outType` supplied.
 // outType must be a slice of object (e.g. []*types.CloudAPIEdgeGateway) because accumulated responses are in JSON list
-func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryParams url.Values, outType interface{}, responses []*json.RawMessage) ([]*json.RawMessage, error) {
+func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryParams url.Values, outType interface{}, responses []json.RawMessage) ([]json.RawMessage, error) {
 	if responses == nil {
-		responses = []*json.RawMessage{}
+		responses = []json.RawMessage{}
 	}
 
 	// Reuse existing queryParams struct to fill in pages or create a new one if nil was passed
@@ -341,7 +343,7 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 	// Accumulate all responses in a single page as JSON text using json.RawMessage
 	// After pages are unwrapped one can marshal response into specified type
 	// singleQueryResponses := &json.RawMessage{}
-	var singleQueryResponses []*json.RawMessage
+	var singleQueryResponses []json.RawMessage
 	if err = json.Unmarshal(pages.Values, &singleQueryResponses); err != nil {
 		return nil, fmt.Errorf("error decoding values into accumulation type: %s", err)
 	}
@@ -440,4 +442,14 @@ func findRelLink(relFieldName string, header http.Header) (*url.URL, error) {
 	}
 
 	return url.Parse(foundAddress.String())
+}
+
+// jsonRawMessagesToStrings converts []*json.RawMessage to []string
+func jsonRawMessagesToStrings(messages []json.RawMessage) []string {
+	resultString := make([]string, len(messages))
+	for index, message := range messages {
+		resultString[index] = string(message)
+	}
+
+	return resultString
 }

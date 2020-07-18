@@ -2,13 +2,12 @@ package govcd
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
-
-	"github.com/davecgh/go-spew/spew"
 
 	. "gopkg.in/check.v1"
 )
@@ -19,15 +18,32 @@ func (vcd *TestVCD) Test_CloudAPIRawJsonAudiTrail(check *C) {
 	urlRef, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
 
-	responses := []json.RawMessage{{}}
-	err = vcd.vdc.client.CloudApiGetAllItems(urlRef, nil, &responses)
-	check.Assert(err, IsNil)
+	// Limit search of audi trails to the last 12 hours so that it doesn't take too long and set pageSize to be 1 result to
+	// force following pages
+	queryParams := url.Values{}
+	filterTime := time.Now().Add(-12 * time.Hour).Format(types.FiqlQueryTimestampFormat)
+	queryParams.Add("filter", "timestamp=gt="+filterTime)
+	queryParams.Add("pageSize", "1")
 
-	check.Assert(len(responses) > 1, Equals, true)
+	allResponses := []json.RawMessage{{}}
+	err = vcd.vdc.client.CloudApiGetAllItems(urlRef, queryParams, &allResponses)
+
+	check.Assert(err, IsNil)
+	check.Assert(len(allResponses) > 1, Equals, true)
+
+	// Build a regex ant match it internally so that we are sure auditTrail events are returned in RAW json message. There
+	// should be the same amount of audit event IDs as total responses
+	auditLogUrn := regexp.MustCompile("urn:vcloud:audit:")
+	responseStrings := jsonRawMessagesToStrings(allResponses)
+	allStringResponses := `[` + strings.Join(responseStrings, ",") + `]`
+	matches := auditLogUrn.FindAllStringIndex(allStringResponses, -1)
+	check.Assert(len(matches), Equals, len(allResponses))
 }
 
+// Test_CloudAPIInlineStructAudiTrail uses low level GET function to test out that get function can unmarshal directly
+// to user defined inline type
 func (vcd *TestVCD) Test_CloudAPIInlineStructAudiTrail(check *C) {
-	urll, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/auditTrail")
+	urlRef, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
 
 	// Inline type
@@ -62,38 +78,35 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructAudiTrail(check *C) {
 		} `json:"additionalProperties"`
 	}
 
-	respp := []*AudiTrail{{}}
+	allResponses := []*AudiTrail{{}}
 
-	// FIQL filtering test
+	// Define FIQL query to find events for the last 24 hours
 	queryParams := url.Values{}
+	filterTime := time.Now().Add(-24 * time.Hour).Format(types.FiqlQueryTimestampFormat)
+	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
-	// Find audi trail logs for the last 12 hours
-	filterTime := time.Now().Add(-24 * 30 * time.Hour).Format(types.FiqlQueryTimestampFormat)
-	queryParams.Add("filter", "timestamp=gt="+filterTime+";"+"user.id!=urn:vcloud:user:2e15afcf-ae56-4287-b7c9-4139d4592d0c")
-	// queryParams.Add("filter", "timestamp=gt="+filterTime)
-	// queryParams.Add("filter", "user.name==administrator")
-	// queryParams.Add("filter", "description=administrator")
-	// queryParams.Add("filter", "timestamp=gt="+filterTime+";"+"title==foo*;(updated=lt=-P1D,title==*bar)")
-	// queryParams.Add("filter", "title==foo*;(updated=lt=-P1D,title==*bar)")
+	err = vcd.vdc.client.CloudApiGetAllItems(urlRef, queryParams, &allResponses)
 
-	err = vcd.vdc.client.CloudApiGetAllItems(urll, queryParams, &respp)
-
-	spew.Dump(respp)
 	check.Assert(err, IsNil)
+	check.Assert(len(allResponses) > 1, Equals, true)
 
-	for _, v := range respp {
-		fmt.Println(v.Timestamp, " ", v.User.Name, "-", v.AdditionalProperties.UserRoles, "", " ", v.EventType)
+	// Check that all responses have IDs populated
+	for _, v := range allResponses {
+		check.Assert(v.EventID, NotNil)
 	}
-
-	fmt.Println(len(respp))
 }
 
 // Test_CloudAPIInlineStructCRUDRoles test aims to test out low level CloudAPI functions to check if all of them work as
 // expected. It uses a very simple "Roles" endpoint which does not have bigger prerequisites and therefore is not
-// dependent one more deployment specific features.
+// dependent one more deployment specific features. It also supports all of the CloudAPI CRUD endpoints so is a good
+// endpoint to test on
 // Actions of the test:
 // 1. Get all available roles using "Get all endpoint"
-// 2.
+// 2.1 Use FIQL query filtering to retrieve specific item by ID on "Get All" endpoint
+// 2.2 Use GET by ID endpoint to check that each of roles retrieved by get all can be found individually
+// 2.3 Compare struct retrieved by using "Get all" endpoint and FIQL filter with struct retrieved by using "Get By ID"
+// 3. Create a new role and verify it is created as specified by using deep equality
+// 4. Delete created role
 func (vcd *TestVCD) Test_CloudAPIInlineStructCRUDRoles(check *C) {
 	// Step 1 - Get all roles
 	urlRef, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/roles")
@@ -121,7 +134,6 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructCRUDRoles(check *C) {
 
 		expectOneRoleResultById := []*Roles{{}}
 
-		// Use the same urlRef inject FIQL filter to test filtering by ID
 		err = vcd.vdc.client.CloudApiGetAllItems(urlRef2, queryParams, &expectOneRoleResultById)
 		check.Assert(err, IsNil)
 		check.Assert(len(expectOneRoleResultById) == 1, Equals, true)
@@ -138,8 +150,7 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructCRUDRoles(check *C) {
 
 	}
 
-	// Step 3 - Create a new role
-
+	// Step 3 - Create a new role and ensure it is created as specified by doing deep comparison
 	createUrl, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/roles")
 	check.Assert(err, IsNil)
 
@@ -157,35 +168,17 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructCRUDRoles(check *C) {
 	newRole.ID = newRoleResponse.ID
 	check.Assert(newRoleResponse, DeepEquals, newRole)
 
-	// Delete
-
-	deleteUrlRef, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/roles/" + newRoleResponse.ID)
+	// Step 4 - delete created role
+	deleteUrlRef, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/roles/", newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
 	err = vcd.client.Client.CloudApiDeleteItem(deleteUrlRef, nil)
 	check.Assert(err, IsNil)
 
+	// Step 5 - try to read deleted role and expect error to contain 'ErrorEntityNotFound'
 	// Read is tricky - it throws an error ACCESS_TO_RESOURCE_IS_FORBIDDEN when the resource with ID does not
 	// exist therefore one cannot know what kind of error occurred.
 	lostRole := &Roles{}
 	err = vcd.client.Client.CloudApiGetItem(deleteUrlRef, nil, lostRole)
 	check.Assert(ContainsNotFound(err), Equals, true)
-
-	//
-	// // FIQL filtering test
-	// queryParams := url.Values{}
-	//
-	// // Find existing Org Vdc network defined in config
-	// queryParams.Add("filter", "name=="+vcd.config.VCD.Network.Net1)
-	//
-	//
-	//
-	// spew.Dump(respp)
-	// check.Assert(err, IsNil)
-	// //
-	// // for _, v := range respp {
-	// // 	fmt.Println(v.Timestamp, " ", v.User.Name, "-", v.AdditionalProperties.UserRoles, "", " ", v.EventType)
-	// // }
-	//
-	// fmt.Println(len(respp))
 }
