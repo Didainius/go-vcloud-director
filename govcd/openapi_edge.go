@@ -27,7 +27,7 @@ func (vdc *Vdc) GetCloudAPIEdgeGatewayId(id string) (*CloudAPIEdgeGateway, error
 	// acceptMime := types.JSONMime + ";version=" + vdc.client.APIVersion
 	// acceptMime := types.JSONMime + ";version=34.0"
 
-	err := vdc.client.CloudApiGetItem(url, nil, edge.EdgeGateway)
+	err := vdc.client.OpenApiGetItem(url, nil, edge.EdgeGateway)
 
 	if err != nil {
 		return nil, err
@@ -41,8 +41,8 @@ func (vdc *Vdc) GetCloudAPIEdgeGateways(queryParameters url.Values) ([]*types.Cl
 
 	response := make([]*types.CloudAPIEdgeGateway, 1)
 
-	// err := vdc.client.CloudApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
-	err := vdc.client.CloudApiGetAllItems(url, queryParameters, &response)
+	// err := vdc.client.OpenApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
+	err := vdc.client.OpenApiGetAllItems(url, queryParameters, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (egw *CloudAPIEdgeGateway) Create(e *types.CloudAPIEdgeGateway) (*CloudAPIE
 		client:      egw.client,
 	}
 
-	err := egw.client.CloudApiPostItem(url, nil, e, returnEdge.EdgeGateway)
+	err := egw.client.OpenApiPostItem(url, nil, e, returnEdge.EdgeGateway)
 
 	if err != nil {
 		return nil, fmt.Errorf("error creating edge gateway: %s", err)
@@ -77,7 +77,7 @@ func (egw *CloudAPIEdgeGateway) Update(e *types.CloudAPIEdgeGateway) (*CloudAPIE
 		client:      egw.client,
 	}
 
-	err := egw.client.CloudApiPutItem(url, nil, e, returnEdge.EdgeGateway)
+	err := egw.client.OpenApiPutItem(url, nil, e, returnEdge.EdgeGateway)
 
 	if err != nil {
 		return nil, fmt.Errorf("error updating gateway: %s", err)
@@ -90,7 +90,7 @@ func (egw *CloudAPIEdgeGateway) Delete() error {
 	urlString := egw.client.VCDHREF.Scheme + "://" + egw.client.VCDHREF.Host + "/cloudapi/1.0.0/edgeGateways/" + egw.EdgeGateway.ID
 	url, _ := url.ParseRequestURI(urlString)
 
-	err := egw.client.CloudApiDeleteItem(url, nil)
+	err := egw.client.OpenApiDeleteItem(url, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting edge gateway: %s", err)

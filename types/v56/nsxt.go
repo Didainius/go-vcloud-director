@@ -109,20 +109,20 @@ type EdgeClusterConfig struct {
 	SecondaryEdgeCluster interface{}        `json:"secondaryEdgeCluster,omitempty"`
 }
 
-// CloudApiError helpes to marshal and provider meaningful `Error` for
-type CloudApiError struct {
+// OpenApiError helpes to marshal and provider meaningful `Error` for
+type OpenApiError struct {
 	MinorErrorCode string `json:"minorErrorCode"`
 	Message        string `json:"message"`
 	StackTrace     string `json:"stackTrace"`
 }
 
 // Error method implements Go's default `error` interface for CloudAPI errors formats them for human readable output.
-func (cloudApiError CloudApiError) Error() string {
-	return fmt.Sprintf("%s - %s", cloudApiError.MinorErrorCode, cloudApiError.Message)
+func (openApiError OpenApiError) Error() string {
+	return fmt.Sprintf("%s - %s", openApiError.MinorErrorCode, openApiError.Message)
 }
 
 // ErrorWithStack is the same as `Error()`, but also includes stack trace returned by API which is usually lengthy.
-func (cloudApiError CloudApiError) ErrorWithStack() string {
-	return fmt.Sprintf("%s - %s. Stack: %s", cloudApiError.MinorErrorCode, cloudApiError.Message,
-		cloudApiError.StackTrace)
+func (openApiError OpenApiError) ErrorWithStack() string {
+	return fmt.Sprintf("%s - %s. Stack: %s", openApiError.MinorErrorCode, openApiError.Message,
+		openApiError.StackTrace)
 }

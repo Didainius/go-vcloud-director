@@ -18,10 +18,10 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// This file contains generalised low level methods to interact with VCD CloudAPI REST endpoints as documented in
+// This file contains generalised low level methods to interact with VCD OpenAPI REST endpoints as documented in
 // https://{VCD_HOST}/api-explorer/tenant/tenant-name and https://{VCD_HOST}/api-explorer/provider documentation. It has
 // functions supporting below methods:
-// GET /items (gets a slice of types like `[]types.CloudAPIEdgeGateway` or even `[]json.RawMessage` to process JSON as text.
+// GET /items (gets a slice of types like `[]types.OpenAPIEdgeGateway` or even `[]json.RawMessage` to process JSON as text.
 // POST /items - creates an item
 // GET /items/URN - retrieves an item with specified URN
 // PUT /items/URN - updates an item with specified URN
@@ -30,41 +30,41 @@ import (
 // GET endpoints support FIQL for filtering in field `filter`. (FIQL IETF doc - https://tools.ietf.org/html/draft-nottingham-atompub-fiql-00)
 // Not all API fields are supported for FIQL filtering and sometimes they return odd errors when filtering is unsupported.
 //
-// CloudAPI versioning.
+// OpenAPI versioning.
 // Versions in path (e.g. 1.0.0) should guarantee behavior while header versions shouldn't matter in long term.
 
-// CloudApiIsSupported allows to check whether VCD supports CloudAPI
-func (client *Client) CloudApiIsSupported() bool {
+// OpenApiIsSupported allows to check whether VCD supports OpenAPI
+func (client *Client) OpenApiIsSupported() bool {
 	return client.APIVCDMaxVersionIs(">= 33")
 }
 
-// BuildCloudAPIEndpoint helps to construct CloudAPI endpoint by using already configured VCD HREF while requiring only
+// BuildOpenApiEndpoint helps to construct OpenAPI endpoint by using already configured VCD HREF while requiring only
 // the last bit for endpoint.
 // Sample URL construct: https://HOST/cloudapi/endpoint
-func (client *Client) BuildCloudAPIEndpoint(endpoint ...string) (*url.URL, error) {
+func (client *Client) BuildOpenApiEndpoint(endpoint ...string) (*url.URL, error) {
 	endpointString := client.VCDHREF.Scheme + "://" + client.VCDHREF.Host + "/cloudapi/" + strings.Join(endpoint, "")
 	urlRef, err := url.ParseRequestURI(endpointString)
 	if err != nil {
-		return nil, fmt.Errorf("error formatting CloudAPI endpoint: %s", err)
+		return nil, fmt.Errorf("error formatting OpenAPI endpoint: %s", err)
 	}
 	return urlRef, nil
 }
 
-// CloudApiGetAllItems retrieves and accumulates all pages then parsing them to a single object. It works by at first
+// OpenApiGetAllItems retrieves and accumulates all pages then parsing them to a single object. It works by at first
 // crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is no intermediate
 // unmarshalling to exact `outType` for every page it can actually unmarshal into response struct in one go. outType
-// must be a slice of object (e.g. []*types.CloudAPIEdgeGateway) because this response contains slice of structs
-func (client *Client) CloudApiGetAllItems(urlRef *url.URL, queryParams url.Values, outType interface{}) error {
+// must be a slice of object (e.g. []*types.OpenAPIEdgeGateway) because this response contains slice of structs
+func (client *Client) OpenApiGetAllItems(urlRef *url.URL, queryParams url.Values, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Getting all items from endpoint %s for parsing into %s type\n",
 		urlRef.String(), reflect.TypeOf(outType))
 
-	if !client.CloudApiIsSupported() {
+	if !client.OpenApiIsSupported() {
 		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
 	// Perform API call to initial endpoint. The function call recursively follows pages using Link headers "nextPage"
 	// until it crawls all results
-	responses, err := client.cloudApiGetAllPages(nil, urlRef, queryParams, outType, nil)
+	responses, err := client.openApiGetAllPages(nil, urlRef, queryParams, outType, nil)
 	if err != nil {
 		return fmt.Errorf("error getting all pages for endpoint %s: %s", urlRef.String(), err)
 	}
@@ -88,13 +88,13 @@ func (client *Client) CloudApiGetAllItems(urlRef *url.URL, queryParams url.Value
 	return nil
 }
 
-// CloudApiPostItem is a low level CloudAPI client function to perform any task.
+// OpenApiPostItem is a low level OpenAPI client function to perform any task.
 // The urlRef must point to POST endpoint (e.g. '/1.0.0/edgeGateways')
-func (client *Client) CloudApiPostItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
+func (client *Client) OpenApiPostItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Posting %s item to endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
 
-	if !client.CloudApiIsSupported() {
+	if !client.OpenApiIsSupported() {
 		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
@@ -108,7 +108,7 @@ func (client *Client) CloudApiPostItem(urlRef *url.URL, params url.Values, paylo
 		body = bytes.NewBuffer(marshaledJson)
 	}
 
-	req := client.newCloudApiRequest(params, http.MethodPost, urlRef, body, "34.0")
+	req := client.newOpenApiRequest(params, http.MethodPost, urlRef, body, "34.0")
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -116,7 +116,7 @@ func (client *Client) CloudApiPostItem(urlRef *url.URL, params url.Values, paylo
 	}
 
 	// resp is ignored below because it is the same the one above
-	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeJSON)
+	_, err = checkRespWithErrType(resp, err, &types.OpenApiError{}, types.BodyTypeJSON)
 	if err != nil {
 		return fmt.Errorf("error in HTTP POST request: %s", err)
 	}
@@ -139,7 +139,7 @@ func (client *Client) CloudApiPostItem(urlRef *url.URL, params url.Values, paylo
 		// old XML API and here we need to pull data from CloudAPI.
 
 		newObjectUrl, _ := url.ParseRequestURI(urlRef.String() + "/" + task.Task.Owner.ID)
-		err = client.CloudApiGetItem(newObjectUrl, nil, outType)
+		err = client.OpenApiGetItem(newObjectUrl, nil, outType)
 		if err != nil {
 			return fmt.Errorf("error retrieving item after creation: %s", err)
 		}
@@ -159,18 +159,18 @@ func (client *Client) CloudApiPostItem(urlRef *url.URL, params url.Values, paylo
 	return nil
 }
 
-// CloudApiGetItem
+// OpenApiGetItem
 // Responds with HTTP 403: Forbidden - If the user is not authorized or the entity does not exist. When HTTP 403 is
 // returned this function returns "ErrorEntityNotFound: API_ERROR" so that one can use ContainsNotFound(err) to validate
 // error
-func (client *Client) CloudApiGetItem(urlRef *url.URL, params url.Values, outType interface{}) error {
+func (client *Client) OpenApiGetItem(urlRef *url.URL, params url.Values, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s", urlRef.String(), reflect.TypeOf(outType))
 
-	if !client.CloudApiIsSupported() {
+	if !client.OpenApiIsSupported() {
 		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
-	req := client.newCloudApiRequest(params, http.MethodGet, urlRef, nil, "34.0")
+	req := client.newOpenApiRequest(params, http.MethodGet, urlRef, nil, "34.0")
 	resp, err := client.Http.Do(req)
 	if err != nil {
 		return fmt.Errorf("error performing GET request to %s: %s", urlRef.String(), err)
@@ -179,13 +179,13 @@ func (client *Client) CloudApiGetItem(urlRef *url.URL, params url.Values, outTyp
 	// Bypassing the regular path using function checkRespWithErrType and returning parsed error directly
 	// HTTP 403: Forbidden - is returned if the user is not authorized or the entity does not exist.
 	if resp.StatusCode == http.StatusForbidden {
-		err := ParseErr(resp, &types.CloudApiError{}, types.BodyTypeJSON)
+		err := ParseErr(resp, &types.OpenApiError{}, types.BodyTypeJSON)
 		resp.Body.Close()
 		return fmt.Errorf("%s: %s", ErrorEntityNotFound, err)
 	}
 
 	// resp is ignored below because it is the same as above
-	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeJSON)
+	_, err = checkRespWithErrType(resp, err, &types.OpenApiError{}, types.BodyTypeJSON)
 
 	// Any other error occured
 	if err != nil {
@@ -204,13 +204,13 @@ func (client *Client) CloudApiGetItem(urlRef *url.URL, params url.Values, outTyp
 	return nil
 }
 
-// CloudApiPutItem handles the PUT method for CloudAPI and tracks the task before returning if the response is HTTP 202
+// OpenApiPutItem handles the PUT method for CloudAPI and tracks the task before returning if the response is HTTP 202
 //
-func (client *Client) CloudApiPutItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
+func (client *Client) OpenApiPutItem(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
 	util.Logger.Printf("[TRACE] Performing HTTP PUT request for item of type %s at endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRef.String(), reflect.TypeOf(outType))
 
-	if !client.CloudApiIsSupported() {
+	if !client.OpenApiIsSupported() {
 		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
@@ -223,7 +223,7 @@ func (client *Client) CloudApiPutItem(urlRef *url.URL, params url.Values, payloa
 		body = bytes.NewBuffer(marshaledJson)
 	}
 
-	req := client.newCloudApiRequest(params, http.MethodPut, urlRef, body, "34.0")
+	req := client.newOpenApiRequest(params, http.MethodPut, urlRef, body, "34.0")
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -231,7 +231,7 @@ func (client *Client) CloudApiPutItem(urlRef *url.URL, params url.Values, payloa
 	}
 
 	// resp is ignored below because it is the same as above
-	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeJSON)
+	_, err = checkRespWithErrType(resp, err, &types.OpenApiError{}, types.BodyTypeJSON)
 	if err != nil {
 		return fmt.Errorf("error in HTTP PUT request: %s", err)
 	}
@@ -250,7 +250,7 @@ func (client *Client) CloudApiPutItem(urlRef *url.URL, params url.Values, payloa
 		}
 
 		// Here we have to find the resource once more to return it populated. Provided params ir ignored for retrieval.
-		err = client.CloudApiGetItem(urlRef, nil, outType)
+		err = client.OpenApiGetItem(urlRef, nil, outType)
 		if err != nil {
 			return fmt.Errorf("error retrieving item after creation: %s", err)
 		}
@@ -270,17 +270,17 @@ func (client *Client) CloudApiPutItem(urlRef *url.URL, params url.Values, payloa
 	return nil
 }
 
-// CloudApiDeleteItem performs HTTP DELETE request for a specified endpoint in given urlRef. If the task is asynchronous
+// OpenApiDeleteItem performs HTTP DELETE request for a specified endpoint in given urlRef. If the task is asynchronous
 // - it will track the task until it is finished.
-func (client *Client) CloudApiDeleteItem(urlRef *url.URL, params url.Values) error {
+func (client *Client) OpenApiDeleteItem(urlRef *url.URL, params url.Values) error {
 	util.Logger.Printf("[TRACE] Deleting item at endpoint %s", urlRef.String())
 
-	if !client.CloudApiIsSupported() {
+	if !client.OpenApiIsSupported() {
 		return fmt.Errorf("OpenAPI is not supported on this VCD version")
 	}
 
 	// Exec request
-	req := client.newCloudApiRequest(params, http.MethodDelete, urlRef, nil, "34.0")
+	req := client.newOpenApiRequest(params, http.MethodDelete, urlRef, nil, "34.0")
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -288,7 +288,7 @@ func (client *Client) CloudApiDeleteItem(urlRef *url.URL, params url.Values) err
 	}
 
 	// resp is ignored below because it would be the same as above
-	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeJSON)
+	_, err = checkRespWithErrType(resp, err, &types.OpenApiError{}, types.BodyTypeJSON)
 	if err != nil {
 		return fmt.Errorf("error in HTTP DELETE request: %s", err)
 	}
@@ -314,11 +314,11 @@ func (client *Client) CloudApiDeleteItem(urlRef *url.URL, params url.Values) err
 	return nil
 }
 
-// cloudApiGetAllPages is a recursive function that helps to accumulate responses from multiple pages for GET query. It
+// openApiGetAllPages is a recursive function that helps to accumulate responses from multiple pages for GET query. It
 // works by at first crawling pages and accumulating all responses into []json.RawMessage (as strings). Because there is
 // no intermediate unmarshalling to exact `outType` for every page it can unmarshal into direct `outType` supplied.
 // outType must be a slice of object (e.g. []*types.CloudAPIEdgeGateway) because accumulated responses are in JSON list
-func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryParams url.Values, outType interface{}, responses []json.RawMessage) ([]json.RawMessage, error) {
+func (client *Client) openApiGetAllPages(pageSize *int, urlRef *url.URL, queryParams url.Values, outType interface{}, responses []json.RawMessage) ([]json.RawMessage, error) {
 	if responses == nil {
 		responses = []json.RawMessage{}
 	}
@@ -334,7 +334,7 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 	}
 
 	// Perform request
-	req := client.newCloudApiRequest(queryParams, http.MethodGet, urlRef, nil, "34.0")
+	req := client.newOpenApiRequest(queryParams, http.MethodGet, urlRef, nil, "34.0")
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
@@ -342,7 +342,7 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 	}
 
 	// resp is ignored below because it is the same as above
-	_, err = checkRespWithErrType(resp, err, &types.CloudApiError{}, types.BodyTypeJSON)
+	_, err = checkRespWithErrType(resp, err, &types.OpenApiError{}, types.BodyTypeJSON)
 	if err != nil {
 		return nil, fmt.Errorf("error in HTTP GET request: %s", err)
 	}
@@ -375,7 +375,7 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 	}
 
 	if nextPageUrlRef != nil {
-		responses, err = client.cloudApiGetAllPages(nil, nextPageUrlRef, url.Values{}, outType, responses)
+		responses, err = client.openApiGetAllPages(nil, nextPageUrlRef, url.Values{}, outType, responses)
 		if err != nil {
 			return nil, fmt.Errorf("got error on page %d: %s", pages.Page, err)
 		}
@@ -384,9 +384,9 @@ func (client *Client) cloudApiGetAllPages(pageSize *int, urlRef *url.URL, queryP
 	return responses, nil
 }
 
-// newCloudApiRequest is a low level function used in upstream CloudAPI functions which handles logging and
+// newOpenApiRequest is a low level function used in upstream CloudAPI functions which handles logging and
 // authentication for each API request
-func (client *Client) newCloudApiRequest(params url.Values, method string, reqUrl *url.URL, body io.Reader, apiVersion string) *http.Request {
+func (client *Client) newOpenApiRequest(params url.Values, method string, reqUrl *url.URL, body io.Reader, apiVersion string) *http.Request {
 
 	// Add the params to our URL
 	reqUrl.RawQuery += params.Encode()

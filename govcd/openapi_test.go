@@ -14,8 +14,8 @@ import (
 
 // Test_CloudAPIAudiTrail uses low level GET function to test out that pagination really works. It is an example how to
 // fetch response from multiple pages in RAW json messages without having defined a clear struct.
-func (vcd *TestVCD) Test_CloudAPIRawJsonAudiTrail(check *C) {
-	urlRef, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/auditTrail")
+func (vcd *TestVCD) Test_OpenAPIRawJsonAudiTrail(check *C) {
+	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
 
 	// Limit search of audi trails to the last 12 hours so that it doesn't take too long and set pageSize to be 1 result to
@@ -26,7 +26,7 @@ func (vcd *TestVCD) Test_CloudAPIRawJsonAudiTrail(check *C) {
 	queryParams.Add("pageSize", "1")
 
 	allResponses := []json.RawMessage{{}}
-	err = vcd.vdc.client.CloudApiGetAllItems(urlRef, queryParams, &allResponses)
+	err = vcd.vdc.client.OpenApiGetAllItems(urlRef, queryParams, &allResponses)
 
 	check.Assert(err, IsNil)
 	check.Assert(len(allResponses) > 1, Equals, true)
@@ -40,10 +40,10 @@ func (vcd *TestVCD) Test_CloudAPIRawJsonAudiTrail(check *C) {
 	check.Assert(len(matches), Equals, len(allResponses))
 }
 
-// Test_CloudAPIInlineStructAudiTrail uses low level GET function to test out that get function can unmarshal directly
+// Test_OpenAPIInlineStructAudiTrail uses low level GET function to test out that get function can unmarshal directly
 // to user defined inline type
-func (vcd *TestVCD) Test_CloudAPIInlineStructAudiTrail(check *C) {
-	urlRef, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/auditTrail")
+func (vcd *TestVCD) Test_OpenAPIInlineStructAudiTrail(check *C) {
+	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/auditTrail")
 	check.Assert(err, IsNil)
 
 	// Inline type
@@ -85,7 +85,7 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructAudiTrail(check *C) {
 	filterTime := time.Now().Add(-24 * time.Hour).Format(types.FiqlQueryTimestampFormat)
 	queryParams.Add("filter", "timestamp=gt="+filterTime)
 
-	err = vcd.vdc.client.CloudApiGetAllItems(urlRef, queryParams, &allResponses)
+	err = vcd.vdc.client.OpenApiGetAllItems(urlRef, queryParams, &allResponses)
 
 	check.Assert(err, IsNil)
 	check.Assert(len(allResponses) > 1, Equals, true)
@@ -96,7 +96,7 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructAudiTrail(check *C) {
 	}
 }
 
-// Test_CloudAPIInlineStructCRUDRoles test aims to test out low level CloudAPI functions to check if all of them work as
+// Test_OpenAPIInlineStructCRUDRoles test aims to test out low level CloudAPI functions to check if all of them work as
 // expected. It uses a very simple "Roles" endpoint which does not have bigger prerequisites and therefore is not
 // dependent one more deployment specific features. It also supports all of the CloudAPI CRUD endpoints so is a good
 // endpoint to test on
@@ -107,9 +107,9 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructAudiTrail(check *C) {
 // 2.3 Compare struct retrieved by using "Get all" endpoint and FIQL filter with struct retrieved by using "Get By ID"
 // 3. Create a new role and verify it is created as specified by using deep equality
 // 4. Delete created role
-func (vcd *TestVCD) Test_CloudAPIInlineStructCRUDRoles(check *C) {
+func (vcd *TestVCD) Test_OpenAPIInlineStructCRUDRoles(check *C) {
 	// Step 1 - Get all roles
-	urlRef, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/roles")
+	urlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")
 	check.Assert(err, IsNil)
 
 	type Roles struct {
@@ -121,12 +121,12 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructCRUDRoles(check *C) {
 	}
 
 	allExistingRoles := []*Roles{{}}
-	err = vcd.vdc.client.CloudApiGetAllItems(urlRef, nil, &allExistingRoles)
+	err = vcd.vdc.client.OpenApiGetAllItems(urlRef, nil, &allExistingRoles)
 
 	// Step 2 - Get all roles using query filters
 	for _, oneRole := range allExistingRoles {
 		// Step 2.1 - retrieve specific role by using FIQL filter
-		urlRef2, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/roles")
+		urlRef2, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")
 		check.Assert(err, IsNil)
 
 		queryParams := url.Values{}
@@ -134,14 +134,14 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructCRUDRoles(check *C) {
 
 		expectOneRoleResultById := []*Roles{{}}
 
-		err = vcd.vdc.client.CloudApiGetAllItems(urlRef2, queryParams, &expectOneRoleResultById)
+		err = vcd.vdc.client.OpenApiGetAllItems(urlRef2, queryParams, &expectOneRoleResultById)
 		check.Assert(err, IsNil)
 		check.Assert(len(expectOneRoleResultById) == 1, Equals, true)
 
 		// Step 2.2 - retrieve specific role by using endpoint
-		singleRef, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/roles/" + oneRole.ID)
+		singleRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles/" + oneRole.ID)
 		oneRole := &Roles{}
-		err = vcd.vdc.client.CloudApiGetItem(singleRef, nil, oneRole)
+		err = vcd.vdc.client.OpenApiGetItem(singleRef, nil, oneRole)
 		check.Assert(err, IsNil)
 		check.Assert(oneRole, NotNil)
 
@@ -151,7 +151,7 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructCRUDRoles(check *C) {
 	}
 
 	// Step 3 - Create a new role and ensure it is created as specified by doing deep comparison
-	createUrl, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/roles")
+	createUrl, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles")
 	check.Assert(err, IsNil)
 
 	newRole := &Roles{
@@ -161,7 +161,7 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructCRUDRoles(check *C) {
 		ReadOnly:    false,
 	}
 	newRoleResponse := &Roles{}
-	err = vcd.client.Client.CloudApiPostItem(createUrl, nil, newRole, newRoleResponse)
+	err = vcd.client.Client.OpenApiPostItem(createUrl, nil, newRole, newRoleResponse)
 	check.Assert(err, IsNil)
 
 	// Ensure supplied and created structs differ only by ID
@@ -169,16 +169,16 @@ func (vcd *TestVCD) Test_CloudAPIInlineStructCRUDRoles(check *C) {
 	check.Assert(newRoleResponse, DeepEquals, newRole)
 
 	// Step 4 - delete created role
-	deleteUrlRef, err := vcd.client.Client.BuildCloudAPIEndpoint("1.0.0/roles/", newRoleResponse.ID)
+	deleteUrlRef, err := vcd.client.Client.BuildOpenApiEndpoint("1.0.0/roles/", newRoleResponse.ID)
 	check.Assert(err, IsNil)
 
-	err = vcd.client.Client.CloudApiDeleteItem(deleteUrlRef, nil)
+	err = vcd.client.Client.OpenApiDeleteItem(deleteUrlRef, nil)
 	check.Assert(err, IsNil)
 
 	// Step 5 - try to read deleted role and expect error to contain 'ErrorEntityNotFound'
 	// Read is tricky - it throws an error ACCESS_TO_RESOURCE_IS_FORBIDDEN when the resource with ID does not
 	// exist therefore one cannot know what kind of error occurred.
 	lostRole := &Roles{}
-	err = vcd.client.Client.CloudApiGetItem(deleteUrlRef, nil, lostRole)
+	err = vcd.client.Client.OpenApiGetItem(deleteUrlRef, nil, lostRole)
 	check.Assert(ContainsNotFound(err), Equals, true)
 }

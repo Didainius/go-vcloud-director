@@ -127,8 +127,8 @@ func (vcd *TestVCD) Test_NsxtEdgeGetPages(check *C) {
 //
 // 	response := make([]*types.CloudAPIEdgeGateway, 1)
 //
-// 	// err := vdc.client.CloudApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
-// 	err := vdc.client.CloudApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
+// 	// err := vdc.client.OpenApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
+// 	err := vdc.client.OpenApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
 // 	if err != nil {
 // 		return nil, err
 // 	}
