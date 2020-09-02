@@ -52,7 +52,7 @@ func (vcd *TestVCD) Test_Roles(check *C) {
 		client: adminOrg.client,
 		Role: &types.Role{
 			Name:        check.TestName(),
-			Description: "Role created by test",
+			Description: "NsxtTier0Router created by test",
 			// This BundleKey is being set by VCD even if it is not sent
 			BundleKey: "com.vmware.vcloud.undefined.key",
 			ReadOnly:  false,

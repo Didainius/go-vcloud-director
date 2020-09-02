@@ -2156,6 +2156,7 @@ type QueryResultRecordsType struct {
 	AdminCatalogItemRecord          []*QueryResultCatalogItemType                     `xml:"AdminCatalogItemRecord"`          // A record representing an admin catalog item
 	VappTemplateRecord              []*QueryResultVappTemplateType                    `xml:"VAppTemplateRecord"`              // A record representing a vApp template
 	AdminVappTemplateRecord         []*QueryResultVappTemplateType                    `xml:"AdminVAppTemplateRecord"`         // A record representing an admin vApp template
+	NsxtManagerRecord               []*QueryResultNsxtManagerRecordType               `xml:"NsxTManagerRecord"`               // A record representing NSX-T manager
 }
 
 // QueryResultCatalogItemType represents a catalog item as query result
@@ -2698,6 +2699,17 @@ type QueryResultOrgVdcNetworkRecordType struct {
 	Metadata           *Metadata `xml:"Metadata,omitempty"`
 }
 
+type QueryResultNsxtManagerRecordType struct {
+	Xmlns      string  `xml:"xmlns,attr,omitempty"`
+	Name       string  `xml:"name,attr"`
+	URL        string  `xml:"url,attr"`
+	HREF       string  `xml:"href,attr"`
+	Site       string  `xml:"site,attr"`
+	LocationId string  `xml:"locationId,attr"`
+	SiteName   string  `xml:"siteName,attr"`
+	Link       []*Link `xml:"Link,omitempty"`
+}
+
 // Represents org VDC Network
 // Reference: vCloud API 27.0 - Network Pool
 // https://code.vmware.com/apis/72/vcloud-director#/doc/doc/types/VMWNetworkPoolType.html
@@ -2742,7 +2754,7 @@ type User struct {
 	IsGroupRole     bool             `xml:"IsGroupRole,omitempty"`
 	StoredVmQuota   int              `xml:"StoredVmQuota,omitempty"`
 	DeployedVmQuota int              `xml:"DeployedVmQuota,omitempty"`
-	Role            *Reference       `xml:"Role,omitempty"`
+	Role            *Reference       `xml:"NsxtTier0Router,omitempty"`
 	GroupReferences *GroupReference  `xml:"GroupReferences,omitempty"`
 	Password        string           `xml:"Password,omitempty"`
 	Tasks           *TasksInProgress `xml:"Tasks"`
@@ -2765,7 +2777,7 @@ type Group struct {
 	// ProviderType - 'SAML', 'INTEGRATED'
 	ProviderType string `xml:"ProviderType"`
 	// Role - reference to existing role
-	Role *Reference `xml:"Role,omitempty"`
+	Role *Reference `xml:"NsxtTier0Router,omitempty"`
 }
 
 // Type: AdminCatalogRecord
