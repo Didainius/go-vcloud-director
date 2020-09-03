@@ -9,7 +9,10 @@ package types
 import (
 	"encoding/xml"
 	"fmt"
+	"regexp"
 	"sort"
+
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // Maps status Attribute Values for VAppTemplate, VApp, Vm, and Media Objects
@@ -2708,6 +2711,36 @@ type QueryResultNsxtManagerRecordType struct {
 	LocationId string  `xml:"locationId,attr"`
 	SiteName   string  `xml:"siteName,attr"`
 	Link       []*Link `xml:"Link,omitempty"`
+}
+
+func (q *QueryResultNsxtManagerRecordType) Urn() string {
+	uuid, _ := getUuidFromHref(q.HREF, true)
+	return "urn:vcloud:nsxtmanager:" + uuid
+}
+
+func getUuidFromHref(href string, idAtEnd bool) (string, error) {
+	util.Logger.Printf("[TRACE] GetUuidFromHref got href: %s with idAtEnd: %t", href, idAtEnd)
+	// Regular expression to match an ID:
+	//     1 string starting by 'https://' and ending with a '/',
+	//     followed by
+	//        1 group of 8 hexadecimal digits
+	//        3 groups of 4 hexadecimal digits
+	//        1 group of 12 hexadecimal digits
+
+	searchExpression := `^https://.+/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})`
+	if idAtEnd {
+		searchExpression += `$`
+	} else {
+		searchExpression += `.*$`
+	}
+	reGetID := regexp.MustCompile(searchExpression)
+	matchList := reGetID.FindAllStringSubmatch(href, -1)
+
+	if len(matchList) == 0 || len(matchList[0]) < 2 {
+		return "", fmt.Errorf("error extracting UUID from '%s'", href)
+	}
+	util.Logger.Printf("[TRACE] GetUuidFromHref returns UUID : %s", matchList[0][1])
+	return matchList[0][1], nil
 }
 
 // Represents org VDC Network

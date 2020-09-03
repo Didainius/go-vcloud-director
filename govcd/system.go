@@ -800,7 +800,7 @@ func QueryOrgVdcNetworkByName(vcdCli *VCDClient, name string) ([]*types.QueryRes
 }
 
 // QueryNsxtManagerByName searches for NSX-T managers available in VCD
-func QueryNsxtManagerByName(vcdCli *VCDClient, name string) ([]*types.QueryResultNsxtManagerRecordType, error) {
+func (vcdCli *VCDClient) QueryNsxtManagerByName(name string) ([]*types.QueryResultNsxtManagerRecordType, error) {
 	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          "nsxTManager",
 		"filter":        fmt.Sprintf("name==%s", url.QueryEscape(name)),
