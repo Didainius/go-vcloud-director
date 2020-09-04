@@ -36,25 +36,43 @@ func (vcdCli *VCDClient) GetNsxtTier0RouterByName(name, nsxtManagerId string) (*
 		return nil, fmt.Errorf("empty Tier 0 router name specified")
 	}
 
-	queryParameters := copyOrNewUrlValues(nil)
-	queryParameters.Add("filter", "displayName=="+name)
+	// Ideally FIQL filter could be used to filter on server side and get only desired result, but filtering on
+	// 'displayName' is not yet supported. The only supported field for filtering is
+	// _context==urn:vcloud:nsxtmanager:09722307-aee0-4623-af95-7f8e577c9ebc to specify parent NSX-T manager (This
+	// automatically happens in GetAllNsxtTier0Routers()). The below filter injection is left as documentation.
+	/*
+		queryParameters := copyOrNewUrlValues(nil)
+		queryParameters.Add("filter", "displayName=="+name)
+	*/
 
-	nsxtTier0Routers, err := vcdCli.GetAllNsxtTier0Routers(nsxtManagerId, queryParameters)
+	nsxtTier0Routers, err := vcdCli.GetAllNsxtTier0Routers(nsxtManagerId, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not find NSX-T Tier-0 router with name '%s' for NSX-T manager with id '%s': %s",
 			name, nsxtManagerId, err)
 	}
 
-	if len(nsxtTier0Routers) == 0 {
-		return nil, fmt.Errorf("no NSX-T Tier-0 router with name '%s' for NSX-T manager with id '%s' found", name, nsxtManagerId)
+	// TODO remove this when FIQL supports filtering on 'displayName'
+	// At the moment FIQL misbehaves so this is a temporary fix to make search work properly
+	filteredNsxtTier0Routers := make([]*NsxtTier0Router, 0)
+	for index, nsxtTier0Router := range nsxtTier0Routers {
+		if nsxtTier0Routers[index].NsxtTier0Router.DisplayName == name {
+			filteredNsxtTier0Routers = append(filteredNsxtTier0Routers, nsxtTier0Router)
+		}
+	}
+	// EOF TODO remove this when FIQL supports filtering on 'displayName'
+
+	if len(filteredNsxtTier0Routers) == 0 {
+		// ErrorEntityNotFound is injected here for the ability to validate problem using ContainsNotFound()
+		return nil, fmt.Errorf("%s: no NSX-T Tier-0 router with name '%s' for NSX-T manager with id '%s' found",
+			ErrorEntityNotFound, name, nsxtManagerId)
 	}
 
-	if len(nsxtTier0Routers) > 1 {
+	if len(filteredNsxtTier0Routers) > 1 {
 		return nil, fmt.Errorf("more than one (%d) NSX-T Tier-0 router with name '%s' for NSX-T manager with id '%s' found",
-			len(nsxtTier0Routers), name, nsxtManagerId)
+			len(filteredNsxtTier0Routers), name, nsxtManagerId)
 	}
 
-	return nsxtTier0Routers[0], nil
+	return filteredNsxtTier0Routers[0], nil
 }
 
 // GetAllNsxtTier0Routers retrieves all NSX-T Tier-0 routers using OpenAPI endpoint. Query parameters can be supplied to
