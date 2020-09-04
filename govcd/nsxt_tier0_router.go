@@ -7,8 +7,6 @@ package govcd
 import (
 	"fmt"
 	"net/url"
-	"regexp"
-	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -123,67 +121,4 @@ func (vcdCli *VCDClient) GetAllNsxtTier0Routers(nsxtManagerId string, queryParam
 	}
 
 	return returnObjects, nil
-}
-
-// copyOrNewUrlValues either creates a copy of parameters or instantiates a new url.Values if nil parameters are
-// supplied. It helps to avoid mutating supplied parameter when additional values must be injected internally.
-func copyOrNewUrlValues(parameters url.Values) url.Values {
-	parameterCopy := make(map[string][]string)
-
-	// if supplied parameters are nil - we just return new initialized
-	if parameters == nil {
-		return parameterCopy
-	}
-
-	// Copy URL values
-	for key, value := range parameters {
-		parameterCopy[key] = value
-	}
-
-	return parameterCopy
-}
-
-// queryParameterFilterAnd is a helper to append "AND" clause to FIQL filter by using ';' (semicolon) if any values are
-// already set in 'filter' value of parameters. If none existed before then 'filter' value will be set.
-//
-// Note. It does a copy of supplied 'parameters' value and does not mutate supplied original parameter.
-func queryParameterFilterAnd(filter string, parameters url.Values) url.Values {
-	newParameters := copyOrNewUrlValues(parameters)
-
-	existingFilter := newParameters.Get("filter")
-	if existingFilter == "" {
-		newParameters.Set("filter", filter)
-		return newParameters
-	}
-
-	newParameters.Set("filter", existingFilter+";"+filter)
-	return newParameters
-}
-
-// isUuid returns true if the identifier is a bare UUID
-func isUuid(identifier string) bool {
-	reUuid := regexp.MustCompile(`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`)
-	return reUuid.MatchString(identifier)
-}
-
-// isUrn validates if supplied identifier is of URN format (e.g. urn:vcloud:nsxtmanager:09722307-aee0-4623-af95-7f8e577c9ebc)
-// it checks for the following criteria:
-// 1. idenfifier is not empty
-// 2. identifier has 4 elements separated by ';'
-// 3. element 1 is 'urn' and element 4 is valid UUID
-func isUrn(identifier string) bool {
-	if identifier == "" {
-		return false
-	}
-
-	ss := strings.Split(identifier, ":")
-	if len(ss) != 4 {
-		return false
-	}
-
-	if ss[0] != "urn" && !isUuid(ss[3]) {
-		return false
-	}
-
-	return true
 }
