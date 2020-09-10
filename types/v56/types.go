@@ -2787,7 +2787,7 @@ type User struct {
 	IsGroupRole     bool             `xml:"IsGroupRole,omitempty"`
 	StoredVmQuota   int              `xml:"StoredVmQuota,omitempty"`
 	DeployedVmQuota int              `xml:"DeployedVmQuota,omitempty"`
-	Role            *Reference       `xml:"NsxtTier0Router,omitempty"`
+	Role            *Reference       `xml:"Role,omitempty"`
 	GroupReferences *GroupReference  `xml:"GroupReferences,omitempty"`
 	Password        string           `xml:"Password,omitempty"`
 	Tasks           *TasksInProgress `xml:"Tasks"`
@@ -2810,7 +2810,7 @@ type Group struct {
 	// ProviderType - 'SAML', 'INTEGRATED'
 	ProviderType string `xml:"ProviderType"`
 	// Role - reference to existing role
-	Role *Reference `xml:"NsxtTier0Router,omitempty"`
+	Role *Reference `xml:"Role,omitempty"`
 }
 
 // Type: AdminCatalogRecord
