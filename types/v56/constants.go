@@ -324,6 +324,7 @@ const (
 	OpenApiPathVersion1_0_0               = "1.0.0/"
 	OpenApiEndpointRoles                  = "roles/"
 	OpenApiEndpointImportableTier0Routers = "nsxTResources/importableTier0Routers"
+	OpenApiEndpointExternalNetworks       = "externalNetworks/"
 )
 
 // Header keys to run operations in tenant context
