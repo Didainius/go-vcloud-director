@@ -17,7 +17,8 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
 	// NSX-T details
 	man, err := vcd.client.QueryNsxtManagerByName(vcd.config.Nsxt.Manager)
 	check.Assert(err, IsNil)
-	manId := "urn:vcloud:nsxtmanager:" + extractUuid(man[0].HREF)
+	manId, err := buildUrnWithUuid("urn:vcloud:nsxtmanager:", extractUuid(man[0].HREF))
+	check.Assert(err, IsNil)
 
 	tier0Router, err := vcd.client.GetNsxtTier0RouterByName(vcd.config.Nsxt.Tier0router, manId)
 	check.Assert(err, IsNil)
@@ -57,7 +58,10 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2PortGroup(check *C) {
 	check.Assert(err, IsNil)
 	vcuuid := extractUuid(vcHref)
 
-	neT := testExternalNetworkV2(vcd.config.VCD.ExternalNetworkPortGroupType, pgs[0].MoRef, "urn:vcloud:vimserver:"+vcuuid)
+	vcUrn, err := buildUrnWithUuid("urn:vcloud:vimserver:", vcuuid)
+	check.Assert(err, IsNil)
+
+	neT := testExternalNetworkV2(vcd.config.VCD.ExternalNetworkPortGroupType, pgs[0].MoRef, vcUrn)
 
 	r, err := CreateExternalNetworkV2(vcd.client, neT)
 	check.Assert(err, IsNil)
@@ -118,4 +122,19 @@ func getVcenterHref(vcdClient *VCDClient, name string) (string, error) {
 		return "", fmt.Errorf("vSphere server found %d instances with name '%s' while expected one", len(virtualCenters), name)
 	}
 	return virtualCenters[0].HREF, nil
+}
+
+// buildUrnWithUuid helps to build valid URNs where APIs require URN format, but other API responds with UUID (or
+// extracted from HREF)
+func buildUrnWithUuid(urnPrefix, uuid string) (string, error) {
+	if !IsUuid(uuid) {
+		return "", fmt.Errorf("supplied uuid '%s' is not valid UUID", uuid)
+	}
+
+	urn := urnPrefix + uuid
+	if !isUrn(urn) {
+		return "", fmt.Errorf("failed building valid URN '%s'", urn)
+	}
+
+	return urn, nil
 }
