@@ -132,6 +132,11 @@ type TestConfig struct {
 			StorageProfile string `yaml:"storage_profile"`
 			NetworkPool    string `yaml:"network_pool"`
 		} `yaml:"provider_vdc"`
+		NsxtProviderVdc struct {
+			Name           string `yaml:"name"`
+			StorageProfile string `yaml:"storage_profile"`
+			NetworkPool    string `yaml:"network_pool"`
+		} `yaml:"nsxt_provider_vdc"`
 		Catalog struct {
 			Name                    string `yaml:"name,omitempty"`
 			Description             string `yaml:"description,omitempty"`
@@ -1606,4 +1611,19 @@ func skipWhenMediaPathMissing(vcd *TestVCD, check *C) {
 	if vcd.config.Media.MediaPath == "" {
 		check.Skip("Skipping test because no iso path given")
 	}
+}
+
+func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
+	generalMessage := "Missing NSX-T config: "
+	if vcd.config.VCD.NsxtProviderVdc.Name == "" {
+		check.Skip(generalMessage + "No provider vdc specified")
+	}
+	if vcd.config.VCD.NsxtProviderVdc.NetworkPool == "" {
+		check.Skip(generalMessage + "No network pool specified")
+	}
+
+	if vcd.config.VCD.NsxtProviderVdc.StorageProfile == "" {
+		check.Skip(generalMessage + "No storage profile specified")
+	}
+
 }
