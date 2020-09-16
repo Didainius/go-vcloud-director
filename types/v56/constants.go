@@ -334,3 +334,12 @@ const (
 	// HeaderAuthContext requires the Org name of the tenant
 	HeaderAuthContext = "X-VMWARE-VCLOUD-AUTH-CONTEXT"
 )
+
+const (
+	// ExternalNetworkBackingTypeNsxtTier0Router defines backing type of NSX-T Tier-0 router
+	ExternalNetworkBackingTypeNsxtTier0Router = "NSXT_TIER0"
+	// ExternalNetworkBackingTypeNetwork defines vSwitch portgroup
+	ExternalNetworkBackingTypeNetwork = "NETWORK"
+	// ExternalNetworkBackingDvPortgroup refers distributed switch portgroup
+	ExternalNetworkBackingDvPortgroup = "DV_PORTGROUP"
+)

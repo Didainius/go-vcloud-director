@@ -16,68 +16,7 @@ type ExternalNetworkV2 struct {
 	client          *Client
 }
 
-// GetExternalNetworkById retrieves external network by given ID
-func (adminOrg *AdminOrg) GetExternalNetworkById(id string) (*ExternalNetworkV2, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	if id == "" {
-		return nil, fmt.Errorf("empty external network id")
-	}
-
-	urlRef, err := adminOrg.client.OpenApiBuildEndpoint(endpoint, id)
-	if err != nil {
-		return nil, err
-	}
-
-	extNet := &ExternalNetworkV2{
-		ExternalNetwork: &types.ExternalNetworkV2{},
-		client:          adminOrg.client,
-	}
-
-	err = adminOrg.client.OpenApiGetItem(minimumApiVersion, urlRef, nil, extNet.ExternalNetwork)
-	if err != nil {
-		return nil, err
-	}
-
-	return extNet, nil
-}
-
-// GetAllExternalNetworks retrieves all roles using OpenAPI endpoint. Query parameters can be supplied to perform
-// additional filtering
-func (adminOrg *AdminOrg) GetAllExternalNetworks(queryParameters url.Values) ([]*ExternalNetworkV2, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	urlRef, err := adminOrg.client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	typeResponses := []*types.ExternalNetworkV2{{}}
-	err = adminOrg.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses)
-	if err != nil {
-		return nil, err
-	}
-
-	// Wrap all typeResponses into external network types with client
-	returnExtNetworks := make([]*ExternalNetworkV2, len(typeResponses))
-	for sliceIndex := range typeResponses {
-		returnExtNetworks[sliceIndex] = &ExternalNetworkV2{
-			ExternalNetwork: typeResponses[sliceIndex],
-			client:          adminOrg.client,
-		}
-	}
-
-	return returnExtNetworks, nil
-}
-
+// CreateExternalNetwork creates a new external network using OpenAPI endpoint
 func CreateExternalNetworkV2(vcdClient *VCDClient, newExtNet *types.ExternalNetworkV2) (*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
 	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(endpoint)
@@ -103,55 +42,91 @@ func CreateExternalNetworkV2(vcdClient *VCDClient, newExtNet *types.ExternalNetw
 	return returnRole, nil
 }
 
-// CreateExternalNetwork creates a new external network using OpenAPI endpoint
-func (adminOrg *AdminOrg) CreateExternalNetwork(newExtNet *types.ExternalNetworkV2) (*ExternalNetworkV2, error) {
+// GetExternalNetworkById retrieves external network by given ID
+func GetExternalNetworkById(vcdClient *VCDClient, id string) (*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := adminOrg.client.OpenApiBuildEndpoint(endpoint)
+	if id == "" {
+		return nil, fmt.Errorf("empty external network id")
+	}
+
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, id)
 	if err != nil {
 		return nil, err
 	}
 
-	returnRole := &ExternalNetworkV2{
+	extNet := &ExternalNetworkV2{
 		ExternalNetwork: &types.ExternalNetworkV2{},
-		client:          adminOrg.client,
+		client:          &vcdClient.Client,
 	}
 
-	err = adminOrg.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newExtNet, returnRole.ExternalNetwork)
+	err = vcdClient.Client.OpenApiGetItem(minimumApiVersion, urlRef, nil, extNet.ExternalNetwork)
 	if err != nil {
-		return nil, fmt.Errorf("error creating external network: %s", err)
+		return nil, err
 	}
 
-	return returnRole, nil
+	return extNet, nil
+}
+
+// GetAllExternalNetworks retrieves all roles using OpenAPI endpoint. Query parameters can be supplied to perform
+// additional filtering
+func GetAllExternalNetworks(vcdClient *VCDClient, queryParameters url.Values) ([]*ExternalNetworkV2, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
+	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.ExternalNetworkV2{{}}
+	err = vcdClient.Client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wrap all typeResponses into external network types with client
+	returnExtNetworks := make([]*ExternalNetworkV2, len(typeResponses))
+	for sliceIndex := range typeResponses {
+		returnExtNetworks[sliceIndex] = &ExternalNetworkV2{
+			ExternalNetwork: typeResponses[sliceIndex],
+			client:          &vcdClient.Client,
+		}
+	}
+
+	return returnExtNetworks, nil
 }
 
 // Update updates existing OpenAPI external network
-func (role *ExternalNetworkV2) Update() (*ExternalNetworkV2, error) {
+func (extNet *ExternalNetworkV2) Update() (*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := role.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := extNet.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	if role.ExternalNetwork.ID == "" {
+	if extNet.ExternalNetwork.ID == "" {
 		return nil, fmt.Errorf("cannot update external network without id")
 	}
 
-	urlRef, err := role.client.OpenApiBuildEndpoint(endpoint, role.ExternalNetwork.ID)
+	urlRef, err := extNet.client.OpenApiBuildEndpoint(endpoint, extNet.ExternalNetwork.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	returnExtNet := &ExternalNetworkV2{
 		ExternalNetwork: &types.ExternalNetworkV2{},
-		client:          role.client,
+		client:          extNet.client,
 	}
 
-	err = role.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, role.ExternalNetwork, returnExtNet.ExternalNetwork)
+	err = extNet.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, extNet.ExternalNetwork, returnExtNet.ExternalNetwork)
 	if err != nil {
 		return nil, fmt.Errorf("error updating external network: %s", err)
 	}
@@ -160,26 +135,26 @@ func (role *ExternalNetworkV2) Update() (*ExternalNetworkV2, error) {
 }
 
 // Delete deletes OpenAPI external network
-func (role *ExternalNetworkV2) Delete() error {
+func (extNet *ExternalNetworkV2) Delete() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
-	minimumApiVersion, err := role.client.checkOpenApiEndpointCompatibility(endpoint)
+	minimumApiVersion, err := extNet.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return err
 	}
 
-	if role.ExternalNetwork.ID == "" {
+	if extNet.ExternalNetwork.ID == "" {
 		return fmt.Errorf("cannot delete external network without id")
 	}
 
-	urlRef, err := role.client.OpenApiBuildEndpoint(endpoint, role.ExternalNetwork.ID)
+	urlRef, err := extNet.client.OpenApiBuildEndpoint(endpoint, extNet.ExternalNetwork.ID)
 	if err != nil {
 		return err
 	}
 
-	err = role.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+	err = extNet.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
 
 	if err != nil {
-		return fmt.Errorf("error deleting role: %s", err)
+		return fmt.Errorf("error deleting extNet: %s", err)
 	}
 
 	return nil

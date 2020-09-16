@@ -17,11 +17,15 @@ type NsxtTier0Router struct {
 	client          *Client
 }
 
-// GetNsxtTier0RouterByName retrieves NSX-T tier 0 router by given parent NSX-T manager ID and Tier 0 router name
+// GetImportableNsxtTier0RouterByName retrieves NSX-T tier 0 router by given parent NSX-T manager ID and Tier 0 router
+// name
+//
+// Warning. The API returns only unused Tier-0 routers (the ones that are not used in external networks yet)
 //
 // Note. NSX-T manager ID is mandatory and must be in URN format (e.g.
 // urn:vcloud:nsxtmanager:09722307-aee0-4623-af95-7f8e577c9ebc)
-func (vcdCli *VCDClient) GetNsxtTier0RouterByName(name, nsxtManagerId string) (*NsxtTier0Router, error) {
+
+func (vcdCli *VCDClient) GetImportableNsxtTier0RouterByName(name, nsxtManagerId string) (*NsxtTier0Router, error) {
 	if nsxtManagerId == "" {
 		return nil, fmt.Errorf("no NSX-T manager ID specified")
 	}
@@ -37,13 +41,13 @@ func (vcdCli *VCDClient) GetNsxtTier0RouterByName(name, nsxtManagerId string) (*
 	// Ideally FIQL filter could be used to filter on server side and get only desired result, but filtering on
 	// 'displayName' is not yet supported. The only supported field for filtering is
 	// _context==urn:vcloud:nsxtmanager:09722307-aee0-4623-af95-7f8e577c9ebc to specify parent NSX-T manager (This
-	// automatically happens in GetAllNsxtTier0Routers()). The below filter injection is left as documentation.
+	// automatically happens in GetAllImportableNsxtTier0Routers()). The below filter injection is left as documentation.
 	/*
 		queryParameters := copyOrNewUrlValues(nil)
 		queryParameters.Add("filter", "displayName=="+name)
 	*/
 
-	nsxtTier0Routers, err := vcdCli.GetAllNsxtTier0Routers(nsxtManagerId, nil)
+	nsxtTier0Routers, err := vcdCli.GetAllImportableNsxtTier0Routers(nsxtManagerId, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not find NSX-T Tier-0 router with name '%s' for NSX-T manager with id '%s': %s",
 			name, nsxtManagerId, err)
@@ -73,14 +77,16 @@ func (vcdCli *VCDClient) GetNsxtTier0RouterByName(name, nsxtManagerId string) (*
 	return filteredNsxtTier0Routers[0], nil
 }
 
-// GetAllNsxtTier0Routers retrieves all NSX-T Tier-0 routers using OpenAPI endpoint. Query parameters can be supplied to
-// perform additional filtering. By default it injects FIQL filter _context==nsxtManagerId (e.g.
+// GetAllImportableNsxtTier0Routers retrieves all NSX-T Tier-0 routers using OpenAPI endpoint. Query parameters can be
+// supplied to perform additional filtering. By default it injects FIQL filter _context==nsxtManagerId (e.g.
 // _context==urn:vcloud:nsxtmanager:09722307-aee0-4623-af95-7f8e577c9ebc) because it is mandatory to list child Tier-0
 // routers.
 //
+// Warning. The API returns only unused Tier-0 routers (the ones that are not used in external networks yet)
+//
 // Note. IDs of Tier-0 routers do not have a standard and may look as strings when they are created using UI or as UUIDs
 // when they are created using API
-func (vcdCli *VCDClient) GetAllNsxtTier0Routers(nsxtManagerId string, queryParameters url.Values) ([]*NsxtTier0Router, error) {
+func (vcdCli *VCDClient) GetAllImportableNsxtTier0Routers(nsxtManagerId string, queryParameters url.Values) ([]*NsxtTier0Router, error) {
 	if !isUrn(nsxtManagerId) {
 		return nil, fmt.Errorf("NSX-T manager ID is not URN (e.g. 'urn:vcloud:nsxtmanager:09722307-aee0-4623-af95-7f8e577c9ebc)', got: %s", nsxtManagerId)
 	}

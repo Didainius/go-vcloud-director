@@ -20,10 +20,10 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
 	manId, err := buildUrnWithUuid("urn:vcloud:nsxtmanager:", extractUuid(man[0].HREF))
 	check.Assert(err, IsNil)
 
-	tier0Router, err := vcd.client.GetNsxtTier0RouterByName(vcd.config.Nsxt.Tier0router, manId)
+	tier0Router, err := vcd.client.GetImportableNsxtTier0RouterByName(vcd.config.Nsxt.Tier0router, manId)
 	check.Assert(err, IsNil)
 
-	neT := testExternalNetworkV2("NSXT_TIER0", tier0Router.NsxtTier0Router.ID, manId)
+	neT := testExternalNetworkV2(types.ExternalNetworkBackingTypeNsxtTier0Router, tier0Router.NsxtTier0Router.ID, manId)
 
 	r, err := CreateExternalNetworkV2(vcd.client, neT)
 	check.Assert(err, IsNil)
@@ -43,12 +43,12 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2PortGroup(check *C) {
 	var pgs []*types.PortGroupRecordType
 
 	switch vcd.config.VCD.ExternalNetworkPortGroupType {
-	case "DV_PORTGROUP":
+	case types.ExternalNetworkBackingDvPortgroup:
 		pgs, err = QueryDistributedPortGroup(vcd.client, vcd.config.VCD.ExternalNetworkPortGroup)
-	case "NETWORK":
+	case types.ExternalNetworkBackingTypeNetwork:
 		pgs, err = QueryNetworkPortGroup(vcd.client, vcd.config.VCD.ExternalNetworkPortGroup)
 	default:
-
+		check.Errorf("unrecognized external network portgroup type: %s", vcd.config.VCD.ExternalNetworkPortGroupType)
 	}
 	check.Assert(err, IsNil)
 	check.Assert(len(pgs), Equals, 1)
