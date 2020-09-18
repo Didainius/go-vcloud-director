@@ -642,7 +642,7 @@ func copyOrNewUrlValues(parameters url.Values) url.Values {
 // queryParameterFilterAnd is a helper to append "AND" clause to FIQL filter by using ';' (semicolon) if any values are
 // already set in 'filter' value of parameters. If none existed before then 'filter' value will be set.
 //
-// Note. It does a copy of supplied 'parameters' value and does not mutate supplied original parameter.
+// Note. It does a copy of supplied 'parameters' value and does not mutate supplied original parameters.
 func queryParameterFilterAnd(filter string, parameters url.Values) url.Values {
 	newParameters := copyOrNewUrlValues(parameters)
 
