@@ -11,6 +11,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// ExternalNetworkV2 is a type for version 2 of external network which uses OpenAPI endpoint to manage external networks
 type ExternalNetworkV2 struct {
 	ExternalNetwork *types.ExternalNetworkV2
 	client          *Client
