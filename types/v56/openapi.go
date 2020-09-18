@@ -100,7 +100,7 @@ type ExternalNetworkV2Backings struct {
 	Values []ExternalNetworkV2Backing `json:"values"`
 }
 
-// ExternalNetworkV2Backing defines
+// ExternalNetworkV2Backing defines which networking subsystem is used for external network (NSX-T or NSX-V)
 type ExternalNetworkV2Backing struct {
 	// BackingID must contain either Tier-0 router ID for NSX-T or PortGroup ID for NSX-V
 	BackingID string `json:"backingId"`
