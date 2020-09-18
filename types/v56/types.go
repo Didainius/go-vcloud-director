@@ -10,8 +10,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"sort"
-
-	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
 // Maps status Attribute Values for VAppTemplate, VApp, Vm, and Media Objects
@@ -2710,15 +2708,6 @@ type QueryResultNsxtManagerRecordType struct {
 	LocationId string  `xml:"locationId,attr"`
 	SiteName   string  `xml:"siteName,attr"`
 	Link       []*Link `xml:"Link,omitempty"`
-}
-
-// Urn returns URN formatted as "urn:vcloud:nsxtmanager:UUID" so that it can be fed into other API endpoints
-func (q *QueryResultNsxtManagerRecordType) Urn() (string, error) {
-	uuid, err := govcd.GetUuidFromHref(q.HREF, true)
-	if err != nil {
-		return "", fmt.Errorf("could not find UUID in HREF '%s': %s", q.HREF, uuid)
-	}
-	return govcd.BuildUrnWithUuid("urn:vcloud:nsxtmanager:", uuid)
 }
 
 // Represents org VDC Network
