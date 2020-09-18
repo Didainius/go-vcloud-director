@@ -25,17 +25,35 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
 	tier0Router, err := vcd.client.GetImportableNsxtTier0RouterByName(vcd.config.Nsxt.Tier0router, nsxtManagerId)
 	check.Assert(err, IsNil)
 
-	neT := testExternalNetworkV2(types.ExternalNetworkBackingTypeNsxtTier0Router, tier0Router.NsxtTier0Router.ID, nsxtManagerId)
-
-	r, err := CreateExternalNetworkV2(vcd.client, neT)
+	// Create network and test CRUD capabilities
+	netNsxt := testExternalNetworkV2(types.ExternalNetworkBackingTypeNsxtTier0Router, tier0Router.NsxtTier0Router.ID, nsxtManagerId)
+	createdNet, err := CreateExternalNetworkV2(vcd.client, netNsxt)
 	check.Assert(err, IsNil)
 
-	r.ExternalNetwork.Name = "changed_name"
-	_, err = r.Update()
+	createdNet.ExternalNetwork.Name = "changed_name"
+	_, err = createdNet.Update()
 	check.Assert(err, IsNil)
 
-	err = r.Delete()
+	read1, err := GetExternalNetworkV2ById(vcd.client, createdNet.ExternalNetwork.ID)
 	check.Assert(err, IsNil)
+	check.Assert(createdNet.ExternalNetwork.ID, Equals, read1.ExternalNetwork.ID)
+
+	readAllNetworks, err := GetAllExternalNetworksV2(vcd.client, nil)
+	check.Assert(err, IsNil)
+	var foundNetwork bool
+	for i := range readAllNetworks {
+		if readAllNetworks[i].ExternalNetwork.ID == createdNet.ExternalNetwork.ID {
+			foundNetwork = true
+			break
+		}
+	}
+	check.Assert(foundNetwork, Equals, true)
+
+	err = createdNet.Delete()
+	check.Assert(err, IsNil)
+
+	_, err = GetExternalNetworkV2ById(vcd.client, createdNet.ExternalNetwork.ID)
+	check.Assert(ContainsNotFound(err), Equals, true)
 }
 
 func (vcd *TestVCD) Test_CreateExternalNetworkV2PortGroup(check *C) {
