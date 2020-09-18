@@ -58,6 +58,7 @@ type NsxtTier0Router struct {
 	DisplayName string `json:"displayName"`
 }
 
+// ExternalNetworkV2 defines a struct for OpenAPI endpoint
 type ExternalNetworkV2 struct {
 	ID              string                    `json:"id,omitempty"`
 	Name            string                    `json:"name"`
@@ -65,18 +66,24 @@ type ExternalNetworkV2 struct {
 	Subnets         ExternalNetworkV2Subnets  `json:"subnets"`
 	NetworkBackings ExternalNetworkV2Backings `json:"networkBackings"`
 }
+
+// ExternalNetworkV2IPRange defines allocated IP pools for a subnet in external network
 type ExternalNetworkV2IPRange struct {
 	StartAddress string `json:"startAddress"`
 	EndAddress   string `json:"endAddress"`
 }
+
+// ExternalNetworkV2IPRanges contains slice of ExternalNetworkV2IPRange
 type ExternalNetworkV2IPRanges struct {
 	Values []ExternalNetworkV2IPRange `json:"values"`
 }
 
+// ExternalNetworkV2Subnets contains slice of ExternalNetworkV2Subnet
 type ExternalNetworkV2Subnets struct {
 	Values []ExternalNetworkV2Subnet `json:"values"`
 }
 
+// ExternalNetworkV2Subnet defines one subnet for external network with assigned static IP ranges
 type ExternalNetworkV2Subnet struct {
 	Gateway      string                    `json:"gateway"`
 	PrefixLength int                       `json:"prefixLength"`
@@ -93,13 +100,18 @@ type ExternalNetworkV2Backings struct {
 	Values []ExternalNetworkV2Backing `json:"values"`
 }
 
+// ExternalNetworkV2Backing defines
 type ExternalNetworkV2Backing struct {
-	BackingID       string                  `json:"backingId"`
-	Name            string                  `json:"name,omitempty"`
+	// BackingID must contain either Tier-0 router ID for NSX-T or PortGroup ID for NSX-V
+	BackingID string `json:"backingId"`
+	Name      string `json:"name,omitempty"`
+	// BackingType can be either ExternalNetworkBackingTypeNsxtTier0Router in case of NSX-T or one of
+	// ExternalNetworkBackingTypeNetwork or ExternalNetworkBackingDvPortgroup in case of NSX-V
 	BackingType     string                  `json:"backingType"`
 	NetworkProvider NetworkProviderProvider `json:"networkProvider"`
 }
 
+// NetworkProvider can be NSX-T manager or vCenter
 type NetworkProviderProvider struct {
 	Name string `json:"name,omitempty"`
 	ID   string `json:"id"`
