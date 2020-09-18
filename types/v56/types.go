@@ -9,10 +9,9 @@ package types
 import (
 	"encoding/xml"
 	"fmt"
-	"regexp"
 	"sort"
 
-	"github.com/vmware/go-vcloud-director/v2/util"
+	"github.com/vmware/go-vcloud-director/v2/govcd"
 )
 
 // Maps status Attribute Values for VAppTemplate, VApp, Vm, and Media Objects
@@ -1913,8 +1912,8 @@ type IpsecVpnLocalPeer struct {
 // Since: 5.1
 type IpsecVpnSubnet struct {
 	Name    string `xml:"Name"`    // Gateway Name.
-	Gateway string `xml:"Gateway"` // ExternalNetworkV2Subnet Gateway.
-	Netmask string `xml:"Netmask"` // ExternalNetworkV2Subnet Netmask.
+	Gateway string `xml:"Gateway"` // Subnet Gateway.
+	Netmask string `xml:"Netmask"` // Subnet Netmask.
 }
 
 // GatewayDhcpService represents Gateway DHCP service.
@@ -2713,34 +2712,13 @@ type QueryResultNsxtManagerRecordType struct {
 	Link       []*Link `xml:"Link,omitempty"`
 }
 
-func (q *QueryResultNsxtManagerRecordType) Urn() string {
-	uuid, _ := getUuidFromHref(q.HREF, true)
-	return "urn:vcloud:nsxtmanager:" + uuid
-}
-
-func getUuidFromHref(href string, idAtEnd bool) (string, error) {
-	util.Logger.Printf("[TRACE] GetUuidFromHref got href: %s with idAtEnd: %t", href, idAtEnd)
-	// Regular expression to match an ID:
-	//     1 string starting by 'https://' and ending with a '/',
-	//     followed by
-	//        1 group of 8 hexadecimal digits
-	//        3 groups of 4 hexadecimal digits
-	//        1 group of 12 hexadecimal digits
-
-	searchExpression := `^https://.+/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})`
-	if idAtEnd {
-		searchExpression += `$`
-	} else {
-		searchExpression += `.*$`
+// Urn returns URN formatted as "urn:vcloud:nsxtmanager:UUID" so that it can be fed into other API endpoints
+func (q *QueryResultNsxtManagerRecordType) Urn() (string, error) {
+	uuid, err := govcd.GetUuidFromHref(q.HREF, true)
+	if err != nil {
+		return "", fmt.Errorf("could not find UUID in HREF '%s': %s", q.HREF, uuid)
 	}
-	reGetID := regexp.MustCompile(searchExpression)
-	matchList := reGetID.FindAllStringSubmatch(href, -1)
-
-	if len(matchList) == 0 || len(matchList[0]) < 2 {
-		return "", fmt.Errorf("error extracting UUID from '%s'", href)
-	}
-	util.Logger.Printf("[TRACE] GetUuidFromHref returns UUID : %s", matchList[0][1])
-	return matchList[0][1], nil
+	return govcd.BuildUrnWithUuid("urn:vcloud:nsxtmanager:", uuid)
 }
 
 // Represents org VDC Network

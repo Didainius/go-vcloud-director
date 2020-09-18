@@ -19,7 +19,7 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
 	// NSX-T details
 	man, err := vcd.client.QueryNsxtManagerByName(vcd.config.Nsxt.Manager)
 	check.Assert(err, IsNil)
-	nsxtManagerId, err := buildUrnWithUuid("urn:vcloud:nsxtmanager:", extractUuid(man[0].HREF))
+	nsxtManagerId, err := BuildUrnWithUuid("urn:vcloud:nsxtmanager:", extractUuid(man[0].HREF))
 	check.Assert(err, IsNil)
 
 	tier0Router, err := vcd.client.GetImportableNsxtTier0RouterByName(vcd.config.Nsxt.Tier0router, nsxtManagerId)
@@ -60,7 +60,7 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2PortGroup(check *C) {
 	check.Assert(err, IsNil)
 	vcuuid := extractUuid(vcHref)
 
-	vcUrn, err := buildUrnWithUuid("urn:vcloud:vimserver:", vcuuid)
+	vcUrn, err := BuildUrnWithUuid("urn:vcloud:vimserver:", vcuuid)
 	check.Assert(err, IsNil)
 
 	neT := testExternalNetworkV2(vcd.config.VCD.ExternalNetworkPortGroupType, pgs[0].MoRef, vcUrn)
