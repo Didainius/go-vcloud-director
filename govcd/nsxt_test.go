@@ -29,7 +29,8 @@ func (vcd *TestVCD) Test_GetAllNsxtTier0Routers(check *C) {
 
 	uuid, err := GetUuidFromHref(nsxtManagers[0].HREF, true)
 	check.Assert(err, IsNil)
-	urn := "urn:vcloud:nsxtmanager:" + uuid
+	urn, err := buildUrnWithUuid("urn:vcloud:nsxtmanager:", uuid)
+	check.Assert(err, IsNil)
 
 	tier0Router, err := vcd.client.GetImportableNsxtTier0RouterByName(vcd.config.Nsxt.Tier0router, urn)
 	check.Assert(err, IsNil)
