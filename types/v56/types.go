@@ -1913,8 +1913,8 @@ type IpsecVpnLocalPeer struct {
 // Since: 5.1
 type IpsecVpnSubnet struct {
 	Name    string `xml:"Name"`    // Gateway Name.
-	Gateway string `xml:"Gateway"` // Subnet Gateway.
-	Netmask string `xml:"Netmask"` // Subnet Netmask.
+	Gateway string `xml:"Gateway"` // ExternalNetworkV2Subnet Gateway.
+	Netmask string `xml:"Netmask"` // ExternalNetworkV2Subnet Netmask.
 }
 
 // GatewayDhcpService represents Gateway DHCP service.

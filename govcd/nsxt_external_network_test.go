@@ -79,14 +79,14 @@ func testExternalNetworkV2(backingType, backingId, NetworkProviderId string) *ty
 		ID:          "",
 		Name:        "testNet",
 		Description: "",
-		Subnets: types.Subnets{[]types.Subnet{
+		Subnets: types.ExternalNetworkV2Subnets{[]types.ExternalNetworkV2Subnet{
 			{
 				Gateway:      "1.1.1.1",
 				PrefixLength: 24,
 				DNSSuffix:    "",
 				DNSServer1:   "",
 				DNSServer2:   "",
-				IPRanges: types.IPRanges2{[]types.IPRange2{
+				IPRanges: types.ExternalNetworkV2IPRanges{[]types.ExternalNetworkV2IPRange{
 					{
 						StartAddress: "1.1.1.3",
 						EndAddress:   "1.1.1.50",
@@ -97,12 +97,12 @@ func testExternalNetworkV2(backingType, backingId, NetworkProviderId string) *ty
 				TotalIPCount: 0,
 			},
 		}},
-		NetworkBackings: types.NetworkBackings{[]types.NetworkBacking{
+		NetworkBackings: types.ExternalNetworkV2Backings{[]types.ExternalNetworkV2Backing{
 			{
 				BackingID: backingId,
 				// Name:        tier0Router.NsxtTier0Router.DisplayName,
 				BackingType: backingType,
-				NetworkProvider: types.NetworkProvider{
+				NetworkProvider: types.NetworkProviderProvider{
 					// Name: vcd.config.Nsxt.Manager,
 					ID: NetworkProviderId,
 				},
