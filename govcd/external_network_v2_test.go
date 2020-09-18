@@ -1,3 +1,5 @@
+// +build extnetwork network functional openapi ALL
+
 /*
  * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
@@ -17,13 +19,13 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxT(check *C) {
 	// NSX-T details
 	man, err := vcd.client.QueryNsxtManagerByName(vcd.config.Nsxt.Manager)
 	check.Assert(err, IsNil)
-	manId, err := buildUrnWithUuid("urn:vcloud:nsxtmanager:", extractUuid(man[0].HREF))
+	nsxtManagerId, err := buildUrnWithUuid("urn:vcloud:nsxtmanager:", extractUuid(man[0].HREF))
 	check.Assert(err, IsNil)
 
-	tier0Router, err := vcd.client.GetImportableNsxtTier0RouterByName(vcd.config.Nsxt.Tier0router, manId)
+	tier0Router, err := vcd.client.GetImportableNsxtTier0RouterByName(vcd.config.Nsxt.Tier0router, nsxtManagerId)
 	check.Assert(err, IsNil)
 
-	neT := testExternalNetworkV2(types.ExternalNetworkBackingTypeNsxtTier0Router, tier0Router.NsxtTier0Router.ID, manId)
+	neT := testExternalNetworkV2(types.ExternalNetworkBackingTypeNsxtTier0Router, tier0Router.NsxtTier0Router.ID, nsxtManagerId)
 
 	r, err := CreateExternalNetworkV2(vcd.client, neT)
 	check.Assert(err, IsNil)
@@ -122,19 +124,4 @@ func getVcenterHref(vcdClient *VCDClient, name string) (string, error) {
 		return "", fmt.Errorf("vSphere server found %d instances with name '%s' while expected one", len(virtualCenters), name)
 	}
 	return virtualCenters[0].HREF, nil
-}
-
-// buildUrnWithUuid helps to build valid URNs where APIs require URN format, but other API responds with UUID (or
-// extracted from HREF)
-func buildUrnWithUuid(urnPrefix, uuid string) (string, error) {
-	if !IsUuid(uuid) {
-		return "", fmt.Errorf("supplied uuid '%s' is not valid UUID", uuid)
-	}
-
-	urn := urnPrefix + uuid
-	if !isUrn(urn) {
-		return "", fmt.Errorf("failed building valid URN '%s'", urn)
-	}
-
-	return urn, nil
 }

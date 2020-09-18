@@ -29,20 +29,20 @@ func CreateExternalNetworkV2(vcdClient *VCDClient, newExtNet *types.ExternalNetw
 		return nil, err
 	}
 
-	returnRole := &ExternalNetworkV2{
+	returnExtNet := &ExternalNetworkV2{
 		ExternalNetwork: &types.ExternalNetworkV2{},
 		client:          &vcdClient.Client,
 	}
 
-	err = vcdClient.Client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newExtNet, returnRole.ExternalNetwork)
+	err = vcdClient.Client.OpenApiPostItem(minimumApiVersion, urlRef, nil, newExtNet, returnExtNet.ExternalNetwork)
 	if err != nil {
 		return nil, fmt.Errorf("error creating external network: %s", err)
 	}
 
-	return returnRole, nil
+	return returnExtNet, nil
 }
 
-// GetExternalNetworkById retrieves external network by given ID
+// GetExternalNetworkById retrieves external network by given ID using OpenAPI endpoint
 func GetExternalNetworkById(vcdClient *VCDClient, id string) (*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
 	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(endpoint)
@@ -72,8 +72,8 @@ func GetExternalNetworkById(vcdClient *VCDClient, id string) (*ExternalNetworkV2
 	return extNet, nil
 }
 
-// GetAllExternalNetworks retrieves all roles using OpenAPI endpoint. Query parameters can be supplied to perform
-// additional filtering
+// GetAllExternalNetworks retrieves all external networks using OpenAPI endpoint. Query parameters can be supplied to
+// perform additional filtering
 func GetAllExternalNetworks(vcdClient *VCDClient, queryParameters url.Values) ([]*ExternalNetworkV2, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
 	minimumApiVersion, err := vcdClient.Client.checkOpenApiEndpointCompatibility(endpoint)

@@ -671,3 +671,18 @@ func isUrn(identifier string) bool {
 
 	return true
 }
+
+// buildUrnWithUuid helps to build valid URNs where APIs require URN format, but other API responds with UUID (or
+// extracted from HREF)
+func buildUrnWithUuid(urnPrefix, uuid string) (string, error) {
+	if !IsUuid(uuid) {
+		return "", fmt.Errorf("supplied uuid '%s' is not valid UUID", uuid)
+	}
+
+	urn := urnPrefix + uuid
+	if !isUrn(urn) {
+		return "", fmt.Errorf("failed building valid URN '%s'", urn)
+	}
+
+	return urn, nil
+}
