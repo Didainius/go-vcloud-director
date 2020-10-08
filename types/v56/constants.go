@@ -327,6 +327,7 @@ const (
 	OpenApiEndpointRoles                      = "roles/"
 	OpenApiEndpointVdcComputePolicies         = "vdcComputePolicies/"
 	OpenApiEndpointVdcAssignedComputePolicies = "vdcs/%s/computePolicies"
+	OpenApiEndpointEdgeGateways               = "edgeGateways/"
 )
 
 // Header keys to run operations in tenant context

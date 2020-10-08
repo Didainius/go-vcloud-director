@@ -5,7 +5,7 @@ const (
 	gatewayTypeNsxV = "NSXV_BACKED"
 )
 
-type CloudAPIEdgeGateway struct {
+type NsxtEdgeGateway struct {
 	Status      string `json:"status,omitempty"`
 	ID          string `json:"id,omitempty"`
 	Name        string `json:"name"`

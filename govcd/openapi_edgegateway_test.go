@@ -2,17 +2,19 @@ package govcd
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
+/*
 func (vcd *TestVCD) Test_NsxtEdge(check *C) {
 	// if vcd.config.VCD.EdgeGateway == "" {
 	// 	check.Skip("Skipping test because no edge gateway given")
 	// }
-	edge, err := vcd.vdc.GetOpenApiEdgeGatewayById("urn:vcloud:gateway:e934e76b-757c-4ea7-a89a-c160a6199689")
+	edge, err := vcd.vdc.GetNsxtEdgeGatewayById("urn:vcloud:gateway:e934e76b-757c-4ea7-a89a-c160a6199689")
 	check.Assert(err, IsNil)
 	check.Assert(edge.EdgeGateway.Name, Equals, "nsxt-gw-dainius")
 	// copyEdge := edge
@@ -21,43 +23,50 @@ func (vcd *TestVCD) Test_NsxtEdge(check *C) {
 	// check.Assert(copyEdge.EdgeGateway.Name, Equals, edge.EdgeGateway.Name)
 	// check.Assert(copyEdge.EdgeGateway.HREF, Equals, edge.EdgeGateway.HREF)
 }
-
+*/
 func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	// if vcd.config.VCD.EdgeGateway == "" {
 	// 	check.Skip("Skipping test because no edge gateway given")
 	// }
 
-	bd := new(types.CloudAPIEdgeGateway)
+	// Lookup data. Get Org Vdc
+
+	nsxtVdcName := "vdc-dainius-nsxt"
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	nsxtVdc, err := adminOrg.GetVDCByName(nsxtVdcName, false)
+	check.Assert(err, IsNil)
+
+	bd := new(types.NsxtEdgeGateway)
 
 	data := []byte(`{
   "name": "nsx-t-edge",
   "description": "nsx-t-edge-description",
   "orgVdc": {
-    "id": "urn:vcloud:vdc:170089ee-5d34-462c-826e-c9b88b25e893"
+    "id": "` + nsxtVdc.Vdc.ID + `"
   },
   "edgeGatewayUplinks": [
     {
-      "uplinkId": "urn:vcloud:network:ac9890b0-106d-469e-b1d5-0848dda198d6",
-      "uplinkName": "nsxt-extnet-dainius",
+      "uplinkId": "urn:vcloud:network:3f1f6081-c151-412d-8933-6f25bd896032",
       "subnets": {
         "values": [
           {
-            "gateway": "10.150.191.253",
-            "prefixLength": 19,
+            "gateway": "1.1.1.1",
+            "prefixLength": 24,
             "dnsSuffix": null,
             "dnsServer1": "",
             "dnsServer2": "",
             "ipRanges": {
               "values": [
                 {
-                  "startAddress": "10.150.160.142",
-                  "endAddress": "10.150.160.143"
+                  "startAddress": "1.1.1.10",
+                  "endAddress": "1.1.1.15"
                 }
               ]
             },
-            "enabled": true,
-            "totalIpCount": 2,
-            "usedIpCount": 0
+            "enabled": true
           }
         ]
       },
@@ -67,19 +76,23 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 }
 `)
 
-	err := json.Unmarshal(data, bd)
+	fmt.Println(string(data))
 
-	newEdge := &NsxtEdgeGateway{
-		EdgeGateway: bd,
-		client:      vcd.vdc.client,
-	}
+	err = json.Unmarshal(data, bd)
+	check.Assert(err, IsNil)
+
+	// newEdge := &NsxtEdgeGateway{
+	// 	EdgeGateway: bd,
+	// 	client:      vcd.vdc.client,
+	// }
 
 	// spew.Dump(newEdge.EdgeGateway)
+	// GetAdminOrgByName()
 
-	createdEdge, err := newEdge.Create(newEdge.EdgeGateway)
+	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(bd)
 
 	check.Assert(err, IsNil)
-	check.Assert(createdEdge.EdgeGateway.Name, Equals, newEdge.EdgeGateway.Name)
+	check.Assert(createdEdge.EdgeGateway.Name, Equals, bd.Name)
 
 	// Check pagination stuff
 
@@ -92,7 +105,7 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	queryParams := url.Values{}
 	queryParams.Add("filter", "name==renamed-edge")
 	//
-	egws, err := vcd.vdc.GetAllOpenApiEdgeGateways(queryParams)
+	egws, err := adminOrg.GetAllNsxtEdgeGateways(queryParams)
 	check.Assert(err, IsNil)
 	check.Assert(len(egws) == 1, Equals, true)
 
@@ -108,6 +121,7 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	// check.Assert(copyEdge.EdgeGateway.HREF, Equals, edge.EdgeGateway.HREF)
 }
 
+/*
 func (vcd *TestVCD) Test_NsxtEdgeGetPages(check *C) {
 	// if vcd.config.VCD.EdgeGateway == "" {
 	// 	check.Skip("Skipping test because no edge gateway given")
@@ -116,7 +130,7 @@ func (vcd *TestVCD) Test_NsxtEdgeGetPages(check *C) {
 	params := url.Values{}
 	params.Add("pageSize", "1")
 
-	_, err := vcd.vdc.GetAllOpenApiEdgeGateways(params)
+	_, err := vcd.vdc.GetAllNsxtEdgeGateways(params)
 	// spew.Dump(edges)
 	check.Assert(err, IsNil)
 	// check.Assert(edges, )
@@ -130,7 +144,7 @@ func (vcd *TestVCD) Test_NsxtEdgeGetPages(check *C) {
 	// check.Assert(copyEdge.EdgeGateway.HREF, Equals, edge.EdgeGateway.HREF)
 }
 
-// func (vdc *Vdc) GetAllOpenApiEdgeGateways(queryParameters url.Values) ([]*types.NsxtEdgeGateway, error) {
+// func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*types.NsxtEdgeGateway, error) {
 // 	urlString := vdc.client.VCDHREF.Scheme + "://" + vdc.client.VCDHREF.Host + "/cloudapi/1.0.0/edgeGateways"
 // 	url, _ := url.ParseRequestURI(urlString)
 //
@@ -144,3 +158,4 @@ func (vcd *TestVCD) Test_NsxtEdgeGetPages(check *C) {
 //
 // 	return response, nil
 // }
+*/

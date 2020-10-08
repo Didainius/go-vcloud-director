@@ -2,105 +2,66 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
-	"time"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 type NsxtEdgeGateway struct {
-	EdgeGateway *types.CloudAPIEdgeGateway
+	EdgeGateway *types.NsxtEdgeGateway
 	client      *Client
 }
 
-func (vdc *Vdc) GetOpenApiEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
-	endpoint := "1.0.0/edgeGateways/"
-	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-
-	time.Sleep(10 * time.Second)
-
-	if id == "" {
-		return nil, fmt.Errorf("empty edge gateway id")
-	}
-
-	urlRef, err := vdc.client.OpenApiBuildEndpoint(endpoint, id)
-	if err != nil {
-		return nil, err
-	}
-
-	egw := &NsxtEdgeGateway{
-		EdgeGateway:   &types.CloudAPIEdgeGateway{},
-		client: vdc.client,
-	}
-
-	err = vdc.client.OpenApiGetItem(minimumApiVersion, urlRef, nil, egw.EdgeGateway)
-	if err != nil {
-		return nil, err
-	}
-
-	return egw, nil
+func (adminOrg *AdminOrg) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
+	return getNsxtEdgeGatewayById(adminOrg.client, id)
 }
 
-func (vdc *Vdc) GetAllOpenApiEdgeGateways(queryParameters url.Values) ([]*types.CloudAPIEdgeGateway, error) {
-	endpoint := "1.0.0/edgeGateways/"
-	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	urlRef, err := vdc.client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	responses := []*types.CloudAPIEdgeGateway{{}}
-
-	err = vdc.client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses)
-	if err != nil {
-		return nil, err
-	}
-
-	return responses, nil
+func (org *Org) GetNsxtEdgeGatewayById(id string) (*NsxtEdgeGateway, error) {
+	return getNsxtEdgeGatewayById(org.client, id)
 }
 
+func (adminOrg *AdminOrg) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
+	return getAllNsxtEdgeGateways(adminOrg.client, queryParameters)
+}
 
-func (egw *NsxtEdgeGateway) Create(e *types.CloudAPIEdgeGateway) (*NsxtEdgeGateway, error) {
-	endpoint := "1.0.0/edgeGateways"
-	minimumApiVersion, err := egw.client.checkOpenApiEndpointCompatibility(endpoint)
+func (org *Org) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
+	return getAllNsxtEdgeGateways(org.client, queryParameters)
+}
+
+func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(e *types.NsxtEdgeGateway) (*NsxtEdgeGateway, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
+	minimumApiVersion, err := adminOrg.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := egw.client.OpenApiBuildEndpoint(endpoint)
+	urlRef, err := adminOrg.client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
 	returnEgw := &NsxtEdgeGateway{
-		EdgeGateway:   &types.CloudAPIEdgeGateway{},
-		client: egw.client,
+		EdgeGateway: &types.NsxtEdgeGateway{},
+		client:      adminOrg.client,
 	}
 
-	err = egw.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, e, returnEgw.EdgeGateway)
+	err = adminOrg.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, e, returnEgw.EdgeGateway)
 	if err != nil {
-		return nil, fmt.Errorf("error creating edge gateway: %s", err)
+		return nil, fmt.Errorf("error creating Edge Gateway: %s", err)
 	}
 
 	return returnEgw, nil
 }
 
-func (egw *NsxtEdgeGateway) Update(e *types.CloudAPIEdgeGateway) (*NsxtEdgeGateway, error) {
-	endpoint := "1.0.0/edgeGateways/"
+func (egw *NsxtEdgeGateway) Update(e *types.NsxtEdgeGateway) (*NsxtEdgeGateway, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
 	minimumApiVersion, err := egw.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
 	if e.ID == "" {
-		return nil, fmt.Errorf("cannot update edge gateway without id")
+		return nil, fmt.Errorf("cannot update Edge Gateway without id")
 	}
 
 	urlRef, err := egw.client.OpenApiBuildEndpoint(endpoint, e.ID)
@@ -109,20 +70,20 @@ func (egw *NsxtEdgeGateway) Update(e *types.CloudAPIEdgeGateway) (*NsxtEdgeGatew
 	}
 
 	returnEgw := &NsxtEdgeGateway{
-		EdgeGateway:   &types.CloudAPIEdgeGateway{},
-		client: egw.client,
+		EdgeGateway: &types.NsxtEdgeGateway{},
+		client:      egw.client,
 	}
 
 	err = egw.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, e, returnEgw.EdgeGateway)
 	if err != nil {
-		return nil, fmt.Errorf("error updating edge gateway: %s", err)
+		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
 	}
 
 	return returnEgw, nil
 }
 
 func (egw *NsxtEdgeGateway) Delete() error {
-	endpoint := "1.0.0/edgeGateways/"
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
 	minimumApiVersion, err := egw.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
 		return err
@@ -140,8 +101,67 @@ func (egw *NsxtEdgeGateway) Delete() error {
 	err = egw.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
 
 	if err != nil {
-		return fmt.Errorf("error deleting role: %s", err)
+		return fmt.Errorf("error deleting Edge Gateway: %s", err)
 	}
 
 	return nil
+}
+
+func getNsxtEdgeGatewayById(client *Client, id string) (*NsxtEdgeGateway, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if id == "" {
+		return nil, fmt.Errorf("empty Edge Gateway id")
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
+	if err != nil {
+		return nil, err
+	}
+
+	egw := &NsxtEdgeGateway{
+		EdgeGateway: &types.NsxtEdgeGateway{},
+		client:      client,
+	}
+
+	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, egw.EdgeGateway)
+	if err != nil {
+		return nil, err
+	}
+
+	return egw, nil
+}
+
+func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.NsxtEdgeGateway{{}}
+	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wrap all typeResponses into Role types with client
+	wrappedResponses := make([]*NsxtEdgeGateway, len(typeResponses))
+	for sliceIndex := range typeResponses {
+		wrappedResponses[sliceIndex] = &NsxtEdgeGateway{
+			EdgeGateway: typeResponses[sliceIndex],
+			client:      client,
+		}
+	}
+
+	return wrappedResponses, nil
 }
