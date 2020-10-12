@@ -5,7 +5,7 @@ const (
 	gatewayTypeNsxV = "NSXV_BACKED"
 )
 
-type NsxtEdgeGateway struct {
+type NsxtEdgeGateway2 struct {
 	Status      string `json:"status,omitempty"`
 	ID          string `json:"id,omitempty"`
 	Name        string `json:"name"`
@@ -39,73 +39,78 @@ type NsxtEdgeGateway struct {
 	} `json:"edgeGatewayUplinks"`
 }
 
-type CloudAPIEdgeGateway2 struct {
+type NsxtEdgeGateway struct {
 	Status                    string               `json:"status,omitempty"`
 	ID                        string               `json:"id,omitempty"`
-	Name                      string               `json:"name,omitempty"`
-	Description               string               `json:"description,omitempty"`
-	EdgeGatewayUplinks        []EdgeGatewayUplinks `json:"edgeGatewayUplinks,omitempty"`
-	DistributedRoutingEnabled bool                 `json:"distributedRoutingEnabled,omitempty"`
-	OrgVdcNetworkCount        int                  `json:"orgVdcNetworkCount,omitempty"`
-	// GatewayBacking            GatewayBacking       `json:"gatewayBacking,omitempty"`
-	OrgVdc                   OrgVdc            `json:"orgVdc,omitempty"`
-	OrgRef                   OrgRef            `json:"orgRef,omitempty"`
-	ServiceNetworkDefinition string            `json:"serviceNetworkDefinition,omitempty"`
-	EdgeClusterConfig        EdgeClusterConfig `json:"edgeClusterConfig,omitempty"`
+	Name                      string               `json:"name"`
+	Description               string               `json:"description"`
+	EdgeGatewayUplinks        []EdgeGatewayUplinks `json:"edgeGatewayUplinks"`
+	DistributedRoutingEnabled bool                 `json:"distributedRoutingEnabled"`
+	OrgVdcNetworkCount        int                  `json:"orgVdcNetworkCount"`
+	GatewayBacking            GatewayBacking       `json:"gatewayBacking"`
+	OrgVdc                    OrgVdc               `json:"orgVdc"`
+	OrgRef                    OrgRef               `json:"orgRef"`
+	ServiceNetworkDefinition  string               `json:"serviceNetworkDefinition"`
+	EdgeClusterConfig         EdgeClusterConfig    `json:"edgeClusterConfig"`
 }
-type IPRanges2 struct {
-	Values []interface{} `json:"values,omitempty"`
+
+type NsxtRangeValues struct {
+	StartAddress string `json:"startAddress"`
+	EndAddress   string `json:"endAddress"`
 }
-type Values struct {
-	Gateway              string      `json:"gateway,omitempty"`
-	PrefixLength         int         `json:"prefixLength,omitempty"`
-	DNSSuffix            interface{} `json:"dnsSuffix,omitempty"`
-	DNSServer1           string      `json:"dnsServer1,omitempty"`
-	DNSServer2           string      `json:"dnsServer2,omitempty"`
-	IPRanges             IPRanges2   `json:"ipRanges,omitempty"`
-	Enabled              bool        `json:"enabled,omitempty"`
-	TotalIPCount         int         `json:"totalIpCount,omitempty"`
-	UsedIPCount          interface{} `json:"usedIpCount,omitempty"`
-	PrimaryIP            string      `json:"primaryIp,omitempty"`
-	AutoAllocateIPRanges bool        `json:"autoAllocateIpRanges,omitempty"`
+type NsxtIPRanges struct {
+	Values []NsxtRangeValues `json:"values"`
 }
-type Subnets struct {
-	Values []Values `json:"values,omitempty"`
+type NsxtSubnetValues struct {
+	Gateway              string       `json:"gateway"`
+	PrefixLength         int          `json:"prefixLength"`
+	DNSSuffix            interface{}  `json:"dnsSuffix"`
+	DNSServer1           string       `json:"dnsServer1"`
+	DNSServer2           string       `json:"dnsServer2"`
+	IPRanges             NsxtIPRanges `json:"ipRanges"`
+	Enabled              bool         `json:"enabled"`
+	TotalIPCount         int          `json:"totalIpCount"`
+	UsedIPCount          interface{}  `json:"usedIpCount"`
+	PrimaryIP            string       `json:"primaryIp"`
+	AutoAllocateIPRanges bool         `json:"autoAllocateIpRanges"`
+}
+type NsxtSubnets struct {
+	Values []NsxtSubnetValues `json:"values"`
 }
 type EdgeGatewayUplinks struct {
-	UplinkID                 string      `json:"uplinkId,omitempty"`
-	UplinkName               string      `json:"uplinkName,omitempty"`
-	Subnets                  Subnets     `json:"subnets,omitempty"`
-	Connected                bool        `json:"connected,omitempty"`
-	QuickAddAllocatedIPCount interface{} `json:"quickAddAllocatedIpCount,omitempty"`
-	Dedicated                bool        `json:"dedicated,omitempty"`
+	UplinkID                 string      `json:"uplinkId"`
+	UplinkName               string      `json:"uplinkName"`
+	Subnets                  NsxtSubnets `json:"subnets"`
+	Connected                bool        `json:"connected"`
+	QuickAddAllocatedIPCount interface{} `json:"quickAddAllocatedIpCount"`
+	Dedicated                bool        `json:"dedicated"`
 }
 type NetworkProvider struct {
-	Name string `json:"name,omitempty"`
-	ID   string `json:"id,omitempty"`
+	Name string `json:"name"`
+	ID   string `json:"id"`
 }
 type GatewayBacking struct {
-	BackingID       string          `json:"backingId,omitempty"`
-	GatewayType     string          `json:"gatewayType,omitempty"`
-	NetworkProvider NetworkProvider `json:"networkProvider,omitempty"`
+	BackingID       string          `json:"backingId"`
+	GatewayType     string          `json:"gatewayType"`
+	NetworkProvider NetworkProvider `json:"networkProvider"`
 }
 type OrgVdc struct {
-	Name string `json:"name,omitempty"`
-	ID   string `json:"id,omitempty"`
+	Name string `json:"name"`
+	ID   string `json:"id"`
 }
 type OrgRef struct {
-	Name string `json:"name,omitempty"`
-	ID   string `json:"id,omitempty"`
+	Name string `json:"name"`
+	ID   string `json:"id"`
 }
 type EdgeClusterRef struct {
-	Name string `json:"name,omitempty"`
-	ID   string `json:"id,omitempty"`
+	Name string `json:"name"`
+	ID   string `json:"id"`
 }
 type PrimaryEdgeCluster struct {
-	EdgeClusterRef EdgeClusterRef `json:"edgeClusterRef,omitempty"`
-	BackingID      string         `json:"backingId,omitempty"`
+	EdgeClusterRef EdgeClusterRef `json:"edgeClusterRef"`
+	BackingID      string         `json:"backingId"`
 }
 type EdgeClusterConfig struct {
-	PrimaryEdgeCluster   PrimaryEdgeCluster `json:"primaryEdgeCluster,omitempty"`
-	SecondaryEdgeCluster interface{}        `json:"secondaryEdgeCluster,omitempty"`
+	PrimaryEdgeCluster   PrimaryEdgeCluster `json:"primaryEdgeCluster"`
+	SecondaryEdgeCluster interface{}        `json:"secondaryEdgeCluster"`
 }
