@@ -85,10 +85,11 @@ type EdgeGatewayUplinks struct {
 	QuickAddAllocatedIPCount interface{} `json:"quickAddAllocatedIpCount"`
 	Dedicated                bool        `json:"dedicated"`
 }
-type NetworkProvider struct {
-	Name string `json:"name"`
-	ID   string `json:"id"`
-}
+
+// type NetworkProvider struct {
+// 	Name string `json:"name"`
+// 	ID   string `json:"id"`
+// }
 type GatewayBacking struct {
 	BackingID       string          `json:"backingId"`
 	GatewayType     string          `json:"gatewayType"`
