@@ -1,3 +1,5 @@
+// +build network functional openapi ALL
+
 package govcd
 
 import (

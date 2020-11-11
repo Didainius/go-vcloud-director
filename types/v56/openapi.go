@@ -58,6 +58,19 @@ type NsxtTier0Router struct {
 	DisplayName string `json:"displayName"`
 }
 
+type NsxtEdgeCluster struct {
+	// ID contains edge cluster ID (UUID format)
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	// NodeCount shows number of nodes in the edge cluster
+	NodeCount int `json:"nodeCount"`
+	// NodeType usually holds "EDGE_NODE"
+	NodeType string `json:"nodeType"`
+	// DeploymentType (e.g. "VIRTUAL_MACHINE")
+	DeploymentType string `json:"deploymentType"`
+}
+
 // ExternalNetworkV2 defines a struct for OpenAPI endpoint which is capable of creating NSX-V or
 // NSX-T external network based on provided NetworkBackings.
 type ExternalNetworkV2 struct {
