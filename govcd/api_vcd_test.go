@@ -170,6 +170,7 @@ type TestConfig struct {
 			Manager        string `yaml:"manager"`
 			Tier0router    string `yaml:"tier0router"`
 			Tier0routerVrf string `yaml:"tier0routerVrf"`
+			Vdc            string `yaml:"vdc"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {

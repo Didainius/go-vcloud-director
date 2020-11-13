@@ -17,10 +17,10 @@ func (vcd *TestVCD) Test_GetAllNsxtEdgeClusters(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	nsxtVdc, err := vcd.org.GetVDCByNameOrId("nsxt-vdc-dainius", true)
+	nsxtVdc, err := vcd.org.GetVDCByNameOrId(vcd.config.VCD.Nsxt.Vdc, true)
 	check.Assert(err, IsNil)
 
-	tier0Router, err := vcd.client.GetAllNsxtEdgeClusters(nsxtVdc.Vdc.ID, nil)
+	tier0Router, err := nsxtVdc.GetAllNsxtEdgeClusters(nil)
 	check.Assert(err, IsNil)
 	check.Assert(tier0Router, NotNil)
 }
@@ -30,14 +30,14 @@ func (vcd *TestVCD) Test_GetNsxtEdgeClusterByName(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	nsxtVdc, err := vcd.org.GetVDCByNameOrId("nsxt-vdc-dainius", true)
+	nsxtVdc, err := vcd.org.GetVDCByNameOrId(vcd.config.VCD.Nsxt.Vdc, true)
 	check.Assert(err, IsNil)
 
-	tier0Router, err := vcd.client.GetAllNsxtEdgeClusters(nsxtVdc.Vdc.ID, nil)
+	tier0Router, err := nsxtVdc.GetAllNsxtEdgeClusters(nil)
 	check.Assert(err, IsNil)
 	check.Assert(tier0Router, NotNil)
 
-	ecl, err := vcd.client.GetNsxtEdgeClusterByName(tier0Router[0].NsxtEdgeCluster.Name, nsxtVdc.Vdc.ID)
+	ecl, err := nsxtVdc.GetNsxtEdgeClusterByName(tier0Router[0].NsxtEdgeCluster.Name)
 	check.Assert(err, IsNil)
 	check.Assert(tier0Router, NotNil)
 	check.Assert(ecl, DeepEquals, tier0Router[0])
