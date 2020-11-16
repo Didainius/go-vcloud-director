@@ -5,113 +5,105 @@ const (
 	gatewayTypeNsxV = "NSXV_BACKED"
 )
 
-type NsxtEdgeGateway2 struct {
-	Status      string `json:"status,omitempty"`
-	ID          string `json:"id,omitempty"`
-	Name        string `json:"name"`
+// OpenAPIEdgeGateway structure can hold both NSX-V and NSX-T edge gateways as returned by OpenAPI endpoint.
+//
+// Note. OpenAPI endpoint only allows to read NSX-V edge gateways.
+type OpenAPIEdgeGateway struct {
+	Status string `json:"status,omitempty"`
+	ID     string `json:"id,omitempty"`
+	// Name of edge gateway
+	Name string `json:"name"`
+	// Description of edge gateway
 	Description string `json:"description"`
-	OrgVdc      struct {
-		ID string `json:"id"`
-	} `json:"orgVdc"`
-	EdgeGatewayUplinks []struct {
-		UplinkID   string `json:"uplinkId"`
-		UplinkName string `json:"uplinkName"`
-		Subnets    struct {
-			Values []struct {
-				Gateway      string      `json:"gateway"`
-				PrefixLength int         `json:"prefixLength"`
-				DNSSuffix    interface{} `json:"dnsSuffix"`
-				DNSServer1   string      `json:"dnsServer1"`
-				DNSServer2   string      `json:"dnsServer2"`
-				IPRanges     struct {
-					Values []struct {
-						StartAddress string `json:"startAddress"`
-						EndAddress   string `json:"endAddress"`
-					} `json:"values"`
-				} `json:"ipRanges"`
-				Enabled      bool   `json:"enabled"`
-				TotalIPCount int    `json:"totalIpCount"`
-				UsedIPCount  int    `json:"usedIpCount"`
-				PrimaryIp    string `json:"primaryIp,omitempty"`
-			} `json:"values"`
-		} `json:"subnets"`
-		Dedicated bool `json:"dedicated"`
-	} `json:"edgeGatewayUplinks"`
+	// OrgVdc holds the organization vDC or vDC Group that this edge gateway belongs to. If the ownerRef is set to a vDC
+	// Group, this gateway will be available across all the participating Organization vDCs in the vDC Group.
+	OrgVdc *OpenApiReference `json:"orgVdc,omitempty"`
+	// Org holds the organization to which the gateway belongs.
+	Org *OpenApiReference `json:"orgRef,omitempty"`
+	// EdgeGatewayUplink defines uplink connections for the edge gateway.
+	EdgeGatewayUplinks []EdgeGatewayUplinks `json:"edgeGatewayUplinks"`
+	// DistributedRoutingEnabled is a flag indicating whether distributed routing is enabled or not. The default is false.
+	DistributedRoutingEnabled bool `json:"distributedRoutingEnabled"`
+	// EdgeClusterConfig holds Edge Cluster Configuration for the Edge Gateway. Can be specified if a gateway needs to be
+	// placed on a specific set of Edge Clusters. For NSX-T Edges, user should specify the ID of the NSX-T edge cluster as
+	// the value of primaryEdgeCluster's backingId. The gateway defaults to the Edge Cluster of the connected External
+	// Network's backing Tier-0 router, if nothing is specified.
+	//
+	// Note. The value of secondaryEdgeCluster will be set to NULL for NSX-T edge gateways. For NSX-V Edges, this is
+	// read-only and the legacy API must be used for edge specific placement.
+	EdgeClusterConfig *EdgeClusterConfig `json:"edgeClusterConfig,omitempty"`
+	// OrgVdcNetworkCount holds the number of Org vDC networks connected to the gateway.
+	OrgVdcNetworkCount *int `json:"orgVdcNetworkCount,omitempty"`
+	// GatewayBacking must contain backing details of the edge gateway only if importing an NSX-T router.
+	GatewayBacking *GatewayBacking `json:"gatewayBacking,omitempty"`
+
+	// ServiceNetworkDefinition holds network definition in CIDR form that DNS and DHCP service on an NSX-T edge will run
+	// on. The subnet prefix length must be 27. This property applies to creating or importing an NSX-T Edge. This is not
+	// supported for VMC. If nothing is set, the default is 192.168.255.225/27. The DHCP listener IP network is on
+	// 192.168.255.225/30. The DNS listener IP network is on 192.168.255.228/32. This field cannot be updated.
+	ServiceNetworkDefinition string `json:"serviceNetworkDefinition,omitempty"`
 }
 
-type NsxtEdgeGateway struct {
-	Status                    string               `json:"status,omitempty"`
-	ID                        string               `json:"id,omitempty"`
-	Name                      string               `json:"name"`
-	Description               string               `json:"description"`
-	EdgeGatewayUplinks        []EdgeGatewayUplinks `json:"edgeGatewayUplinks"`
-	DistributedRoutingEnabled bool                 `json:"distributedRoutingEnabled"`
-	OrgVdcNetworkCount        int                  `json:"orgVdcNetworkCount"`
-	GatewayBacking            GatewayBacking       `json:"gatewayBacking"`
-	OrgVdc                    OrgVdc               `json:"orgVdc"`
-	OrgRef                    OrgRef               `json:"orgRef"`
-	ServiceNetworkDefinition  string               `json:"serviceNetworkDefinition"`
-	EdgeClusterConfig         EdgeClusterConfig    `json:"edgeClusterConfig"`
-}
-
-type NsxtRangeValues struct {
-	StartAddress string `json:"startAddress"`
-	EndAddress   string `json:"endAddress"`
-}
-type NsxtIPRanges struct {
-	Values []NsxtRangeValues `json:"values"`
-}
-type NsxtSubnetValues struct {
-	Gateway              string       `json:"gateway"`
-	PrefixLength         int          `json:"prefixLength"`
-	DNSSuffix            interface{}  `json:"dnsSuffix"`
-	DNSServer1           string       `json:"dnsServer1"`
-	DNSServer2           string       `json:"dnsServer2"`
-	IPRanges             NsxtIPRanges `json:"ipRanges"`
-	Enabled              bool         `json:"enabled"`
-	TotalIPCount         int          `json:"totalIpCount"`
-	UsedIPCount          interface{}  `json:"usedIpCount"`
-	PrimaryIP            string       `json:"primaryIp"`
-	AutoAllocateIPRanges bool         `json:"autoAllocateIpRanges"`
-}
-type NsxtSubnets struct {
-	Values []NsxtSubnetValues `json:"values"`
-}
+// EdgeGatewayUplink defines uplink connections for the edge gateway.
 type EdgeGatewayUplinks struct {
-	UplinkID                 string      `json:"uplinkId"`
-	UplinkName               string      `json:"uplinkName"`
-	Subnets                  NsxtSubnets `json:"subnets"`
-	Connected                bool        `json:"connected"`
-	QuickAddAllocatedIPCount interface{} `json:"quickAddAllocatedIpCount"`
-	Dedicated                bool        `json:"dedicated"`
+	// UplinkID contains ID of external network
+	UplinkID string `json:"uplinkId,omitempty"`
+	// UplinkID contains Name of external network
+	UplinkName string `json:"uplinkName,omitempty"`
+	// Subnets contain subnets to be used on edge gateway
+	Subnets   EdgeGatewaySubnets `json:"subnets,omitempty"`
+	Connected bool               `json:"connected,omitempty"`
+	// QuickAddAllocatedIPCount allows to allocate additional IPs during update
+	QuickAddAllocatedIPCount int `json:"quickAddAllocatedIpCount,omitempty"`
+	// Dedicated defines if the external network is dedicated. Dedicating the External Network will enable Route
+	// Advertisement for this Edge Gateway
+	Dedicated bool `json:"dedicated,omitempty"`
 }
 
-// type NetworkProvider struct {
-// 	Name string `json:"name"`
-// 	ID   string `json:"id"`
-// }
+// Use type aliases to reuse the same definitions with appropriate names
+type OpenApiIPRanges = ExternalNetworkV2IPRanges
+type OpenApiIPRangeValues = ExternalNetworkV2IPRange
+
+// EdgeGatewaySubnets lists slice of EdgeGatewaySubnetValue values
+type EdgeGatewaySubnets struct {
+	Values []EdgeGatewaySubnetValue `json:"values"`
+}
+
+// EdgeGatewaySubnetValue holds one subnet definition in external network
+type EdgeGatewaySubnetValue struct {
+	// Gateway specified subnet gateway
+	Gateway string `json:"gateway"`
+	// PrefixLength from CIDR format (e.g. 24 from 192.168.1.1/24)
+	PrefixLength int `json:"prefixLength"`
+	// DNSSuffix can only be used for reading NSX-V edge gateway
+	DNSSuffix string `json:"dnsSuffix,omitempty"`
+	// DNSServer1 can only be used for reading NSX-V edge gateway
+	DNSServer1 string `json:"dnsServer1,omitempty"`
+	// DNSServer2 can only be used for reading NSX-V edge gateway
+	DNSServer2 string `json:"dnsServer2,omitempty"`
+	// IPRanges contain IP allocations
+	IPRanges *OpenApiIPRanges `json:"ipRanges,omitempty"`
+	// Enabled toggles if the subnet is enabled
+	Enabled              bool   `json:"enabled"`
+	TotalIPCount         int    `json:"totalIpCount,omitempty"`
+	UsedIPCount          int    `json:"usedIpCount,omitempty"`
+	PrimaryIP            string `json:"primaryIp,omitempty"`
+	AutoAllocateIPRanges bool   `json:"autoAllocateIpRanges,omitempty"`
+}
+
+// GatewayBacking specifies edge gateway backing details
 type GatewayBacking struct {
-	BackingID       string          `json:"backingId"`
-	GatewayType     string          `json:"gatewayType"`
+	BackingID       string          `json:"backingId,omitempty"`
+	GatewayType     string          `json:"gatewayType,omitempty"`
 	NetworkProvider NetworkProvider `json:"networkProvider"`
 }
-type OrgVdc struct {
-	Name string `json:"name"`
-	ID   string `json:"id"`
+
+type EdgeCluster struct {
+	EdgeClusterRef OpenApiReference `json:"edgeClusterRef"`
+	BackingID      string           `json:"backingId"`
 }
-type OrgRef struct {
-	Name string `json:"name"`
-	ID   string `json:"id"`
-}
-type EdgeClusterRef struct {
-	Name string `json:"name"`
-	ID   string `json:"id"`
-}
-type PrimaryEdgeCluster struct {
-	EdgeClusterRef EdgeClusterRef `json:"edgeClusterRef"`
-	BackingID      string         `json:"backingId"`
-}
+
 type EdgeClusterConfig struct {
-	PrimaryEdgeCluster   PrimaryEdgeCluster `json:"primaryEdgeCluster"`
-	SecondaryEdgeCluster interface{}        `json:"secondaryEdgeCluster"`
+	PrimaryEdgeCluster   EdgeCluster `json:"primaryEdgeCluster,omitempty"`
+	SecondaryEdgeCluster EdgeCluster `json:"secondaryEdgeCluster,omitempty"`
 }

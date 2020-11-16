@@ -33,15 +33,13 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 
 	// Lookup data. Get Org Vdc
 
-	nsxtVdcName := "vdc-dainius-nsxt"
-
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
-	nsxtVdc, err := adminOrg.GetVDCByName(nsxtVdcName, false)
+	nsxtVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
 	check.Assert(err, IsNil)
 
-	bd := new(types.NsxtEdgeGateway)
+	bd := new(types.OpenAPIEdgeGateway)
 
 	data := []byte(`{
   "name": "nsx-t-edge",
@@ -83,7 +81,7 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	err = json.Unmarshal(data, bd)
 	check.Assert(err, IsNil)
 
-	// newEdge := &NsxtEdgeGateway{
+	// newEdge := &OpenAPIEdgeGateway{
 	// 	EdgeGateway: bd,
 	// 	client:      vcd.vdc.client,
 	// }
@@ -146,11 +144,11 @@ func (vcd *TestVCD) Test_NsxtEdgeGetPages(check *C) {
 	// check.Assert(copyEdge.EdgeGateway.HREF, Equals, edge.EdgeGateway.HREF)
 }
 
-// func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*types.NsxtEdgeGateway, error) {
+// func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*types.OpenAPIEdgeGateway, error) {
 // 	urlString := vdc.client.VCDHREF.Scheme + "://" + vdc.client.VCDHREF.Host + "/cloudapi/1.0.0/edgeGateways"
 // 	url, _ := url.ParseRequestURI(urlString)
 //
-// 	response := make([]*types.NsxtEdgeGateway, 1)
+// 	response := make([]*types.OpenAPIEdgeGateway, 1)
 //
 // 	// err := vdc.client.OpenApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
 // 	err := vdc.client.OpenApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)

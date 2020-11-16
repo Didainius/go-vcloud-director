@@ -13,7 +13,7 @@ import (
 
 // NsxtEdgeGateway uses OpenAPI endpoint to operate NSX-T Edge Gateways
 type NsxtEdgeGateway struct {
-	EdgeGateway *types.NsxtEdgeGateway
+	EdgeGateway *types.OpenAPIEdgeGateway
 	client      *Client
 }
 
@@ -80,7 +80,7 @@ func (org *Org) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeG
 }
 
 // CreateNsxtEdgeGateway allows to create NSX-T edge gateway for Org admins
-func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(e *types.NsxtEdgeGateway) (*NsxtEdgeGateway, error) {
+func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(e *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
 	if !adminOrg.client.IsSysAdmin {
 		return nil, fmt.Errorf("only Provider can create Edge Gateway")
 	}
@@ -97,7 +97,7 @@ func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(e *types.NsxtEdgeGateway) (*Nsxt
 	}
 
 	returnEgw := &NsxtEdgeGateway{
-		EdgeGateway: &types.NsxtEdgeGateway{},
+		EdgeGateway: &types.OpenAPIEdgeGateway{},
 		client:      adminOrg.client,
 	}
 
@@ -110,7 +110,7 @@ func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(e *types.NsxtEdgeGateway) (*Nsxt
 }
 
 // Update allows to update NSX-T edge gateway for Org admins
-func (egw *NsxtEdgeGateway) Update(e *types.NsxtEdgeGateway) (*NsxtEdgeGateway, error) {
+func (egw *NsxtEdgeGateway) Update(e *types.OpenAPIEdgeGateway) (*NsxtEdgeGateway, error) {
 	if !egw.client.IsSysAdmin {
 		return nil, fmt.Errorf("only Provider can update Edge Gateway")
 	}
@@ -131,7 +131,7 @@ func (egw *NsxtEdgeGateway) Update(e *types.NsxtEdgeGateway) (*NsxtEdgeGateway, 
 	}
 
 	returnEgw := &NsxtEdgeGateway{
-		EdgeGateway: &types.NsxtEdgeGateway{},
+		EdgeGateway: &types.OpenAPIEdgeGateway{},
 		client:      egw.client,
 	}
 
@@ -193,7 +193,7 @@ func getNsxtEdgeGatewayById(client *Client, id string) (*NsxtEdgeGateway, error)
 	}
 
 	egw := &NsxtEdgeGateway{
-		EdgeGateway: &types.NsxtEdgeGateway{},
+		EdgeGateway: &types.OpenAPIEdgeGateway{},
 		client:      client,
 	}
 
@@ -220,7 +220,7 @@ func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*Nsxt
 		return nil, err
 	}
 
-	typeResponses := []*types.NsxtEdgeGateway{{}}
+	typeResponses := []*types.OpenAPIEdgeGateway{{}}
 	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses)
 	if err != nil {
 		return nil, err
