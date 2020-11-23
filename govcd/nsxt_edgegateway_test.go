@@ -3,7 +3,6 @@
 package govcd
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 
@@ -11,90 +10,46 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-/*
-func (vcd *TestVCD) Test_NsxtEdge(check *C) {
-	// if vcd.config.VCD.EdgeGateway == "" {
-	// 	check.Skip("Skipping test because no edge gateway given")
-	// }
-	edge, err := vcd.vdc.GetNsxtEdgeGatewayById("urn:vcloud:gateway:e934e76b-757c-4ea7-a89a-c160a6199689")
-	check.Assert(err, IsNil)
-	check.Assert(edge.EdgeGateway.Name, Equals, "nsxt-gw-dainius")
-	// copyEdge := edge
-	// err = edge.Refresh()
-	// check.Assert(err, IsNil)
-	// check.Assert(copyEdge.EdgeGateway.Name, Equals, edge.EdgeGateway.Name)
-	// check.Assert(copyEdge.EdgeGateway.HREF, Equals, edge.EdgeGateway.HREF)
-}
-*/
 func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
-	// if vcd.config.VCD.EdgeGateway == "" {
-	// 	check.Skip("Skipping test because no edge gateway given")
-	// }
+	if vcd.client.Client.APIVCDMaxVersionIs("< 34") {
+		check.Skip("At least VCD 10.1 is required to create edge gateway")
+	}
 
-	// Lookup data. Get Org Vdc
-
+	skipNoNsxtConfiguration(vcd, check)
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
 	nsxtVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	if ContainsNotFound(err) {
+		check.Skip(fmt.Sprintf("No NSX-T VDC (%s) found - skipping test", vcd.config.VCD.Nsxt.Vdc))
+	}
 	check.Assert(err, IsNil)
 
-	bd := new(types.OpenAPIEdgeGateway)
-
-	data := []byte(`{
-  "name": "nsx-t-edge",
-  "description": "nsx-t-edge-description",
-  "orgVdc": {
-    "id": "` + nsxtVdc.Vdc.ID + `"
-  },
-  "edgeGatewayUplinks": [
-    {
-      "uplinkId": "urn:vcloud:network:3f1f6081-c151-412d-8933-6f25bd896032",
-      "subnets": {
-        "values": [
-          {
-            "gateway": "1.1.1.1",
-            "prefixLength": 24,
-            "dnsSuffix": null,
-            "dnsServer1": "",
-            "dnsServer2": "",
-            "ipRanges": {
-              "values": [
-                {
-                  "startAddress": "1.1.1.10",
-                  "endAddress": "1.1.1.15"
-                }
-              ]
-            },
-            "enabled": true
-          }
-        ]
-      },
-      "dedicated": false
-    }
-  ]
-}
-`)
-
-	fmt.Println(string(data))
-
-	err = json.Unmarshal(data, bd)
+	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
 	check.Assert(err, IsNil)
 
-	// newEdge := &OpenAPIEdgeGateway{
-	// 	EdgeGateway: bd,
-	// 	client:      vcd.vdc.client,
-	// }
+	egwDefinition := &types.OpenAPIEdgeGateway{
+		Name:        "nsx-t-edge",
+		Description: "nsx-t-edge-description",
+		OrgVdc: &types.OpenApiReference{
+			ID: nsxtVdc.Vdc.ID,
+		},
+		EdgeGatewayUplinks: []types.EdgeGatewayUplinks{types.EdgeGatewayUplinks{
+			UplinkID: nsxtExternalNetwork.ExternalNetwork.ID,
+			Subnets: types.EdgeGatewaySubnets{Values: []types.EdgeGatewaySubnetValue{{
+				Gateway:      "1.1.1.1",
+				PrefixLength: 24,
+				Enabled:      true,
+			}}},
+			Connected: true,
+			Dedicated: false,
+		}},
+	}
 
-	// spew.Dump(newEdge.EdgeGateway)
-	// GetAdminOrgByName()
-
-	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(bd)
+	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(egwDefinition)
 
 	check.Assert(err, IsNil)
-	check.Assert(createdEdge.EdgeGateway.Name, Equals, bd.Name)
-
-	// Check pagination stuff
+	check.Assert(createdEdge.EdgeGateway.Name, Equals, egwDefinition.Name)
 
 	createdEdge.EdgeGateway.Name = "renamed-edge"
 	updatedEdge, err := createdEdge.Update(createdEdge.EdgeGateway)
@@ -109,53 +64,6 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(egws) == 1, Equals, true)
 
-	// check.Assert(edge.EdgeGateway.Name, Equals, "nsxt-gw-dainius")
-
 	err = updatedEdge.Delete()
 	check.Assert(err, IsNil)
-
-	// copyEdge := edge
-	// err = edge.Refresh()
-	// check.Assert(err, IsNil)
-	// check.Assert(copyEdge.EdgeGateway.Name, Equals, edge.EdgeGateway.Name)
-	// check.Assert(copyEdge.EdgeGateway.HREF, Equals, edge.EdgeGateway.HREF)
 }
-
-/*
-func (vcd *TestVCD) Test_NsxtEdgeGetPages(check *C) {
-	// if vcd.config.VCD.EdgeGateway == "" {
-	// 	check.Skip("Skipping test because no edge gateway given")
-	// }
-
-	params := url.Values{}
-	params.Add("pageSize", "1")
-
-	_, err := vcd.vdc.GetAllNsxtEdgeGateways(params)
-	// spew.Dump(edges)
-	check.Assert(err, IsNil)
-	// check.Assert(edges, )
-
-	// spew.Dump(edges)
-	// check.Assert(edge.EdgeGateway.Name, Equals, "nsxt-gw-dainius")
-	// copyEdge := edge
-	// err = edge.Refresh()
-	// check.Assert(err, IsNil)
-	// check.Assert(copyEdge.EdgeGateway.Name, Equals, edge.EdgeGateway.Name)
-	// check.Assert(copyEdge.EdgeGateway.HREF, Equals, edge.EdgeGateway.HREF)
-}
-
-// func (vdc *Vdc) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*types.OpenAPIEdgeGateway, error) {
-// 	urlString := vdc.client.VCDHREF.Scheme + "://" + vdc.client.VCDHREF.Host + "/cloudapi/1.0.0/edgeGateways"
-// 	url, _ := url.ParseRequestURI(urlString)
-//
-// 	response := make([]*types.OpenAPIEdgeGateway, 1)
-//
-// 	// err := vdc.client.OpenApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
-// 	err := vdc.client.OpenApiGetAllItems(url, queryParameters, "error getting edge gateways %s", nil, &response)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	return response, nil
-// }
-*/
