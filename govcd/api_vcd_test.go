@@ -531,6 +531,9 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 
+	// This is set explicitly to make sure that catalog is using storage profile from correct VDC
+	setCatalogStorageProfile(vcd, check)
+
 	// If neither the vApp or VM tags are set, we also skip the
 	// creation of the default vApp
 	if !isTagSet("vapp") && !isTagSet("vm") {
@@ -570,6 +573,28 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		vcd.skipVappTests = true
 		fmt.Println("Skipping all vapp tests because one of the following wasn't given: Network, StorageProfile, Catalog, Catalogitem")
 	}
+}
+
+// setCatalogStorageProfile ensures that pre-created catalog uses storage profile from the same VDC
+// Having a storage profile from different VDC would return random errors because of not accessible storage with templates
+func setCatalogStorageProfile(vcd *TestVCD, check *C) {
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	adminCatalog, err := adminOrg.GetAdminCatalogByName(vcd.config.VCD.Catalog.Name, true)
+	check.Assert(err, IsNil)
+
+	// Explicitly set catalog to use vcd.config.VCD.StorageProfile.SP1 because having multiple VDCs
+	adminCatalog.AdminCatalog.CatalogStorageProfiles = &types.CatalogStorageProfiles{[]*types.Reference{&types.Reference{
+		HREF: vcd.vdc.Vdc.VdcStorageProfiles.VdcStorageProfile[0].HREF,
+		Name: vcd.vdc.Vdc.VdcStorageProfiles.VdcStorageProfile[0].Name,
+	}}}
+
+	fmt.Printf("Setting catalog '%s' to use '%s' storage profile from VDC '%s'\n",
+		adminCatalog.AdminCatalog.Name, vcd.vdc.Vdc.VdcStorageProfiles.VdcStorageProfile[0].Name, vcd.config.VCD.Vdc)
+
+	err = adminCatalog.Update()
+	check.Assert(err, IsNil)
 }
 
 // Shows the detail of cleanup operations only if the relevant verbosity
