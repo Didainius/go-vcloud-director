@@ -334,6 +334,7 @@ const (
 	OpenApiEndpointVdcComputePolicies         = "vdcComputePolicies/"
 	OpenApiEndpointVdcAssignedComputePolicies = "vdcs/%s/computePolicies"
 	OpenApiEndpointEdgeGateways               = "edgeGateways/"
+	OpenApiEndpointOrgVdcNetworks             = "orgVdcNetworks/"
 )
 
 // Header keys to run operations in tenant context
@@ -353,4 +354,9 @@ const (
 	ExternalNetworkBackingTypeNetwork = "NETWORK"
 	// ExternalNetworkBackingDvPortgroup refers distributed switch portgroup
 	ExternalNetworkBackingDvPortgroup = "DV_PORTGROUP"
+)
+
+const (
+	OrgVdcNetworkTypeRouted   = "NAT_ROUTED"
+	OrgVdcNetworkTypeIsolated = "ISOLATED"
 )
