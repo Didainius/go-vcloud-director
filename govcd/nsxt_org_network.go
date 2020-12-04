@@ -7,6 +7,7 @@ package govcd
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -23,12 +24,12 @@ type NsxtOrgVdcNetwork struct {
 // }
 
 // GetNsxtOrgVdcNetworkById allows to retrieve NSX-T edge gateway by ID for Org users
-func (org *Org) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error) {
-	// Inject Org ID filter to perform filtering on server side
-	params := url.Values{}
-	filterParams := queryParameterFilterAnd("orgRef.id=="+org.Org.ID, params)
-	return getNsxtOrgVdcNetworkById(org.client, id, filterParams)
-}
+// func (org *Org) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error) {
+// 	// Inject Org ID filter to perform filtering on server side
+// 	params := url.Values{}
+// 	filterParams := queryParameterFilterAnd("orgRef.id=="+org.Org.ID, params)
+// 	return getNsxtOrgVdcNetworkById(org.client, id, filterParams)
+// }
 
 // GetNsxtOrgVdcNetworkById allows to retrieve NSX-T edge gateway by ID for specific Vdc
 func (vdc *Vdc) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error) {
@@ -64,20 +65,20 @@ func (vdc *Vdc) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error) 
 // }
 
 // GetNsxtOrgVdcNetworkByName allows to retrieve NSX-T edge gateway by Name for Org admins
-func (org *Org) GetNsxtOrgVdcNetworkByName(name string) (*NsxtOrgVdcNetwork, error) {
-	queryParameters := url.Values{}
-	queryParameters.Add("filter", "name=="+name)
-	queryParameters = queryParameterFilterAnd("orgRef.id=="+org.Org.ID, queryParameters)
-
-	allEdges, err := org.GetAllNsxtOrgVdcNetworks(queryParameters)
-	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
-	}
-
-	// onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
-
-	return returnSingleNsxtOrgVdcNetwork(name, allEdges)
-}
+// func (org *Org) GetNsxtOrgVdcNetworkByName(name string) (*NsxtOrgVdcNetwork, error) {
+// 	queryParameters := url.Values{}
+// 	queryParameters.Add("filter", "name=="+name)
+// 	queryParameters = queryParameterFilterAnd("orgRef.id=="+org.Org.ID, queryParameters)
+//
+// 	allEdges, err := org.GetAllNsxtOrgVdcNetworks(queryParameters)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
+// 	}
+//
+// 	// onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
+//
+// 	return returnSingleNsxtOrgVdcNetwork(name, allEdges)
+// }
 
 // GetNsxtOrgVdcNetworkByName allows to retrieve NSX-T edge gateway by Name for specifi Vdc
 func (vdc *Vdc) GetNsxtOrgVdcNetworkByName(name string) (*NsxtOrgVdcNetwork, error) {
@@ -86,7 +87,7 @@ func (vdc *Vdc) GetNsxtOrgVdcNetworkByName(name string) (*NsxtOrgVdcNetwork, err
 
 	allEdges, err := vdc.GetAllNsxtOrgVdcNetworks(queryParameters)
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
+		return nil, fmt.Errorf("unable to retrieve Org Vdc network by name '%s': %s", name, err)
 	}
 
 	// onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
@@ -94,17 +95,19 @@ func (vdc *Vdc) GetNsxtOrgVdcNetworkByName(name string) (*NsxtOrgVdcNetwork, err
 	return returnSingleNsxtOrgVdcNetwork(name, allEdges)
 }
 
-// GetAllNsxtOrgVdcNetworks allows to retrieve all NSX-T edge gateways for Org Admins
-func (adminOrg *AdminOrg) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error) {
-	return getAllNsxtOrgVdcNetworks(adminOrg.client, queryParameters)
-}
+// GetAllNsxtOrgVdcNetworks allows to retrieve all Org Vdc networks in AdminOrg
+// func (adminOrg *AdminOrg) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error) {
+// 	return getAllNsxtOrgVdcNetworks(adminOrg.client, queryParameters)
+// }
 
-// GetAllNsxtOrgVdcNetworks  allows to retrieve all NSX-T edge gateways for Org users
-func (org *Org) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error) {
-	return getAllNsxtOrgVdcNetworks(org.client, queryParameters)
-}
+// GetAllNsxtOrgVdcNetworks allows to retrieve all Org Vdc networks in Org
+//
+// Note. GetAllNsxtOrgVdcNetworks
+// func (org *Org) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error) {
+// 	return getAllNsxtOrgVdcNetworks(org.client, queryParameters)
+// }
 
-// GetAllNsxtOrgVdcNetworks allows to retrieve all NSX-T edge gateways for Vdc users.
+// GetAllNsxtOrgVdcNetworks allows to retrieve all NSX-T Or gVdc networks in Vdc
 func (vdc *Vdc) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error) {
 	filteredQueryParams := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, queryParameters)
 	return getAllNsxtOrgVdcNetworks(vdc.client, filteredQueryParams)
@@ -136,7 +139,7 @@ func (vdc *Vdc) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrg
 // 	return returnEgw, nil
 // }
 
-// CreateNsxtOrgVdcNetwork
+// CreateNsxtOrgVdcNetwork allows to create
 func (vdc *Vdc) CreateNsxtOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*NsxtOrgVdcNetwork, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
 	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
@@ -162,11 +165,11 @@ func (vdc *Vdc) CreateNsxtOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrgVdc
 	return returnEgw, nil
 }
 
-// Update allows to update
+// Update allows to update Org Vdc network
 func (orgVdcNet *NsxtOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*NsxtOrgVdcNetwork, error) {
-	if !orgVdcNet.client.IsSysAdmin {
-		return nil, fmt.Errorf("only System Administrator can update Edge Gateway")
-	}
+	// if !orgVdcNet.client.IsSysAdmin {
+	// 	return nil, fmt.Errorf("only System Administrator can update Edge Gateway")
+	// }
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
 	minimumApiVersion, err := orgVdcNet.client.checkOpenApiEndpointCompatibility(endpoint)
@@ -175,7 +178,7 @@ func (orgVdcNet *NsxtOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApiOrg
 	}
 
 	if OrgVdcNetworkConfig.ID == "" {
-		return nil, fmt.Errorf("cannot update Edge Gateway without id")
+		return nil, fmt.Errorf("cannot update Org Vdc network without id")
 	}
 
 	urlRef, err := orgVdcNet.client.OpenApiBuildEndpoint(endpoint, OrgVdcNetworkConfig.ID)
@@ -190,7 +193,7 @@ func (orgVdcNet *NsxtOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApiOrg
 
 	err = orgVdcNet.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, OrgVdcNetworkConfig, returnEgw.OrgVdcNetwork)
 	if err != nil {
-		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
+		return nil, fmt.Errorf("error updating Org Vdc network: %s", err)
 	}
 
 	return returnEgw, nil
@@ -205,7 +208,7 @@ func (orgVdcNet *NsxtOrgVdcNetwork) Delete() error {
 	}
 
 	if orgVdcNet.OrgVdcNetwork.ID == "" {
-		return fmt.Errorf("cannot delete Edge Gateway without id")
+		return fmt.Errorf("cannot delete Org Vdc network without id")
 	}
 
 	urlRef, err := orgVdcNet.client.OpenApiBuildEndpoint(endpoint, orgVdcNet.OrgVdcNetwork.ID)
@@ -216,7 +219,7 @@ func (orgVdcNet *NsxtOrgVdcNetwork) Delete() error {
 	err = orgVdcNet.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
 
 	if err != nil {
-		return fmt.Errorf("error deleting Edge Gateway: %s", err)
+		return fmt.Errorf("error deleting Org Vdc: %s", err)
 	}
 
 	return nil
@@ -233,7 +236,7 @@ func getNsxtOrgVdcNetworkById(client *Client, id string, queryParameters url.Val
 	}
 
 	if id == "" {
-		return nil, fmt.Errorf("empty Edge Gateway id")
+		return nil, fmt.Errorf("empty Org Vdc network id")
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
@@ -263,11 +266,11 @@ func getNsxtOrgVdcNetworkById(client *Client, id string, queryParameters url.Val
 // receivers
 func returnSingleNsxtOrgVdcNetwork(name string, allEdges []*NsxtOrgVdcNetwork) (*NsxtOrgVdcNetwork, error) {
 	if len(allEdges) > 1 {
-		return nil, fmt.Errorf("got more than 1 edge gateway by name '%s' %d", name, len(allEdges))
+		return nil, fmt.Errorf("got more than 1 Org Vdc network by name '%s' %d", name, len(allEdges))
 	}
 
 	if len(allEdges) < 1 {
-		return nil, fmt.Errorf("%s: got 0 edge gateways by name '%s'", ErrorEntityNotFound, name)
+		return nil, fmt.Errorf("%s: got 0 Org Vdc network by name '%s'", ErrorEntityNotFound, name)
 	}
 
 	return allEdges[0], nil
@@ -276,7 +279,30 @@ func returnSingleNsxtOrgVdcNetwork(name string, allEdges []*NsxtOrgVdcNetwork) (
 // getAllNsxtOrgVdcNetworks is a private parent for wrapped functions:
 // func (adminOrg *AdminOrg) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error)
 // func (org *Org) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error)
+//
+// Note. If pageSize > 32 it will be limited to maximum of 32 in this function because API validation does not allow for
+// higher number
 func getAllNsxtOrgVdcNetworks(client *Client, queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error) {
+
+	// Enforce maximum pageSize to be 32 as API endpoint throws error if it is > 32
+	pageSizeString := queryParameters.Get("pageSize")
+
+	switch pageSizeString {
+	// If no pageSize is specified it must be set to 32 as by default low level API function OpenApiGetAllItems sets 128
+	case "":
+		queryParameters.Set("pageSize", "32")
+
+		// If pageSize is specified ensure it is not >32
+	default:
+		pageSizeValue, err := strconv.Atoi(pageSizeString)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing pageSize value: %s", err)
+		}
+		if pageSizeString != "" && pageSizeValue > 32 {
+			queryParameters.Set("pageSize", "32")
+		}
+	}
+
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
@@ -303,23 +329,5 @@ func getAllNsxtOrgVdcNetworks(client *Client, queryParameters url.Values) ([]*Ns
 		}
 	}
 
-	// onlyNsxtEdges := filterOnlyNsxtEdges(wrappedResponses)
-
 	return wrappedResponses, nil
 }
-
-// filterOnlyNsxtEdges filters our list of edge gateways only for NSXT_BACKED ones because original endpoint can
-// return NSX-V and NSX-T backed edge gateways.
-// func filterOnlyNsxtEdges(allEdges []*NsxtOrgVdcNetwork) []*NsxtOrgVdcNetwork {
-// 	filteredEdges := make([]*NsxtOrgVdcNetwork, 0)
-//
-// 	for index := range allEdges {
-// 		if allEdges[index] != nil && allEdges[index].OrgVdcNetwork != nil &&
-// 			allEdges[index].OrgVdcNetwork.GatewayBacking != nil &&
-// 			allEdges[index].OrgVdcNetwork.GatewayBacking.GatewayType == "NSXT_BACKED" {
-// 			filteredEdges = append(filteredEdges, allEdges[index])
-// 		}
-// 	}
-//
-// 	return filteredEdges
-// }

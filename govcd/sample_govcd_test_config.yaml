@@ -69,6 +69,8 @@ vcd:
       externalNetwork: tier0-backed-external-network
       # Existing NSX-T based VDC
       vdc: nsxt-vdc-name
+      # Existing NSX-T edge gateway
+      edgeGateway: nsxt-gw-name
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat

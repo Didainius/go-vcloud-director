@@ -172,6 +172,7 @@ type TestConfig struct {
 			Tier0routerVrf  string `yaml:"tier0routerVrf"`
 			Vdc             string `yaml:"vdc"`
 			ExternalNetwork string `yaml:"externalNetwork"`
+			EdgeGateway     string `yaml:"edgeGateway"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {
@@ -205,6 +206,7 @@ type TestVCD struct {
 	client         *VCDClient
 	org            *Org
 	vdc            *Vdc
+	nsxtVdc        *Vdc
 	vapp           *VApp
 	config         TestConfig
 	skipVappTests  bool
@@ -532,6 +534,14 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 
+	// configured NSX-T VDC for convenience if it specified in configuration
+	if config.VCD.Nsxt.Vdc != "" {
+		vcd.nsxtVdc, err = vcd.org.GetVDCByName(config.VCD.Nsxt.Vdc, false)
+		if err != nil {
+			panic(fmt.Errorf("error geting NSX-T Vdc '%s': %s", config.VCD.Nsxt.Vdc, err))
+		}
+	}
+
 	// This is set explicitly to make sure that catalog is using storage profile from correct VDC
 	setCatalogStorageProfile(vcd, check)
 
@@ -695,6 +705,53 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	// For this reason, the [ERROR] messages won't be followed by a program termination
 	vcd.infoCleanup(introMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	switch entity.EntityType {
+
+	// openApiEntity can be used to delete any OpenAPI entity due to the API being uniform and allowing the same
+	// low level OpenApiDeleteItem()
+	case "OpenApiEntity":
+
+		// entity.Parent contains "endpoint/{ID}"
+		// (in format types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID) but
+		// to lookup used API version this ID must not be present therefore below we remove suffix ID.
+		// This is done by splitting whole path by "/" and rebuilding path again without last element in slice (which is
+		// expected to be the ID)
+		endpointSlice := strings.Split(entity.Parent, "/")
+		endpoint := strings.Join(endpointSlice[:len(endpointSlice)-1], "/") + "/"
+		apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
+
+		// Build UP complete endpoint address
+		urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(entity.Parent)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		// Validate if the resource still exists
+		err = vcd.client.Client.OpenApiGetItem(apiVersion, urlRef, nil, nil)
+		if ContainsNotFound(err) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		// Attempt to use supplied path in entity.Parent for element deletion
+		err = vcd.client.Client.OpenApiDeleteItem(apiVersion, urlRef, nil)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+
 	case "vapp":
 		vapp, err := vcd.vdc.GetVAppByName(entity.Name, true)
 		if err != nil {

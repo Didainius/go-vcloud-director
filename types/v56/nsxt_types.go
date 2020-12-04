@@ -107,42 +107,54 @@ type OpenAPIEdgeGatewayEdgeClusterConfig struct {
 
 // OpenApiOrgVdcNetwork allows to manage Org Vdc networks
 type OpenApiOrgVdcNetwork struct {
-	ID          string `json:"id"`
+	ID          string `json:"id,omitempty"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Status      string `json:"status,omitempty"`
 	// OwnerRef defines org vDC or vDC Group that this network belongs to. If the ownerRef is set to a vDC Group, this
 	// network will be available across all the vDCs in the vDC Group. If the vDC Group is backed by a NSX-V network
 	// provider, the org vDC network is automatically connected to the distributed router associated with the vDC Group
 	// and the "connection" field does not need to be set. For API version 35.0 and above, this field should be set for
 	// network creation.
-	OwnerRef *OpenApiReference `json:"ownerRef"`
+	//
+	// Note. In lower API versions (i.e. 32.0) this field is not recognized and OrgVdc should be used instead
+	OwnerRef *OpenApiReference `json:"ownerRef,omitempty"`
+
+	OrgVdc *OpenApiReference `json:"orgVdc,omitempty"`
+
 	// NetworkType describes type of Org Vdc network. ('NAT_ROUTED', 'ISOLATED')
 	NetworkType string `json:"networkType"`
 
 	// Connection specifies the edge gateway this network is connected to.
 	//
 	// Note. When NetworkType == ISOLATED, there is no uplink connection.
-	Connection Connection `json:"connection"`
+	Connection *Connection `json:"connection,omitempty"`
 
 	// backingNetworkId contains the NSX ID of the backing network.
-	BackingNetworkId string `json:"backingNetworkId"`
+	BackingNetworkId string `json:"backingNetworkId,omitempty"`
 	// backingNetworkType contains object type of the backing network. ('VIRTUAL_WIRE' for NSX-V, 'NSXT_FLEXIBLE_SEGMENT'
 	// for NSX-T)
-	BackingNetworkType string `json:"backingNetworkType"`
+	BackingNetworkType string `json:"backingNetworkType,omitempty"`
 
 	// GuestVlanTaggingAllowed specifies whether guest VLAN tagging is allowed
-	GuestVlanTaggingAllowed bool `json:"guestVlanTaggingAllowed"`
+	GuestVlanTaggingAllowed *bool `json:"guestVlanTaggingAllowed"`
 
 	// Subnets contains list of subnets defined on
 	Subnets OrgVdcNetworkSubnets `json:"subnets"`
 
 	// SecurityGroups defines a list of firewall groups of type SECURITY_GROUP that are assigned to the Org VDC Network.
 	// These groups can then be used in firewall rules to protect the Org VDC Network and allow/deny traffic.
-	SecurityGroups OpenApiReferences `json:"securityGroups"`
+	SecurityGroups *OpenApiReferences `json:"securityGroups,omitempty"`
 
 	// RouteAdvertised reports if this network is advertised so that it can be routed out to the external networks. This
 	// applies only to network backed by NSX-T. Value will be unset if route advertisement is not applicable.
-	RouteAdvertised *bool `json:"routeAdvertised"`
+	RouteAdvertised *bool `json:"routeAdvertised,omitempty"`
+
+	// TotalIpCount is a read only attribute reporting total number of IPs available in network
+	TotalIpCount *int `json:"totalIpCount"`
+
+	// UsedIpCount is a read only attribute reporting number of used IPs in network
+	UsedIpCount *int `json:"usedIpCount"`
 }
 
 // OrgVdcNetworkSubnetIPRanges is a type alias to reuse the same definitions with appropriate names
@@ -168,5 +180,5 @@ type OrgVdcNetworkSubnetValues struct {
 // Connection specifies the edge gateway this network is connected to
 type Connection struct {
 	RouterRef      OpenApiReference `json:"routerRef"`
-	ConnectionType string           `json:"connectionType"`
+	ConnectionType string           `json:"connectionType,omitempty"`
 }
