@@ -216,10 +216,11 @@ type TestVCD struct {
 // Cleanup entity structure used by the tear-down procedure
 // at the end of the tests to remove leftover entities
 type CleanupEntity struct {
-	Name       string
-	EntityType string
-	Parent     string
-	CreatedBy  string
+	Name            string
+	EntityType      string
+	Parent          string
+	CreatedBy       string
+	OpenApiEndpoint string
 }
 
 // CleanupInfo is the data used to persist an entity list in a file
@@ -336,18 +337,26 @@ func writeCleanupList(cleanupList []CleanupEntity) error {
 	return file.Close()
 }
 
-// Adds an entity to the cleanup list.
+// AddToCleanupList adds an entity to the cleanup list.
 // To be called by all tests when a new entity has been created, before
 // running any other operation.
 // Items in the list will be deleted at the end of the tests if they still exist.
-func AddToCleanupList(name, entityType, parent, createdBy string) {
+// For OpenApi objects `entityType=OpenApiEntity` and `openApiEndpoint`should be set in format
+// "types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID"
+func AddToCleanupList(name, entityType, parent, createdBy, openApiEndpoint string) {
 	for _, item := range cleanupEntityList {
 		// avoid adding the same item twice
 		if item.Name == name && item.EntityType == entityType {
 			return
 		}
 	}
-	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy})
+	cleanupEntityList = append(cleanupEntityList, CleanupEntity{
+		Name:            name,
+		EntityType:      entityType,
+		Parent:          parent,
+		CreatedBy:       createdBy,
+		OpenApiEndpoint: openApiEndpoint,
+	})
 	err := writeCleanupList(cleanupEntityList)
 	if err != nil {
 		fmt.Printf("################ error writing cleanup list %s\n", err)
@@ -358,14 +367,23 @@ func AddToCleanupList(name, entityType, parent, createdBy string) {
 // To be called by all tests when a new entity has been created, before
 // running any other operation.
 // Items in the list will be deleted at the end of the tests if they still exist.
-func PrependToCleanupList(name, entityType, parent, createdBy string) {
+// For OpenApi objects `entityType=OpenApiEntity` and `openApiEndpoint`should be set in format
+// "types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID"
+func PrependToCleanupList(name, entityType, parent, createdBy, openApiEndpoint string) {
 	for _, item := range cleanupEntityList {
 		// avoid adding the same item twice
 		if item.Name == name && item.EntityType == entityType {
 			return
 		}
 	}
-	cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy}}, cleanupEntityList...)
+	cleanupEntityList = append([]CleanupEntity{CleanupEntity{
+		Name:            name,
+		EntityType:      entityType,
+		Parent:          parent,
+		CreatedBy:       createdBy,
+		OpenApiEndpoint: openApiEndpoint,
+	}},
+		cleanupEntityList...)
 	err := writeCleanupList(cleanupEntityList)
 	if err != nil {
 		fmt.Printf("################ error writing cleanup list %s\n", err)
@@ -710,17 +728,17 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	// low level OpenApiDeleteItem()
 	case "OpenApiEntity":
 
-		// entity.Parent contains "endpoint/{ID}"
+		// entity.OpenApiEndpoint contains "endpoint/{ID}"
 		// (in format types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID) but
 		// to lookup used API version this ID must not be present therefore below we remove suffix ID.
 		// This is done by splitting whole path by "/" and rebuilding path again without last element in slice (which is
 		// expected to be the ID)
-		endpointSlice := strings.Split(entity.Parent, "/")
+		endpointSlice := strings.Split(entity.OpenApiEndpoint, "/")
 		endpoint := strings.Join(endpointSlice[:len(endpointSlice)-1], "/") + "/"
 		apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
 
 		// Build UP complete endpoint address
-		urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(entity.Parent)
+		urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(entity.OpenApiEndpoint)
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
@@ -1543,7 +1561,7 @@ func (vcd *TestVCD) createTestVapp(name string) (*VApp, error) {
 	}
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
-	AddToCleanupList(name, "vapp", "", "createTestVapp")
+	AddToCleanupList(name, "vapp", "", "createTestVapp", "")
 	err = task.WaitTaskCompletion()
 	if err != nil {
 		return nil, fmt.Errorf("error composing vapp: %s", err)

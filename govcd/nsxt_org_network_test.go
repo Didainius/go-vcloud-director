@@ -111,8 +111,8 @@ func runOpenApiOrgVdcNetworkTest(vcd *TestVCD, check *C, orgVdcNetworkConfig *ty
 	check.Assert(err, IsNil)
 
 	// Use generic "OpenApiEntity" resource cleanup type
-	parentPath := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OrgVdcNetwork.ID
-	AddToCleanupList(orgVdcNet.OrgVdcNetwork.Name, "OpenApiEntity", parentPath, check.TestName())
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OrgVdcNetwork.ID
+	AddToCleanupList(orgVdcNet.OrgVdcNetwork.Name, "OpenApiEntity", "", check.TestName(), openApiEndpoint)
 
 	// Check it can be found
 	orgVdcNetById, err := vcd.nsxtVdc.GetNsxtOrgVdcNetworkById(orgVdcNet.OrgVdcNetwork.ID)

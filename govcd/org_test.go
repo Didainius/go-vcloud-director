@@ -34,7 +34,7 @@ func (vcd *TestVCD) Test_RefreshOrg(check *C) {
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
-	AddToCleanupList(TestRefreshOrg, "org", "", "Test_RefreshOrg")
+	AddToCleanupList(TestRefreshOrg, "org", "", "Test_RefreshOrg", "")
 
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -81,7 +81,7 @@ func (vcd *TestVCD) Test_DeleteOrg(check *C) {
 	check.Assert(err, IsNil)
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
-	AddToCleanupList(TestDeleteOrg, "org", "", "Test_DeleteOrg")
+	AddToCleanupList(TestDeleteOrg, "org", "", "Test_DeleteOrg", "")
 	// fetch newly created org
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -129,7 +129,7 @@ func (vcd *TestVCD) Test_UpdateOrg(check *C) {
 		check.Assert(task, Not(Equals), Task{})
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
-		AddToCleanupList(uo.orgName, "org", "", "TestUpdateOrg")
+		AddToCleanupList(uo.orgName, "org", "", "TestUpdateOrg", "")
 		// fetch newly created org
 		adminOrg, err := vcd.client.GetAdminOrgByName(uo.orgName)
 		check.Assert(err, IsNil)
@@ -323,7 +323,7 @@ func (vcd *TestVCD) Test_CreateVdc(check *C) {
 		err = adminOrg.CreateVdcWait(vdcConfiguration)
 		check.Assert(err, IsNil)
 
-		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, "Test_CreateVdc")
+		AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, "Test_CreateVdc", "")
 
 		vdc, err = adminOrg.GetVDCByName(vdcConfiguration.Name, true)
 		check.Assert(err, IsNil)
@@ -404,7 +404,7 @@ func (vcd *TestVCD) Test_AdminOrgCreateCatalog(check *C) {
 	}
 	adminCatalog, err := adminOrg.CreateCatalog(TestCreateCatalog, TestCreateCatalogDesc)
 	check.Assert(err, IsNil)
-	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog")
+	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog", "")
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestCreateCatalog)
 	check.Assert(adminCatalog.AdminCatalog.Description, Equals, TestCreateCatalogDesc)
 	task := NewTask(&vcd.client.Client)
@@ -437,7 +437,7 @@ func (vcd *TestVCD) Test_OrgCreateCatalog(check *C) {
 	}
 	catalog, err := org.CreateCatalog(TestCreateCatalog, TestCreateCatalogDesc)
 	check.Assert(err, IsNil)
-	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog")
+	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog", "")
 	check.Assert(catalog.Catalog.Name, Equals, TestCreateCatalog)
 	check.Assert(catalog.Catalog.Description, Equals, TestCreateCatalogDesc)
 	task := NewTask(&vcd.client.Client)
@@ -498,7 +498,7 @@ func (vcd *TestVCD) Test_RefreshVdc(check *C) {
 	adminVdc.AdminVdc.Name = TestRefreshOrgVdc
 	_, err = adminVdc.Update()
 	check.Assert(err, IsNil)
-	AddToCleanupList(TestRefreshOrgVdc, "vdc", vcd.org.Org.Name, check.TestName())
+	AddToCleanupList(TestRefreshOrgVdc, "vdc", vcd.org.Org.Name, check.TestName(), "")
 
 	// Test Refresh on vdc
 	err = adminVdc.Refresh()
@@ -607,7 +607,7 @@ func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.
 	}
 	_, err = adminOrg.CreateOrgVdc(vdcConfiguration)
 	check.Assert(err, IsNil)
-	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName())
+	AddToCleanupList(vdcConfiguration.Name, "vdc", vcd.org.Org.Name, check.TestName(), "")
 	return *adminOrg, vdcConfiguration, err
 }
 
