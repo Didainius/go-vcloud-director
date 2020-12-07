@@ -173,6 +173,7 @@ type TestConfig struct {
 			Vdc             string `yaml:"vdc"`
 			ExternalNetwork string `yaml:"externalNetwork"`
 			EdgeGateway     string `yaml:"edgeGateway"`
+			LogicalSwitch   string `yaml:"logicalSwitch"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {
@@ -735,7 +736,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		// expected to be the ID)
 		endpointSlice := strings.Split(entity.OpenApiEndpoint, "/")
 		endpoint := strings.Join(endpointSlice[:len(endpointSlice)-1], "/") + "/"
-		apiVersion, err := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
+		apiVersion, _ := vcd.client.Client.checkOpenApiEndpointCompatibility(endpoint)
 
 		// Build UP complete endpoint address
 		urlRef, err := vcd.client.Client.OpenApiBuildEndpoint(entity.OpenApiEndpoint)

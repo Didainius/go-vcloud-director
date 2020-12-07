@@ -11,6 +11,8 @@
 * Added ability to set specific catalog storage profile using `func (adminCatalog *AdminCatalog) Update()` [#344](https://github.com/vmware/go-vcloud-director/pull/344)
 * Added functions `(vdc *Vdc) GetNsxtEdgeClusterByName` and `(vdc *Vdc) GetAllNsxtEdgeClusters` for NSX-T Edge Cluster lookup [#344](https://github.com/vmware/go-vcloud-director/pull/344)
 * Added NSX-T Edge Gateway management functions `GetNsxtEdgeGatewayById`, `GetNsxtEdgeGatewayByName`, `GetAllNsxtEdgeGateways`, `CreateNsxtEdgeGateway`, `Update`, `Delete`  [#344](https://github.com/vmware/go-vcloud-director/pull/344)
+* Added OpenApi based NSX-T Org Vdc network functions `GetNsxtOrgVdcNetworkByName`, `GetAllNsxtOrgVdcNetworks`, `CreateNsxtOrgVdcNetwork`, `Update`, `Delete` [#XXX](https://github.com/vmware/go-vcloud-director/pull/XXX)
+* Added NSX-T Logical Switch lookup functions `GetNsxtLogicalSwitchByName`, `GetAllNsxtLogicalSwitches` useful for NSX-T Org Vdc Imported network creation [#XXX](https://github.com/vmware/go-vcloud-director/pull/XXX)
 
 BREAKING CHANGES:
 

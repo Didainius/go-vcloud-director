@@ -106,6 +106,50 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 	runOpenApiOrgVdcNetworkTest(vcd, check, orgVdcNetworkConfig)
 }
 
+func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipNoNsxtConfiguration(vcd, check)
+
+	logicalSwitch, err := vcd.nsxtVdc.GetNsxtLogicalSwitchByName(vcd.config.VCD.Nsxt.LogicalSwitch)
+	check.Assert(err, IsNil)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		OrgVdc:      &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+
+		NetworkType: types.OrgVdcNetworkTypeOpaque,
+		// BackingNetworkId contains NSX-T logical switch ID for Imported networks
+		BackingNetworkId: logicalSwitch.NsxtLogicalSwitch.ID,
+
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "3.1.1.1",
+					PrefixLength: 24,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "foo.bar",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "3.1.1.20",
+								EndAddress:   "3.1.1.30",
+							},
+							{
+								StartAddress: "3.1.1.40",
+								EndAddress:   "3.1.1.50",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	runOpenApiOrgVdcNetworkTest(vcd, check, orgVdcNetworkConfig)
+
+}
+
 func runOpenApiOrgVdcNetworkTest(vcd *TestVCD, check *C, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) {
 	orgVdcNet, err := vcd.vdc.CreateNsxtOrgVdcNetwork(orgVdcNetworkConfig)
 	check.Assert(err, IsNil)
@@ -126,6 +170,7 @@ func runOpenApiOrgVdcNetworkTest(vcd *TestVCD, check *C, orgVdcNetworkConfig *ty
 	// Retrieve all networks in VDC and expect newly created network to be there
 	var foundNetInVdc bool
 	allOrgVdcNets, err := vcd.nsxtVdc.GetAllNsxtOrgVdcNetworks(nil)
+	check.Assert(err, IsNil)
 	for _, net := range allOrgVdcNets {
 		if net.OrgVdcNetwork.ID == orgVdcNet.OrgVdcNetwork.ID {
 			foundNetInVdc = true

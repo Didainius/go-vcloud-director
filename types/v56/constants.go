@@ -359,4 +359,6 @@ const (
 const (
 	OrgVdcNetworkTypeRouted   = "NAT_ROUTED"
 	OrgVdcNetworkTypeIsolated = "ISOLATED"
+	// OrgVdcNetworkTypeOpaque type is used to create NSX-T imported network
+	OrgVdcNetworkTypeOpaque = "OPAQUE"
 )
