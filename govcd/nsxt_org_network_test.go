@@ -3,6 +3,8 @@
 package govcd
 
 import (
+	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -45,7 +47,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(vcd, check, orgVdcNetworkConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig)
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
@@ -103,7 +105,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(vcd, check, orgVdcNetworkConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig)
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
@@ -146,12 +148,164 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(vcd, check, orgVdcNetworkConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig)
 
 }
 
-func runOpenApiOrgVdcNetworkTest(vcd *TestVCD, check *C, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) {
-	orgVdcNet, err := vcd.vdc.CreateNsxtOrgVdcNetwork(orgVdcNetworkConfig)
+func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		NetworkType: types.OrgVdcNetworkTypeIsolated,
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "4.1.1.1",
+					PrefixLength: 25,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "bar.foo",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "4.1.1.20",
+								EndAddress:   "4.1.1.30",
+							},
+							{
+								StartAddress: "4.1.1.40",
+								EndAddress:   "4.1.1.50",
+							},
+							{
+								StartAddress: "4.1.1.88",
+								EndAddress:   "4.1.1.92",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig)
+}
+
+func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	// skipNoNsxtConfiguration(vcd, check)
+
+	nsxvEdgeGateway, err := vcd.vdc.GetEdgeGatewayByName(vcd.config.VCD.EdgeGateway, true)
+	check.Assert(err, IsNil)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		NetworkType: types.OrgVdcNetworkTypeRouted,
+
+		// Connection is used for "routed" network
+		Connection: &types.Connection{
+			RouterRef: types.OpenApiReference{
+				ID: nsxvEdgeGateway.EdgeGateway.ID,
+			},
+			ConnectionType: "INTERNAL",
+		},
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "2.1.1.1",
+					PrefixLength: 24,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "foo.bar",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "2.1.1.20",
+								EndAddress:   "2.1.1.30",
+							},
+							{
+								StartAddress: "2.1.1.40",
+								EndAddress:   "2.1.1.50",
+							},
+							{
+								StartAddress: "2.1.1.60",
+								EndAddress:   "2.1.1.62",
+							}, {
+								StartAddress: "2.1.1.72",
+								EndAddress:   "2.1.1.74",
+							}, {
+								StartAddress: "2.1.1.84",
+								EndAddress:   "2.1.1.85",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig)
+}
+
+func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+
+	externalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.ExternalNetwork)
+	check.Assert(err, IsNil)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		OrgVdc:      &types.OpenApiReference{ID: vcd.vdc.Vdc.ID},
+
+		NetworkType:   types.OrgVdcNetworkTypeDirect,
+		ParentNetwork: &types.OpenApiReference{ID: externalNetwork.ExternalNetwork.ID},
+
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "2.1.1.1",
+					PrefixLength: 24,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "foo.bar",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "2.1.1.20",
+								EndAddress:   "2.1.1.30",
+							},
+							{
+								StartAddress: "2.1.1.40",
+								EndAddress:   "2.1.1.50",
+							},
+							{
+								StartAddress: "2.1.1.60",
+								EndAddress:   "2.1.1.62",
+							}, {
+								StartAddress: "2.1.1.72",
+								EndAddress:   "2.1.1.74",
+							}, {
+								StartAddress: "2.1.1.84",
+								EndAddress:   "2.1.1.85",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig)
+}
+
+func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) {
+	orgVdcNet, err := vdc.CreateNsxtOrgVdcNetwork(orgVdcNetworkConfig)
 	check.Assert(err, IsNil)
 
 	// Use generic "OpenApiEntity" resource cleanup type
@@ -159,17 +313,17 @@ func runOpenApiOrgVdcNetworkTest(vcd *TestVCD, check *C, orgVdcNetworkConfig *ty
 	AddToCleanupList(orgVdcNet.OrgVdcNetwork.Name, "OpenApiEntity", "", check.TestName(), openApiEndpoint)
 
 	// Check it can be found
-	orgVdcNetById, err := vcd.nsxtVdc.GetNsxtOrgVdcNetworkById(orgVdcNet.OrgVdcNetwork.ID)
+	orgVdcNetByIdInVdc, err := vdc.GetNsxtOrgVdcNetworkById(orgVdcNet.OrgVdcNetwork.ID)
 	check.Assert(err, IsNil)
-	orgVdcNetByName, err := vcd.nsxtVdc.GetNsxtOrgVdcNetworkByName(orgVdcNet.OrgVdcNetwork.Name)
+	orgVdcNetByName, err := vdc.GetNsxtOrgVdcNetworkByName(orgVdcNet.OrgVdcNetwork.Name)
 	check.Assert(err, IsNil)
 
-	check.Assert(orgVdcNetById.OrgVdcNetwork.ID, Equals, orgVdcNet.OrgVdcNetwork.ID)
+	check.Assert(orgVdcNetByIdInVdc.OrgVdcNetwork.ID, Equals, orgVdcNet.OrgVdcNetwork.ID)
 	check.Assert(orgVdcNetByName.OrgVdcNetwork.ID, Equals, orgVdcNet.OrgVdcNetwork.ID)
 
 	// Retrieve all networks in VDC and expect newly created network to be there
 	var foundNetInVdc bool
-	allOrgVdcNets, err := vcd.nsxtVdc.GetAllNsxtOrgVdcNetworks(nil)
+	allOrgVdcNets, err := vdc.GetAllNsxtOrgVdcNetworks(nil)
 	check.Assert(err, IsNil)
 	for _, net := range allOrgVdcNets {
 		if net.OrgVdcNetwork.ID == orgVdcNet.OrgVdcNetwork.ID {
@@ -177,6 +331,17 @@ func runOpenApiOrgVdcNetworkTest(vcd *TestVCD, check *C, orgVdcNetworkConfig *ty
 		}
 	}
 	check.Assert(foundNetInVdc, Equals, true)
+
+	// Retrieve all networks in Org and expect newly created network to be there
+	// var foundNetInOrg bool
+	// allOrgNets, err := vcd.org.GetAllNsxtOrgVdcNetworks(nil)
+	// check.Assert(err, IsNil)
+	// for _, net := range allOrgNets {
+	// 	if net.OrgVdcNetwork.ID == orgVdcNet.OrgVdcNetwork.ID {
+	// 		foundNetInOrg = true
+	// 	}
+	// }
+	// check.Assert(foundNetInOrg, Equals, true)
 
 	// Update
 	orgVdcNet.OrgVdcNetwork.Description = check.TestName() + "updated description"
@@ -192,9 +357,9 @@ func runOpenApiOrgVdcNetworkTest(vcd *TestVCD, check *C, orgVdcNetworkConfig *ty
 	check.Assert(err, IsNil)
 
 	// Test again if it was deleted and expect it to contain ErrorEntityNotFound
-	_, err = vcd.nsxtVdc.GetNsxtOrgVdcNetworkByName(orgVdcNet.OrgVdcNetwork.Name)
+	_, err = vdc.GetNsxtOrgVdcNetworkByName(orgVdcNet.OrgVdcNetwork.Name)
 	check.Assert(ContainsNotFound(err), Equals, true)
 
-	_, err = vcd.nsxtVdc.GetNsxtOrgVdcNetworkById(orgVdcNet.OrgVdcNetwork.ID)
+	_, err = vdc.GetNsxtOrgVdcNetworkById(orgVdcNet.OrgVdcNetwork.ID)
 	check.Assert(ContainsNotFound(err), Equals, true)
 }

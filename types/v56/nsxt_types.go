@@ -136,6 +136,9 @@ type OpenApiOrgVdcNetwork struct {
 	// for NSX-T)
 	BackingNetworkType string `json:"backingNetworkType,omitempty"`
 
+	// ParentNetwork should have external network ID specified when creating NSX-V direct network
+	ParentNetwork *OpenApiReference `json:"parentNetworkId"`
+
 	// GuestVlanTaggingAllowed specifies whether guest VLAN tagging is allowed
 	GuestVlanTaggingAllowed *bool `json:"guestVlanTaggingAllowed"`
 

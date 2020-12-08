@@ -357,8 +357,12 @@ const (
 )
 
 const (
-	OrgVdcNetworkTypeRouted   = "NAT_ROUTED"
+	// OrgVdcNetworkTypeRouted can be used to create NSX-T or NSX-V routed Org Vdc network
+	OrgVdcNetworkTypeRouted = "NAT_ROUTED"
+	// OrgVdcNetworkTypeIsolated can be used to creaate NSX-T or NSX-V isolated Org Vdc network
 	OrgVdcNetworkTypeIsolated = "ISOLATED"
-	// OrgVdcNetworkTypeOpaque type is used to create NSX-T imported network
+	// OrgVdcNetworkTypeOpaque type is used to create NSX-T imported Org Vdc network
 	OrgVdcNetworkTypeOpaque = "OPAQUE"
+	// OrgVdcNetworkTypeDirect can be used to create NSX-V direct Org Vdc network
+	OrgVdcNetworkTypeDirect = "DIRECT"
 )

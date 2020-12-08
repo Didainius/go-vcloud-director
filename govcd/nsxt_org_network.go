@@ -18,18 +18,13 @@ type NsxtOrgVdcNetwork struct {
 	client        *Client
 }
 
-// GetNsxtOrgVdcNetworkById allows to retrieve NSX-T edge gateway by ID for Org admins
-// func (adminOrg *AdminOrg) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error) {
-// 	return getNsxtOrgVdcNetworkById(adminOrg.client, id, nil)
-// }
-
-// GetNsxtOrgVdcNetworkById allows to retrieve NSX-T edge gateway by ID for Org users
-// func (org *Org) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error) {
-// 	// Inject Org ID filter to perform filtering on server side
-// 	params := url.Values{}
-// 	filterParams := queryParameterFilterAnd("orgRef.id=="+org.Org.ID, params)
-// 	return getNsxtOrgVdcNetworkById(org.client, id, filterParams)
-// }
+// GetNsxtOrgVdcNetworkById allows to retrieve NSX-T edge gateway by ID for Org
+func (org *Org) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error) {
+	// Inject Org ID filter to perform filtering on server side
+	params := url.Values{}
+	filterParams := queryParameterFilterAnd("orgRef.id=="+org.Org.ID, params)
+	return getNsxtOrgVdcNetworkById(org.client, id, filterParams)
+}
 
 // GetNsxtOrgVdcNetworkById allows to retrieve NSX-T edge gateway by ID for specific Vdc
 func (vdc *Vdc) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error) {
@@ -40,47 +35,11 @@ func (vdc *Vdc) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error) 
 	if err != nil {
 		return nil, err
 	}
-	//
-	// if egw.OrgVdcNetwork.OrgVdc.ID != vdc.Vdc.ID {
-	// 	return nil, fmt.Errorf("%s: no NSX-T edge gateway with ID '%s' found in VDC '%s'",
-	// 		ErrorEntityNotFound, id, vdc.Vdc.ID)
-	// }
 
 	return egw, nil
 }
 
-// GetNsxtOrgVdcNetworkByName allows to retrieve NSX-T edge gateway by Name for Org admins
-// func (adminOrg *AdminOrg) GetNsxtOrgVdcNetworkByName(name string) (*NsxtOrgVdcNetwork, error) {
-// 	queryParameters := url.Values{}
-// 	queryParameters.Add("filter", "name=="+name)
-//
-// 	allEdges, err := adminOrg.GetAllNsxtOrgVdcNetworks(queryParameters)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
-// 	}
-//
-// 	onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
-//
-// 	return returnSingleNsxtOrgVdcNetwork(name, onlyNsxtEdges)
-// }
-
-// GetNsxtOrgVdcNetworkByName allows to retrieve NSX-T edge gateway by Name for Org admins
-// func (org *Org) GetNsxtOrgVdcNetworkByName(name string) (*NsxtOrgVdcNetwork, error) {
-// 	queryParameters := url.Values{}
-// 	queryParameters.Add("filter", "name=="+name)
-// 	queryParameters = queryParameterFilterAnd("orgRef.id=="+org.Org.ID, queryParameters)
-//
-// 	allEdges, err := org.GetAllNsxtOrgVdcNetworks(queryParameters)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("unable to retrieve edge gateway by name '%s': %s", name, err)
-// 	}
-//
-// 	// onlyNsxtEdges := filterOnlyNsxtEdges(allEdges)
-//
-// 	return returnSingleNsxtOrgVdcNetwork(name, allEdges)
-// }
-
-// GetNsxtOrgVdcNetworkByName allows to retrieve NSX-T edge gateway by Name for specifi Vdc
+// GetNsxtOrgVdcNetworkByName allows to retrieve NSX-T edge gateway by Name in the VDC
 func (vdc *Vdc) GetNsxtOrgVdcNetworkByName(name string) (*NsxtOrgVdcNetwork, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", "name=="+name)
@@ -95,51 +54,16 @@ func (vdc *Vdc) GetNsxtOrgVdcNetworkByName(name string) (*NsxtOrgVdcNetwork, err
 	return returnSingleNsxtOrgVdcNetwork(name, allEdges)
 }
 
-// GetAllNsxtOrgVdcNetworks allows to retrieve all Org Vdc networks in AdminOrg
-// func (adminOrg *AdminOrg) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error) {
-// 	return getAllNsxtOrgVdcNetworks(adminOrg.client, queryParameters)
-// }
-
-// GetAllNsxtOrgVdcNetworks allows to retrieve all Org Vdc networks in Org
-//
-// Note. GetAllNsxtOrgVdcNetworks
-// func (org *Org) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error) {
-// 	return getAllNsxtOrgVdcNetworks(org.client, queryParameters)
-// }
-
 // GetAllNsxtOrgVdcNetworks allows to retrieve all NSX-T Or gVdc networks in Vdc
+//
+// Note. If pageSize > 32 it will be limited to maximum of 32 in this function because API validation does not allow for
+// higher number
 func (vdc *Vdc) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error) {
 	filteredQueryParams := queryParameterFilterAnd("orgVdc.id=="+vdc.Vdc.ID, queryParameters)
 	return getAllNsxtOrgVdcNetworks(vdc.client, filteredQueryParams)
 }
 
-// CreateNsxtOrgVdcNetwork
-// func (org *Org) CreateNsxtOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*NsxtOrgVdcNetwork, error) {
-// 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
-// 	minimumApiVersion, err := org.client.checkOpenApiEndpointCompatibility(endpoint)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	urlRef, err := org.client.OpenApiBuildEndpoint(endpoint)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	returnEgw := &NsxtOrgVdcNetwork{
-// 		OrgVdcNetwork: &types.OpenApiOrgVdcNetwork{},
-// 		client:        org.client,
-// 	}
-//
-// 	err = org.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, OrgVdcNetworkConfig, returnEgw.OrgVdcNetwork)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error creating Org Vdc network: %s", err)
-// 	}
-//
-// 	return returnEgw, nil
-// }
-
-// CreateNsxtOrgVdcNetwork allows to create
+// CreateNsxtOrgVdcNetwork allows to create NSX-T Org Vdc network
 func (vdc *Vdc) CreateNsxtOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*NsxtOrgVdcNetwork, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
 	minimumApiVersion, err := vdc.client.checkOpenApiEndpointCompatibility(endpoint)
@@ -167,10 +91,6 @@ func (vdc *Vdc) CreateNsxtOrgVdcNetwork(OrgVdcNetworkConfig *types.OpenApiOrgVdc
 
 // Update allows to update Org Vdc network
 func (orgVdcNet *NsxtOrgVdcNetwork) Update(OrgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) (*NsxtOrgVdcNetwork, error) {
-	// if !orgVdcNet.client.IsSysAdmin {
-	// 	return nil, fmt.Errorf("only System Administrator can update Edge Gateway")
-	// }
-
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
 	minimumApiVersion, err := orgVdcNet.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
@@ -226,8 +146,8 @@ func (orgVdcNet *NsxtOrgVdcNetwork) Delete() error {
 }
 
 // getNsxtOrgVdcNetworkById is a private parent for wrapped functions:
-// func (adminOrg *AdminOrg) GetNsxtOrgVdcNetworkByName(id string) (*NsxtOrgVdcNetwork, error)
-// func (org *Org) GetNsxtOrgVdcNetworkByName(id string) (*NsxtOrgVdcNetwork, error)
+// func (org *Org) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error)
+// func (vdc *Vdc) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error)
 func getNsxtOrgVdcNetworkById(client *Client, id string, queryParameters url.Values) (*NsxtOrgVdcNetwork, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
@@ -254,11 +174,6 @@ func getNsxtOrgVdcNetworkById(client *Client, id string, queryParameters url.Val
 		return nil, err
 	}
 
-	// if egw.OrgVdcNetwork.GatewayBacking.GatewayType != "NSXT_BACKED" {
-	// 	return nil, fmt.Errorf("%s: this is not NSX-T edge gateway (%s)",
-	// 		ErrorEntityNotFound, egw.OrgVdcNetwork.GatewayBacking.GatewayType)
-	// }
-
 	return egw, nil
 }
 
@@ -277,8 +192,7 @@ func returnSingleNsxtOrgVdcNetwork(name string, allEdges []*NsxtOrgVdcNetwork) (
 }
 
 // getAllNsxtOrgVdcNetworks is a private parent for wrapped functions:
-// func (adminOrg *AdminOrg) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error)
-// func (org *Org) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error)
+// func (vdc *Vdc) GetAllNsxtOrgVdcNetworks(queryParameters url.Values) ([]*NsxtOrgVdcNetwork, error)
 //
 // Note. If pageSize > 32 it will be limited to maximum of 32 in this function because API validation does not allow for
 // higher number
