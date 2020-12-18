@@ -442,7 +442,7 @@ func (vcd *TestVCD) Test_AdminOrgCreateCatalogWithStorageProfile(check *C) {
 
 	adminCatalog, err := adminOrg.CreateCatalogWithStorageProfile(check.TestName(), TestCreateCatalogDesc, createStorageProfiles)
 	check.Assert(err, IsNil)
-	AddToCleanupList(check.TestName(), "catalog", vcd.org.Org.Name, check.TestName())
+	AddToCleanupList(check.TestName(), "catalog", vcd.org.Org.Name, check.TestName(), "")
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, check.TestName())
 	check.Assert(adminCatalog.AdminCatalog.Description, Equals, TestCreateCatalogDesc)
 	task := NewTask(&vcd.client.Client)
@@ -525,7 +525,7 @@ func (vcd *TestVCD) Test_OrgCreateCatalogWithStorageProfile(check *C) {
 
 	catalog, err := org.CreateCatalogWithStorageProfile(check.TestName(), TestCreateCatalogDesc, storageProfiles)
 	check.Assert(err, IsNil)
-	AddToCleanupList(check.TestName(), "catalog", vcd.org.Org.Name, check.TestName())
+	AddToCleanupList(check.TestName(), "catalog", vcd.org.Org.Name, check.TestName(), "")
 	check.Assert(catalog.Catalog.Name, Equals, check.TestName())
 	check.Assert(catalog.Catalog.Description, Equals, TestCreateCatalogDesc)
 	task := NewTask(&vcd.client.Client)
