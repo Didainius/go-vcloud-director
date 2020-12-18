@@ -18,8 +18,7 @@ type NsxtEdgeCluster struct {
 }
 
 // GetNsxtEdgeClusterByName retrieves a particular NSX-T Edge Cluster by name available for that VDC
-//
-// Note. Multiple NSX-T Edge Clusters with the same name may exist.
+// Note: Multiple NSX-T Edge Clusters with the same name may exist.
 func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) {
 	if name == "" {
 		return nil, fmt.Errorf("empty NSX-T Edge Cluster name specified")
@@ -27,7 +26,7 @@ func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) 
 
 	// Ideally FIQL filter could be used to filter on server side and get only desired result, but filtering on
 	// 'name' is not yet supported. The only supported field for filtering is
-	// _context==urn:vcloud:vdc:09722307-aee0-4623-af95-7f8e577c9ebc to specify parent Org Vdc (This
+	// _context==urn:vcloud:vdc:09722307-aee0-4623-af95-7f8e577c9ebc to specify parent Org VDC (This
 	// automatically happens in GetAllNsxtEdgeClusters()). The below filter injection is left as documentation.
 	/*
 		queryParameters := copyOrNewUrlValues(nil)
@@ -36,7 +35,7 @@ func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) 
 
 	nsxtEdgeClusters, err := vdc.GetAllNsxtEdgeClusters(nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not find NSX-T Edge Cluster with name '%s' for Org Vdc with id '%s': %s",
+		return nil, fmt.Errorf("could not find NSX-T Edge Cluster with name '%s' for Org VDC with id '%s': %s",
 			name, vdc.Vdc.ID, err)
 	}
 
@@ -46,12 +45,12 @@ func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) 
 
 	if len(nsxtEdgeClusters) == 0 {
 		// ErrorEntityNotFound is injected here for the ability to validate problem using ContainsNotFound()
-		return nil, fmt.Errorf("%s: no NSX-T Tier-0 Edge Cluster with name '%s' for Org Vdc with id '%s' found",
+		return nil, fmt.Errorf("%s: no NSX-T Tier-0 Edge Cluster with name '%s' for Org VDC with id '%s' found",
 			ErrorEntityNotFound, name, vdc.Vdc.ID)
 	}
 
 	if len(nsxtEdgeClusters) > 1 {
-		return nil, fmt.Errorf("more than one (%d) NSX-T Edge Cluster with name '%s' for Org Vdc with id '%s' found",
+		return nil, fmt.Errorf("more than one (%d) NSX-T Edge Cluster with name '%s' for Org VDC with id '%s' found",
 			len(nsxtEdgeClusters), name, vdc.Vdc.ID)
 	}
 
@@ -62,9 +61,9 @@ func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) 
 // filtering by name.
 func filterNsxtEdgeClusters(name string, allNnsxtEdgeCluster []*NsxtEdgeCluster) []*NsxtEdgeCluster {
 	filteredNsxtEdgeClusters := make([]*NsxtEdgeCluster, 0)
-	for index, nsxtTier0Router := range allNnsxtEdgeCluster {
+	for index, nsxtEdgeCluster := range allNnsxtEdgeCluster {
 		if allNnsxtEdgeCluster[index].NsxtEdgeCluster.Name == name {
-			filteredNsxtEdgeClusters = append(filteredNsxtEdgeClusters, nsxtTier0Router)
+			filteredNsxtEdgeClusters = append(filteredNsxtEdgeClusters, nsxtEdgeCluster)
 		}
 	}
 
@@ -90,7 +89,7 @@ func (vdc *Vdc) GetAllNsxtEdgeClusters(queryParameters url.Values) ([]*NsxtEdgeC
 	}
 
 	// Get all NSX-T Edge clusters that are accessible to an organization VDC. The “_context” filter key must be set with
-	// the id of the VDC for which we want to get available Edge Clusters for.
+	// the ID of the VDC for which we want to get available Edge Clusters for.
 	//
 	// _context==urn:vcloud:vdc:09722307-aee0-4623-af95-7f8e577c9ebc
 

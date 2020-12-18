@@ -1,4 +1,4 @@
-## 2.10.0 (Unreleased)
+## 2.10.0 (December 18, 2020)
 
 * Added functions to retrieve and use VCD version `client.GetVcdVersion`, `client.GetVcdShortVersion`, `client.GetVcdFullVersion`, `client.VersionEqualOrGreater` [#339](https://github.com/vmware/go-vcloud-director/pull/339)
 * Added methods `VM.UpdateStorageProfile`, `VM.UpdateStorageProfileAsync` [#338](https://github.com/vmware/go-vcloud-director/pull/338)
@@ -8,11 +8,11 @@
 * Added functions `edge.GetLbAppRules`, `edge.GetLbServerPools`, `edge.GetLbAppProfiles`, `edge.GetNsxvNatRules`, `client.GetOrgList`
 * Exported private function `client.maxSupportedVersion` to `client.MaxSupportedVersion`
 * Able to upload an OVF without ovf:size defined in File part. Some bug fix for uploading OVA/OVF. [#331](https://github.com/vmware/go-vcloud-director/pull/331)
-* Added ability to set specific catalog storage profile using `func (adminCatalog *AdminCatalog) Update()` [#344](https://github.com/vmware/go-vcloud-director/pull/344)
-* Added functions `(vdc *Vdc) GetNsxtEdgeClusterByName` and `(vdc *Vdc) GetAllNsxtEdgeClusters` for NSX-T Edge Cluster lookup [#344](https://github.com/vmware/go-vcloud-director/pull/344)
-* Added NSX-T Edge Gateway management functions `GetNsxtEdgeGatewayById`, `GetNsxtEdgeGatewayByName`, `GetAllNsxtEdgeGateways`, `CreateNsxtEdgeGateway`, `Update`, `Delete`  [#344](https://github.com/vmware/go-vcloud-director/pull/344)
-* Added OpenApi based NSX-T Org Vdc network functions `GetNsxtOrgVdcNetworkByName`, `GetAllNsxtOrgVdcNetworks`, `CreateNsxtOrgVdcNetwork`, `Update`, `Delete` [#XXX](https://github.com/vmware/go-vcloud-director/pull/XXX)
-* Added NSX-T Logical Switch lookup functions `GetNsxtLogicalSwitchByName`, `GetAllNsxtLogicalSwitches` useful for NSX-T Org Vdc Imported network creation [#XXX](https://github.com/vmware/go-vcloud-director/pull/XXX)
+* Add support for handling catalog storage profile (`adminOrg.CreateCatalogWithStorageProfile`,
+`org.CreateCatalogWithStorageProfile`, `adminCatalog.Update`) [#345](https://github.com/vmware/go-vcloud-director/pull/345)
+* Add convenience functions `AdminOrg.GetAllStorageProfileReferences`, `AdminOrg.GetStorageProfileReferenceById`, `AdminOrg.GetAllVDCs` [#345](https://github.com/vmware/go-vcloud-director/pull/345)
+* Added VCD 10.1+ functions `(vdc *Vdc) GetNsxtEdgeClusterByName` and `(vdc *Vdc) GetAllNsxtEdgeClusters` for NSX-T Edge Cluster lookup [#344](https://github.com/vmware/go-vcloud-director/pull/344)
+* Added VCD 10.1+ NSX-T Edge Gateway management functions `GetNsxtEdgeGatewayById`, `GetNsxtEdgeGatewayByName`, `GetAllNsxtEdgeGateways`, `CreateNsxtEdgeGateway`, `Update`, `Delete` [#344](https://github.com/vmware/go-vcloud-director/pull/344)
 
 BREAKING CHANGES:
 
