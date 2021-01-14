@@ -145,6 +145,26 @@ func (orgVdcNet *NsxtOrgVdcNetwork) Delete() error {
 	return nil
 }
 
+func (orgVdcNet *NsxtOrgVdcNetwork) GetType() string {
+
+	return "nil"
+}
+
+func (orgVdcNet *NsxtOrgVdcNetwork) IsIsolated() bool {
+
+	return false
+}
+
+func (orgVdcNet *NsxtOrgVdcNetwork) IsRouted() bool {
+
+	return false
+}
+
+func (orgVdcNet *NsxtOrgVdcNetwork) IsImported() bool {
+
+	return false
+}
+
 // getNsxtOrgVdcNetworkById is a private parent for wrapped functions:
 // func (org *Org) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error)
 // func (vdc *Vdc) GetNsxtOrgVdcNetworkById(id string) (*NsxtOrgVdcNetwork, error)
