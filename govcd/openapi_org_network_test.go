@@ -47,7 +47,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, "")
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
@@ -105,7 +105,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, "")
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
@@ -148,7 +148,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, "")
 
 }
 
@@ -189,7 +189,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, "")
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
@@ -247,7 +247,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, "")
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
@@ -301,32 +301,32 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig)
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, "")
 }
 
-func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork) {
-	orgVdcNet, err := vdc.CreateNsxtOrgVdcNetwork(orgVdcNetworkConfig)
+func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, extpectNetworkType string) {
+	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
 	check.Assert(err, IsNil)
 
 	// Use generic "OpenApiEntity" resource cleanup type
-	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OrgVdcNetwork.ID
-	AddToCleanupList(orgVdcNet.OrgVdcNetwork.Name, "OpenApiEntity", "", check.TestName(), openApiEndpoint)
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OpenApiOrgVdcNetwork.ID
+	AddToCleanupList(orgVdcNet.OpenApiOrgVdcNetwork.Name, "OpenApiEntity", "", check.TestName(), openApiEndpoint)
 
 	// Check it can be found
-	orgVdcNetByIdInVdc, err := vdc.GetNsxtOrgVdcNetworkById(orgVdcNet.OrgVdcNetwork.ID)
+	orgVdcNetByIdInVdc, err := vdc.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
 	check.Assert(err, IsNil)
-	orgVdcNetByName, err := vdc.GetNsxtOrgVdcNetworkByName(orgVdcNet.OrgVdcNetwork.Name)
+	orgVdcNetByName, err := vdc.GetOpenApiOrgVdcNetworkByName(orgVdcNet.OpenApiOrgVdcNetwork.Name)
 	check.Assert(err, IsNil)
 
-	check.Assert(orgVdcNetByIdInVdc.OrgVdcNetwork.ID, Equals, orgVdcNet.OrgVdcNetwork.ID)
-	check.Assert(orgVdcNetByName.OrgVdcNetwork.ID, Equals, orgVdcNet.OrgVdcNetwork.ID)
+	check.Assert(orgVdcNetByIdInVdc.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(orgVdcNetByName.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
 
 	// Retrieve all networks in VDC and expect newly created network to be there
 	var foundNetInVdc bool
-	allOrgVdcNets, err := vdc.GetAllNsxtOrgVdcNetworks(nil)
+	allOrgVdcNets, err := vdc.GetAllOpenApiOrgVdcNetworks(nil)
 	check.Assert(err, IsNil)
 	for _, net := range allOrgVdcNets {
-		if net.OrgVdcNetwork.ID == orgVdcNet.OrgVdcNetwork.ID {
+		if net.OpenApiOrgVdcNetwork.ID == orgVdcNet.OpenApiOrgVdcNetwork.ID {
 			foundNetInVdc = true
 		}
 	}
@@ -334,32 +334,32 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 
 	// Retrieve all networks in Org and expect newly created network to be there
 	// var foundNetInOrg bool
-	// allOrgNets, err := vcd.org.GetAllNsxtOrgVdcNetworks(nil)
+	// allOrgNets, err := vcd.org.GetAllOpenApiOrgVdcNetworks(nil)
 	// check.Assert(err, IsNil)
 	// for _, net := range allOrgNets {
-	// 	if net.OrgVdcNetwork.ID == orgVdcNet.OrgVdcNetwork.ID {
+	// 	if net.OpenApiOrgVdcNetwork.ID == orgVdcNet.OpenApiOrgVdcNetwork.ID {
 	// 		foundNetInOrg = true
 	// 	}
 	// }
 	// check.Assert(foundNetInOrg, Equals, true)
 
 	// Update
-	orgVdcNet.OrgVdcNetwork.Description = check.TestName() + "updated description"
-	updatedOrgVdcNet, err := orgVdcNet.Update(orgVdcNet.OrgVdcNetwork)
+	orgVdcNet.OpenApiOrgVdcNetwork.Description = check.TestName() + "updated description"
+	updatedOrgVdcNet, err := orgVdcNet.Update(orgVdcNet.OpenApiOrgVdcNetwork)
 	check.Assert(err, IsNil)
 
-	check.Assert(updatedOrgVdcNet.OrgVdcNetwork.Name, Equals, orgVdcNet.OrgVdcNetwork.Name)
-	check.Assert(updatedOrgVdcNet.OrgVdcNetwork.ID, Equals, orgVdcNet.OrgVdcNetwork.ID)
-	check.Assert(updatedOrgVdcNet.OrgVdcNetwork.Description, Equals, orgVdcNet.OrgVdcNetwork.Description)
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Name, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Description, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Description)
 
 	// Delete
 	err = orgVdcNet.Delete()
 	check.Assert(err, IsNil)
 
 	// Test again if it was deleted and expect it to contain ErrorEntityNotFound
-	_, err = vdc.GetNsxtOrgVdcNetworkByName(orgVdcNet.OrgVdcNetwork.Name)
+	_, err = vdc.GetOpenApiOrgVdcNetworkByName(orgVdcNet.OpenApiOrgVdcNetwork.Name)
 	check.Assert(ContainsNotFound(err), Equals, true)
 
-	_, err = vdc.GetNsxtOrgVdcNetworkById(orgVdcNet.OrgVdcNetwork.ID)
+	_, err = vdc.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
 	check.Assert(ContainsNotFound(err), Equals, true)
 }
