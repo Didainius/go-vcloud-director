@@ -342,49 +342,65 @@ func writeCleanupList(cleanupList []CleanupEntity) error {
 // To be called by all tests when a new entity has been created, before
 // running any other operation.
 // Items in the list will be deleted at the end of the tests if they still exist.
-// For OpenApi objects `entityType=OpenApiEntity` and `openApiEndpoint`should be set in format
-// "types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID"
-func AddToCleanupList(name, entityType, parent, createdBy, openApiEndpoint string) {
+func AddToCleanupList(name, entityType, parent, createdBy string) {
 	for _, item := range cleanupEntityList {
 		// avoid adding the same item twice
 		if item.Name == name && item.EntityType == entityType {
 			return
 		}
 	}
-	cleanupEntityList = append(cleanupEntityList, CleanupEntity{
-		Name:            name,
-		EntityType:      entityType,
-		Parent:          parent,
-		CreatedBy:       createdBy,
-		OpenApiEndpoint: openApiEndpoint,
-	})
+	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy})
 	err := writeCleanupList(cleanupEntityList)
 	if err != nil {
 		fmt.Printf("################ error writing cleanup list %s\n", err)
 	}
 }
 
-// Prepend an entity to the cleanup list.
+// PrependToCleanupList prepends an entity to the cleanup list.
 // To be called by all tests when a new entity has been created, before
 // running any other operation.
 // Items in the list will be deleted at the end of the tests if they still exist.
-// For OpenApi objects `entityType=OpenApiEntity` and `openApiEndpoint`should be set in format
-// "types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID"
-func PrependToCleanupList(name, entityType, parent, createdBy, openApiEndpoint string) {
+func PrependToCleanupList(name, entityType, parent, createdBy string) {
 	for _, item := range cleanupEntityList {
 		// avoid adding the same item twice
 		if item.Name == name && item.EntityType == entityType {
 			return
 		}
 	}
-	cleanupEntityList = append([]CleanupEntity{CleanupEntity{
-		Name:            name,
-		EntityType:      entityType,
-		Parent:          parent,
-		CreatedBy:       createdBy,
-		OpenApiEndpoint: openApiEndpoint,
-	}},
-		cleanupEntityList...)
+	cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: entityType, Parent: parent, CreatedBy: createdBy}}, cleanupEntityList...)
+	err := writeCleanupList(cleanupEntityList)
+	if err != nil {
+		fmt.Printf("################ error writing cleanup list %s\n", err)
+	}
+}
+
+// AddToCleanupListOpenApi adds an OpenAPI entity OpenApi objects `entityType=OpenApiEntity` and `openApiEndpoint`should
+// be set in format "types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID"
+func AddToCleanupListOpenApi(name, createdBy, openApiEndpoint string) {
+	for _, item := range cleanupEntityList {
+		// avoid adding the same item twice
+		if item.OpenApiEndpoint == openApiEndpoint {
+			return
+		}
+	}
+	cleanupEntityList = append(cleanupEntityList, CleanupEntity{Name: name, EntityType: "OpenApiEntity", CreatedBy: createdBy, OpenApiEndpoint: openApiEndpoint})
+	err := writeCleanupList(cleanupEntityList)
+	if err != nil {
+		fmt.Printf("################ error writing cleanup list %s\n", err)
+	}
+}
+
+// PrependToCleanupListOpenApi prepends an OpenAPI entity OpenApi objects `entityType=OpenApiEntity` and
+// `openApiEndpoint`should be set in format "types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + ID"
+//lint:ignore U1000 Not yet used
+func PrependToCleanupListOpenApi(name, createdBy, openApiEndpoint string) {
+	for _, item := range cleanupEntityList {
+		// avoid adding the same item twice
+		if item.OpenApiEndpoint == openApiEndpoint {
+			return
+		}
+	}
+	cleanupEntityList = append([]CleanupEntity{{Name: name, EntityType: "OpenApiEntity", CreatedBy: createdBy, OpenApiEndpoint: openApiEndpoint}}, cleanupEntityList...)
 	err := writeCleanupList(cleanupEntityList)
 	if err != nil {
 		fmt.Printf("################ error writing cleanup list %s\n", err)
@@ -1562,7 +1578,7 @@ func (vcd *TestVCD) createTestVapp(name string) (*VApp, error) {
 	}
 	// After a successful creation, the entity is added to the cleanup list.
 	// If something fails after this point, the entity will be removed
-	AddToCleanupList(name, "vapp", "", "createTestVapp", "")
+	AddToCleanupList(name, "vapp", "", "createTestVapp")
 	err = task.WaitTaskCompletion()
 	if err != nil {
 		return nil, fmt.Errorf("error composing vapp: %s", err)
