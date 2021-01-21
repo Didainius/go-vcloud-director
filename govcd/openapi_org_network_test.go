@@ -109,6 +109,9 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 	skipNoNsxtConfiguration(vcd, check)
 
