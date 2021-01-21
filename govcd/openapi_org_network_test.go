@@ -47,7 +47,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, "")
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated)
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
@@ -105,14 +105,14 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, "")
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted)
 }
 
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 	skipNoNsxtConfiguration(vcd, check)
 
-	logicalSwitch, err := vcd.nsxtVdc.GetNsxtLogicalSwitchByName(vcd.config.VCD.Nsxt.LogicalSwitch)
+	logicalSwitch, err := vcd.nsxtVdc.GetNsxtLogicalSwitchByName(vcd.config.VCD.Nsxt.UnusedSegment)
 	check.Assert(err, IsNil)
 
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
@@ -148,7 +148,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, "")
+	runOpenApiOrgVdcNetworkTest(check, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque)
 
 }
 
@@ -189,7 +189,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, "")
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated)
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
@@ -247,7 +247,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, "")
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted)
 }
 
 func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
@@ -301,7 +301,7 @@ func (vcd *TestVCD) Test_NsxvOrgVdcNetworkDirect(check *C) {
 		},
 	}
 
-	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, "")
+	runOpenApiOrgVdcNetworkTest(check, vcd.vdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeDirect)
 }
 
 func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, extpectNetworkType string) {
@@ -311,6 +311,8 @@ func runOpenApiOrgVdcNetworkTest(check *C, vdc *Vdc, orgVdcNetworkConfig *types.
 	// Use generic "OpenApiEntity" resource cleanup type
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OpenApiOrgVdcNetwork.ID
 	AddToCleanupListOpenApi(orgVdcNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
+
+	check.Assert(orgVdcNet.GetType(), Equals, extpectNetworkType)
 
 	// Check it can be found
 	orgVdcNetByIdInVdc, err := vdc.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)

@@ -45,7 +45,7 @@ func (vcd *TestVCD) Test_GetNsxtLogicalSwitchByName(check *C) {
 	nsxtVdc, err := vcd.org.GetVDCByNameOrId(vcd.config.VCD.Nsxt.Vdc, true)
 	check.Assert(err, IsNil)
 
-	logicalSwitch, err := nsxtVdc.GetNsxtLogicalSwitchByName(vcd.config.VCD.Nsxt.LogicalSwitch)
+	logicalSwitch, err := nsxtVdc.GetNsxtLogicalSwitchByName(vcd.config.VCD.Nsxt.UnusedSegment)
 	check.Assert(err, IsNil)
-	check.Assert(logicalSwitch.NsxtLogicalSwitch.Name, Equals, vcd.config.VCD.Nsxt.LogicalSwitch)
+	check.Assert(logicalSwitch.NsxtLogicalSwitch.Name, Equals, vcd.config.VCD.Nsxt.UnusedSegment)
 }

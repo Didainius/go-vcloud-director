@@ -173,7 +173,7 @@ type TestConfig struct {
 			Vdc             string `yaml:"vdc"`
 			ExternalNetwork string `yaml:"externalNetwork"`
 			EdgeGateway     string `yaml:"edgeGateway"`
-			LogicalSwitch   string `yaml:"logicalSwitch"`
+			UnusedSegment   string `yaml:"unusedSegment"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {

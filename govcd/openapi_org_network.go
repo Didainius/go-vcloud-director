@@ -149,17 +149,19 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) GetType() string {
 }
 
 func (orgVdcNet *OpenApiOrgVdcNetwork) IsIsolated() bool {
-
-	return false
+	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeIsolated
 }
 
 func (orgVdcNet *OpenApiOrgVdcNetwork) IsRouted() bool {
-	return orgVdcNet.GetType() == "NAT_ROUTED"
+	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeRouted
 }
 
 func (orgVdcNet *OpenApiOrgVdcNetwork) IsImported() bool {
+	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeOpaque
+}
 
-	return false
+func (orgVdcNet *OpenApiOrgVdcNetwork) IsDirect() bool {
+	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeDirect
 }
 
 // getOpenApiOrgVdcNetworkById is a private parent for wrapped functions:
