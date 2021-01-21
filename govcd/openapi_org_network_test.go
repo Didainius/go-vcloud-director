@@ -112,7 +112,11 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 	skipNoNsxtConfiguration(vcd, check)
 
-	logicalSwitch, err := vcd.nsxtVdc.GetNsxtLogicalSwitchByName(vcd.config.VCD.Nsxt.UnusedSegment)
+	if vcd.config.VCD.Nsxt.UnusedSegment == "" {
+		check.Skip("Unused NSX-T segment was not provided")
+	}
+
+	logicalSwitch, err := vcd.nsxtVdc.GetNsxtImportableSwitchByName(vcd.config.VCD.Nsxt.UnusedSegment)
 	check.Assert(err, IsNil)
 
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
@@ -122,7 +126,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImported(check *C) {
 
 		NetworkType: types.OrgVdcNetworkTypeOpaque,
 		// BackingNetworkId contains NSX-T logical switch ID for Imported networks
-		BackingNetworkId: logicalSwitch.NsxtLogicalSwitch.ID,
+		BackingNetworkId: logicalSwitch.NsxtImportableSwitch.ID,
 
 		Subnets: types.OrgVdcNetworkSubnets{
 			Values: []types.OrgVdcNetworkSubnetValues{

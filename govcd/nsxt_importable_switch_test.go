@@ -12,7 +12,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_GetAllNsxtLogicalSwitches(check *C) {
+func (vcd *TestVCD) Test_GetAllNsxtImportableSwitches(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -25,14 +25,14 @@ func (vcd *TestVCD) Test_GetAllNsxtLogicalSwitches(check *C) {
 	nsxtVdc, err := vcd.org.GetVDCByNameOrId(vcd.config.VCD.Nsxt.Vdc, true)
 	check.Assert(err, IsNil)
 
-	allSwitches, err := nsxtVdc.GetAllNsxtLogicalSwitches()
+	allSwitches, err := nsxtVdc.GetAllNsxtImportableSwitches()
 	check.Assert(err, IsNil)
 	check.Assert(len(allSwitches) > 1, Equals, true)
 	// spew.Dump(allSwitches)
 
 }
 
-func (vcd *TestVCD) Test_GetNsxtLogicalSwitchByName(check *C) {
+func (vcd *TestVCD) Test_GetNsxtImportableSwitchByName(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -45,7 +45,7 @@ func (vcd *TestVCD) Test_GetNsxtLogicalSwitchByName(check *C) {
 	nsxtVdc, err := vcd.org.GetVDCByNameOrId(vcd.config.VCD.Nsxt.Vdc, true)
 	check.Assert(err, IsNil)
 
-	logicalSwitch, err := nsxtVdc.GetNsxtLogicalSwitchByName(vcd.config.VCD.Nsxt.UnusedSegment)
+	logicalSwitch, err := nsxtVdc.GetNsxtImportableSwitchByName(vcd.config.VCD.Nsxt.UnusedSegment)
 	check.Assert(err, IsNil)
-	check.Assert(logicalSwitch.NsxtLogicalSwitch.Name, Equals, vcd.config.VCD.Nsxt.UnusedSegment)
+	check.Assert(logicalSwitch.NsxtImportableSwitch.Name, Equals, vcd.config.VCD.Nsxt.UnusedSegment)
 }

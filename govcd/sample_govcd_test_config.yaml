@@ -71,8 +71,8 @@ vcd:
       vdc: nsxt-vdc-name
       # Existing NSX-T edge gateway
       edgeGateway: nsxt-gw-name
-      # Existing NSX-T logical switch to test NSX-T Imported Org Vdc network
-      logicalSwitch: vcd-org-vdc-imported-network-backing
+      # Existing NSX-T segment to test NSX-T Imported Org Vdc network
+      unusedSegment: vcd-org-vdc-imported-network-backing
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat

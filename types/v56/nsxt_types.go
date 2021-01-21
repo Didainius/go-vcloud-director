@@ -186,6 +186,6 @@ type Connection struct {
 	ConnectionType string           `json:"connectionType,omitempty"`
 }
 
-// NsxtLogicalSwitch is a type alias with better name for holding NSX-T Logical Switches which can be used to back NSX-T
+// NsxtImportableSwitch is a type alias with better name for holding NSX-T Logical Switches which can be used to back NSX-T
 // imported Org Vdc network
-type NsxtLogicalSwitch = OpenApiReference
+type NsxtImportableSwitch = OpenApiReference
