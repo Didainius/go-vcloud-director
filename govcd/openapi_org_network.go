@@ -164,16 +164,6 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) IsDirect() bool {
 	return orgVdcNet.GetType() == types.OrgVdcNetworkTypeDirect
 }
 
-// func (orgVdcNet *OpenApiOrgVdcNetwork) GetParentVdc() *Vdc {
-// 	vdcId := orgVdcNet.OpenApiOrgVdcNetwork.OrgVdc.ID
-//
-// 	// vdc := Vdc{client: orgVdcNet.client}
-// 	// vdc.
-//
-// 	// orgVdcNet.client.
-// 	return nil
-// }
-
 // getOpenApiOrgVdcNetworkById is a private parent for wrapped functions:
 // func (org *Org) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error)
 // func (vdc *Vdc) GetOpenApiOrgVdcNetworkById(id string) (*OpenApiOrgVdcNetwork, error)

@@ -12,17 +12,18 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// NsxtImportableSwitch is a read only object to retrieve NSX-T segments to be used for Org VDC imported network.
+// NsxtImportableSwitch is a read only object to retrieve NSX-T segments (importable switches) to be used for Org VDC
+// imported network.
 type NsxtImportableSwitch struct {
 	NsxtImportableSwitch *types.NsxtImportableSwitch
 	client               *Client
 }
 
-// GetNsxtImportableSwitchByName retrieves a particular NSX-T Logical Switch by name available for that VDC
+// GetNsxtImportableSwitchByName retrieves a particular NSX-T Segment by name available for that VDC
 //
 // Note. OpenAPI endpoint does not exist for this resource and by default endpoint
 // "/network/orgvdcnetworks/importableswitches" returns only unused NSX-T importable switches (the ones that are not
-// already consumed in Org VDC networks) and there is no way to get them all.
+// already consumed in Org VDC networks) and there is no way to get them all (including the used ones).
 func (vdc *Vdc) GetNsxtImportableSwitchByName(name string) (*NsxtImportableSwitch, error) {
 	if name == "" {
 		return nil, fmt.Errorf("empty NSX-T Importable Switch name specified")
@@ -30,7 +31,7 @@ func (vdc *Vdc) GetNsxtImportableSwitchByName(name string) (*NsxtImportableSwitc
 
 	allNsxtImportableSwitches, err := vdc.GetAllNsxtImportableSwitches()
 	if err != nil {
-		return nil, fmt.Errorf("error getting all Importable Switches for VDC '%s': %s", vdc.Vdc.Name, err)
+		return nil, fmt.Errorf("error getting all NSX-T Importable Switches for VDC '%s': %s", vdc.Vdc.Name, err)
 	}
 
 	var filteredNsxtImportableSwitches []*NsxtImportableSwitch

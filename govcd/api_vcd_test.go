@@ -569,7 +569,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 
-	// configured NSX-T VDC for convenience if it specified in configuration
+	// configure NSX-T VDC for convenience if it is specified in configuration
 	if config.VCD.Nsxt.Vdc != "" {
 		vcd.nsxtVdc, err = vcd.org.GetVDCByName(config.VCD.Nsxt.Vdc, false)
 		if err != nil {
