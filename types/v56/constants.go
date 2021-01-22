@@ -334,6 +334,7 @@ const (
 	OpenApiEndpointExternalNetworks           = "externalNetworks/"
 	OpenApiEndpointVdcComputePolicies         = "vdcComputePolicies/"
 	OpenApiEndpointVdcAssignedComputePolicies = "vdcs/%s/computePolicies"
+	OpenApiEndpointVdcCapabilities            = "vdcs/%s/capabilities"
 	OpenApiEndpointEdgeGateways               = "edgeGateways/"
 	OpenApiEndpointOrgVdcNetworks             = "orgVdcNetworks/"
 )
@@ -366,4 +367,11 @@ const (
 	OrgVdcNetworkTypeOpaque = "OPAQUE"
 	// OrgVdcNetworkTypeDirect can be used to create NSX-V direct Org Vdc network
 	OrgVdcNetworkTypeDirect = "DIRECT"
+)
+
+const (
+	// VdcCapabilityNetworkProviderNsxv is a convenience constant to match VDC capability
+	VdcCapabilityNetworkProviderNsxv = "NSX_V"
+	// VdcCapabilityNetworkProviderNsxt is a convenience constant to match VDC capability
+	VdcCapabilityNetworkProviderNsxt = "NSX_T"
 )

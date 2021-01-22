@@ -21,7 +21,7 @@ type NsxtImportableSwitch struct {
 // GetNsxtImportableSwitchByName retrieves a particular NSX-T Logical Switch by name available for that VDC
 //
 // Note. OpenAPI endpoint does not exist for this resource and by default endpoint
-// "/network/orgvdcnetworks/importableswitches" returns only unused NSX-T logical switches (the ones that are not
+// "/network/orgvdcnetworks/importableswitches" returns only unused NSX-T importable switches (the ones that are not
 // already consumed in Org VDC networks) and there is no way to get them all.
 func (vdc *Vdc) GetNsxtImportableSwitchByName(name string) (*NsxtImportableSwitch, error) {
 	if name == "" {
@@ -58,7 +58,7 @@ func (vdc *Vdc) GetNsxtImportableSwitchByName(name string) (*NsxtImportableSwitc
 // "Imported" Org VDC network
 //
 // Note. OpenAPI endpoint does not exist for this resource and by default endpoint
-// "/network/orgvdcnetworks/importableswitches" returns only unused NSX-T logical switches (the ones that are not
+// "/network/orgvdcnetworks/importableswitches" returns only unused NSX-T importable switches (the ones that are not
 // already consumed in Org VDC networks) and there is no way to get them all.
 func (vdc *Vdc) GetAllNsxtImportableSwitches() ([]*NsxtImportableSwitch, error) {
 	if vdc.Vdc.ID == "" {

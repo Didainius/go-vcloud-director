@@ -111,9 +111,9 @@ type OpenApiOrgVdcNetwork struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Status      string `json:"status,omitempty"`
-	// OwnerRef defines org vDC or vDC Group that this network belongs to. If the ownerRef is set to a vDC Group, this
-	// network will be available across all the vDCs in the vDC Group. If the vDC Group is backed by a NSX-V network
-	// provider, the org vDC network is automatically connected to the distributed router associated with the vDC Group
+	// OwnerRef defines Org VDC or VDC Group that this network belongs to. If the ownerRef is set to a VDC Group, this
+	// network will be available across all the VDCs in the vDC Group. If the VDC Group is backed by a NSX-V network
+	// provider, the Org VDC network is automatically connected to the distributed router associated with the VDC Group
 	// and the "connection" field does not need to be set. For API version 35.0 and above, this field should be set for
 	// network creation.
 	//
