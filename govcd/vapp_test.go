@@ -469,7 +469,7 @@ func (vcd *TestVCD) Test_AddNewVMNilNIC(check *C) {
 	check.Assert(err, IsNil)
 
 	// Cleanup the created VM
-	err = vm.RemoveVm()
+	err = vm.Remove()
 	check.Assert(err, IsNil)
 	task, err = vapp.Delete()
 	check.Assert(err, IsNil)
@@ -591,7 +591,7 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 	verifyNetworkConnectionSection(check, actualNetConfig, desiredNetConfig)
 
 	// Cleanup
-	err = vm.RemoveVm()
+	err = vm.Remove()
 	check.Assert(err, IsNil)
 
 	// Ensure network is detached from vApp to avoid conflicts in other tests
@@ -1433,7 +1433,7 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	check.Assert(err, IsNil)
 
 	// Cleanup the created VM
-	err = vm.RemoveVm()
+	err = vm.Remove()
 	check.Assert(err, IsNil)
 	task, err = vapp.Delete()
 	check.Assert(err, IsNil)
@@ -1534,7 +1534,7 @@ func (vcd *TestVCD) Test_AddNewVMWithComputeCapacity(check *C) {
 	check.Assert(createdVm.VM.ComputePolicy.VmSizingPolicy.ID, Equals, createdPolicy.VdcComputePolicy.ID)
 
 	// Cleanup
-	err = createdVm.RemoveVm()
+	err = createdVm.Remove()
 	check.Assert(err, IsNil)
 
 	// Ensure network is detached from vApp to avoid conflicts in other tests

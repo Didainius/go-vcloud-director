@@ -1327,7 +1327,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 	verifyNetworkConnectionSection(check, actualNetConfig, desiredNetConfig)
 
 	// Cleanup
-	err = createdVm.RemoveVm()
+	err = createdVm.Remove()
 	check.Assert(err, IsNil)
 
 	// Ensure network is detached from vApp to avoid conflicts in other tests
@@ -1586,7 +1586,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
 	check.Assert(updatedVm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(2048))
 
 	// Cleanup
-	err = updatedVm.RemoveVm()
+	err = updatedVm.Remove()
 	check.Assert(err, IsNil)
 
 	// Ensure network is detached from vApp to avoid conflicts in other tests
@@ -1641,7 +1641,7 @@ func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
 
 	// Cleanup
 	var task Task
-	err = createdVm.RemoveVm()
+	err = createdVm.Remove()
 	check.Assert(err, IsNil)
 
 	// Ensure network is detached from vApp to avoid conflicts in other tests

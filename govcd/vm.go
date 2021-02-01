@@ -217,19 +217,19 @@ func (vm *VM) PowerOff() (Task, error) {
 		"", "error powering off VM: %s", nil)
 }
 
-// RemoveVmAsync is an alternative way for removing VM instead of using vapp.RemoveVM.
+// RemoveAsync is an alternative way for removing VM instead of using vapp.RemoveVM.
 //
 // Note. VM must be undeployed before removal
-func (vm *VM) RemoveVmAsync() (*Task, error) {
+func (vm *VM) RemoveAsync() (*Task, error) {
 
-	isDeployed, err := vm.IsDeployed()
-	if err != nil {
-		return nil, fmt.Errorf("unable to verify if VM is deployed")
-	}
-
-	if !isDeployed {
-		return nil, fmt.Errorf("unable to remove Deployed VM")
-	}
+	// isDeployed, err := vm.IsDeployed()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("unable to verify if VM is deployed")
+	// }
+	//
+	// if !isDeployed {
+	// 	return nil, fmt.Errorf("unable to remove Deployed VM")
+	// }
 
 	// HTTP DELETE method should be invoked directly on VM HREF
 	// https://HOSTNAME/api/vApp/vm-3728c32a-a06e-4907-a115-d3edb78d25c9
@@ -244,11 +244,11 @@ func (vm *VM) RemoveVmAsync() (*Task, error) {
 	return &deleteTask, nil
 }
 
-// RemoveVm is an alternative way for removing VM instead of using vapp.RemoveVM.
+// Remove is an alternative way for removing VM instead of using vapp.RemoveVM.
 //
 // Note. VM must be undeployed before removal
-func (vm *VM) RemoveVm() error {
-	deleteTask, err := vm.RemoveVmAsync()
+func (vm *VM) Remove() error {
+	deleteTask, err := vm.RemoveAsync()
 	if err != nil {
 		return err
 	}
