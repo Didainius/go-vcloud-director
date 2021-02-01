@@ -217,6 +217,50 @@ func (vm *VM) PowerOff() (Task, error) {
 		"", "error powering off VM: %s", nil)
 }
 
+// RemoveVmAsync is an alternative way for removing VM instead of using vapp.RemoveVM.
+//
+// Note. VM must be undeployed before removal
+func (vm *VM) RemoveVmAsync() (*Task, error) {
+
+	isDeployed, err := vm.IsDeployed()
+	if err != nil {
+		return nil, fmt.Errorf("unable to verify if VM is deployed")
+	}
+
+	if !isDeployed {
+		return nil, fmt.Errorf("unable to remove Deployed VM")
+	}
+
+	// HTTP DELETE method should be invoked directly on VM HREF
+	// https://HOSTNAME/api/vApp/vm-3728c32a-a06e-4907-a115-d3edb78d25c9
+	apiEndpoint, _ := url.ParseRequestURI(vm.VM.HREF)
+
+	deleteTask, err := vm.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodDelete,
+		"", "error removing VM: %s", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &deleteTask, nil
+}
+
+// RemoveVm is an alternative way for removing VM instead of using vapp.RemoveVM.
+//
+// Note. VM must be undeployed before removal
+func (vm *VM) RemoveVm() error {
+	deleteTask, err := vm.RemoveVmAsync()
+	if err != nil {
+		return err
+	}
+
+	err = deleteTask.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error performing removing VM task: %s", err)
+	}
+
+	return nil
+}
+
 // Sets number of available virtual logical processors
 // (i.e. CPUs x cores per socket)
 // Cpu cores count is inherited from template.

@@ -1067,7 +1067,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		task, _ := vm.Undeploy()
 		_ = task.WaitTaskCompletion()
 
-		err = vapp.RemoveVM(*vm)
+		err = vm.RemoveVm()
 		if err != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Deleting VM '%s' in vApp '%s': %s\n",
 				entity.Name, vapp.VApp.Name, err)
