@@ -141,6 +141,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 					},
 					Proxy:               http.ProxyFromEnvironment,
 					TLSHandshakeTimeout: 120 * time.Second, // Default timeout for TSL hand shake
+					DisableKeepAlives:   true,
 				},
 				Timeout: 600 * time.Second, // Default value for http request+response timeout
 			},
