@@ -1,0 +1,247 @@
+/*
+ * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ */
+
+package govcd
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+)
+
+// NsxtFirewallGroup uses OpenAPI endpoint to operate NSX-T Edge Gateways
+type NsxtFirewallGroup struct {
+	NsxtFirewallGroup *types.NsxtFirewallGroup
+	client            *Client
+}
+
+// GetNsxtFirewallGroupByName retrieves NSX-T Firewall Group by name
+//
+// Note. Name uniqueness is enforced in the API so there can only be one result
+func (adminOrg *AdminOrg) GetNsxtFirewallGroupByName(name string) (*NsxtFirewallGroup, error) {
+	return getNsxtFirewallGroupByName(adminOrg.client, name)
+}
+
+func (org *Org) GetNsxtFirewallGroupByName(name string) (*NsxtFirewallGroup, error) {
+	return getNsxtFirewallGroupByName(org.client, name)
+}
+
+func (vdc *Vdc) GetNsxtFirewallGroupByName(name string) (*NsxtFirewallGroup, error) {
+	return getNsxtFirewallGroupByName(vdc.client, name)
+}
+
+func getNsxtFirewallGroupByName(client *Client, name string) (*NsxtFirewallGroup, error) {
+	queryParams := url.Values{}
+	queryParams.Add("filter", "name=="+name)
+
+	allGroups, err := getAllNsxtFirewallGroups(client, queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("could not find NSX-T Firewall Group with name '%s': %s", name, err)
+	}
+
+	if len(allGroups) == 0 {
+		return nil, fmt.Errorf("%s: expected exactly one NSX-T Firewall Group with name '%s'. Got %d", ErrorEntityNotFound, name, len(allGroups))
+	}
+
+	if len(allGroups) > 1 {
+		return nil, fmt.Errorf("expected exactly one NSX-T Firewall Group with name '%s'. Got %d", name, len(allGroups))
+	}
+
+	return allGroups[0], nil
+}
+
+// GetNsxtFirewallGroupById retrieves NSX-T Firewall Group by id
+func (adminOrg *AdminOrg) GetNsxtFirewallGroupById(id string) (*NsxtFirewallGroup, error) {
+	return getNsxtFirewallGroupById(adminOrg.client, id)
+}
+
+// GetNsxtFirewallGroupById retrieves NSX-T Firewall Group by id
+func (org *Org) GetNsxtFirewallGroupById(id string) (*NsxtFirewallGroup, error) {
+	return getNsxtFirewallGroupById(org.client, id)
+}
+
+func (vdc *Vdc) GetNsxtFirewallGroupById(id string) (*NsxtFirewallGroup, error) {
+	return getNsxtFirewallGroupById(vdc.client, id)
+}
+
+func getNsxtFirewallGroupById(client *Client, id string) (*NsxtFirewallGroup, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if id == "" {
+		return nil, fmt.Errorf("empty NSX-T Firewall Group ID specified")
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
+	if err != nil {
+		return nil, err
+	}
+
+	fwGroup := &NsxtFirewallGroup{
+		NsxtFirewallGroup: &types.NsxtFirewallGroup{},
+		client:            client,
+	}
+
+	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, fwGroup.NsxtFirewallGroup)
+	if err != nil {
+		return nil, err
+	}
+
+	return fwGroup, nil
+}
+
+// GetAllNsxtFirewallGroups allows to retrieve all NSX-T edge gateways for Org users
+//
+// It is possible to add additional filtering by using `_context==` filtering. Value can be one of
+// the following:
+// * Org Vdc Network ID (_context==networkId) - Returns all the firewall groups which the specified
+// network is a member of.
+// * Edge Gateway ID (_context==edgeGatewayId) - Returns all the firewall
+// groups which are available to the specific edge gateway.
+// * Network Provider ID (_context==networkProviderId) - Returns all the firewall groups which are
+// available under a specific network provider. This context requires system admin privilege.
+// 'networkProviderId' is NSX-T manager ID
+func (org *Org) GetAllNsxtFirewallGroups(queryParameters url.Values) ([]*NsxtFirewallGroup, error) {
+	return getAllNsxtFirewallGroups(org.client, queryParameters)
+}
+
+func (adminOrg *AdminOrg) GetAllNsxtFirewallGroups(queryParameters url.Values) ([]*NsxtFirewallGroup, error) {
+	return getAllNsxtFirewallGroups(adminOrg.client, queryParameters)
+}
+
+func (vdc *Vdc) GetAllNsxtFirewallGroups(queryParameters url.Values) ([]*NsxtFirewallGroup, error) {
+	return getAllNsxtFirewallGroups(vdc.client, queryParameters)
+}
+
+func getAllNsxtFirewallGroups(client *Client, queryParameters url.Values) ([]*NsxtFirewallGroup, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	// This Object does not follow regular REST scheme and for get the endpoint must be
+	// 1.0.0/firewallGroups/summaries therefore bellow "summaries" is appended to the path
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, "summaries")
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.NsxtFirewallGroup{{}}
+	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wrap all typeResponses into NsxtEdgeGateway types with client
+	wrappedResponses := make([]*NsxtFirewallGroup, len(typeResponses))
+	for sliceIndex := range typeResponses {
+		wrappedResponses[sliceIndex] = &NsxtFirewallGroup{
+			NsxtFirewallGroup: typeResponses[sliceIndex],
+			client:            client,
+		}
+	}
+
+	return wrappedResponses, nil
+}
+
+// CreateNsxtFirewallGroup allows to create NSX-T Firewall Group
+func (adminOrg *AdminOrg) CreateNsxtFirewallGroup(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
+	return createNsxtFirewallGroup(adminOrg.client, firewallGroupConfig)
+}
+
+// CreateNsxtFirewallGroup allows to create NSX-T Firewall Group
+func (org *Org) CreateNsxtFirewallGroup(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
+	return createNsxtFirewallGroup(org.client, firewallGroupConfig)
+}
+
+// CreateNsxtFirewallGroup allows to create NSX-T Firewall Group
+func (vdc *Vdc) CreateNsxtFirewallGroup(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
+	return createNsxtFirewallGroup(vdc.client, firewallGroupConfig)
+}
+
+func createNsxtFirewallGroup(client *Client, firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	returnObject := &NsxtFirewallGroup{
+		NsxtFirewallGroup: &types.NsxtFirewallGroup{},
+		client:            client,
+	}
+
+	err = org.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup)
+	if err != nil {
+		return nil, fmt.Errorf("error creating NSX-T Firewall Group: %s", err)
+	}
+
+	return returnObject, nil
+}
+
+// Update allows to update NSX-T Firewall Group
+func (firewallGroup *NsxtFirewallGroup) Update(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
+	minimumApiVersion, err := firewallGroup.client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if firewallGroupConfig.ID == "" {
+		return nil, fmt.Errorf("cannot update NSX-T Firewall Group without ID")
+	}
+
+	urlRef, err := firewallGroup.client.OpenApiBuildEndpoint(endpoint, firewallGroupConfig.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	returnObject := &NsxtFirewallGroup{
+		NsxtFirewallGroup: &types.NsxtFirewallGroup{},
+		client:            firewallGroup.client,
+	}
+
+	err = firewallGroup.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup)
+	if err != nil {
+		return nil, fmt.Errorf("error updating NSX-T firewall group: %s", err)
+	}
+
+	return returnObject, nil
+}
+
+// Delete allows to delete NSX-T Firewall Group
+func (firewallGroup *NsxtFirewallGroup) Delete() error {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
+	minimumApiVersion, err := firewallGroup.client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return err
+	}
+
+	if firewallGroup.NsxtFirewallGroup.ID == "" {
+		return fmt.Errorf("cannot delete NSX-T Firewall Group without ID")
+	}
+
+	urlRef, err := firewallGroup.client.OpenApiBuildEndpoint(endpoint, firewallGroup.NsxtFirewallGroup.ID)
+	if err != nil {
+		return err
+	}
+
+	err = firewallGroup.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil)
+
+	if err != nil {
+		return fmt.Errorf("error deleting NSX-T Firewall Group: %s", err)
+	}
+
+	return nil
+}
