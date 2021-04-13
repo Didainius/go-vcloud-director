@@ -78,6 +78,11 @@ func (vcd *TestVCD) Test_NsxtFirewallGroup(check *C) {
 
 	check.Assert(fwGroupById, DeepEquals, fwGroupByName)
 
+	// Get Firewall Group using Edge Gateway
+	egwFirewallGroup, err := egw.GetNsxtFirewallGroupByName(updatedFwGroup.NsxtFirewallGroup.Name)
+
+	check.Assert(egwFirewallGroup.NsxtFirewallGroup, DeepEquals, fwGroupByName.NsxtFirewallGroup)
+
 	// Remove
 	err = createdFwGroup.Delete()
 	check.Assert(err, IsNil)

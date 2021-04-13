@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -11,7 +11,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// NsxtFirewallGroup uses OpenAPI endpoint to operate NSX-T Edge Gateways
+// NsxtFirewallGroup uses OpenAPI endpoint to operate NSX-T Security Groups and IP Sets which use
+// the same Firewall Group API endpoint
 type NsxtFirewallGroup struct {
 	NsxtFirewallGroup *types.NsxtFirewallGroup
 	client            *Client
@@ -21,20 +22,27 @@ type NsxtFirewallGroup struct {
 //
 // Note. Name uniqueness is enforced in the API so there can only be one result
 func (adminOrg *AdminOrg) GetNsxtFirewallGroupByName(name string) (*NsxtFirewallGroup, error) {
-	return getNsxtFirewallGroupByName(adminOrg.client, name)
+	return getNsxtFirewallGroupByName(adminOrg.client, name, nil)
 }
 
 func (org *Org) GetNsxtFirewallGroupByName(name string) (*NsxtFirewallGroup, error) {
-	return getNsxtFirewallGroupByName(org.client, name)
+	return getNsxtFirewallGroupByName(org.client, name, nil)
 }
 
 func (vdc *Vdc) GetNsxtFirewallGroupByName(name string) (*NsxtFirewallGroup, error) {
-	return getNsxtFirewallGroupByName(vdc.client, name)
+	return getNsxtFirewallGroupByName(vdc.client, name, nil)
 }
 
-func getNsxtFirewallGroupByName(client *Client, name string) (*NsxtFirewallGroup, error) {
-	queryParams := url.Values{}
-	queryParams.Add("filter", "name=="+name)
+// GetNsxtFirewallGroupByName will limit scope of Firewall Groups
+func (egw *NsxtEdgeGateway) GetNsxtFirewallGroupByName(name string) (*NsxtFirewallGroup, error) {
+	queryParameters := url.Values{}
+	queryParameters.Add("filter", "_context=="+egw.EdgeGateway.ID)
+	return getNsxtFirewallGroupByName(egw.client, name, queryParameters)
+}
+
+func getNsxtFirewallGroupByName(client *Client, name string, queryParameters url.Values) (*NsxtFirewallGroup, error) {
+	queryParams := copyOrNewUrlValues(queryParameters)
+	queryParams = queryParameterFilterAnd("name=="+name, queryParams)
 
 	allGroups, err := getAllNsxtFirewallGroups(client, queryParams)
 	if err != nil {
@@ -182,7 +190,7 @@ func createNsxtFirewallGroup(client *Client, firewallGroupConfig *types.NsxtFire
 		client:            client,
 	}
 
-	err = org.client.OpenApiPostItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup)
+	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtFirewallGroup)
 	if err != nil {
 		return nil, fmt.Errorf("error creating NSX-T Firewall Group: %s", err)
 	}
@@ -244,4 +252,14 @@ func (firewallGroup *NsxtFirewallGroup) Delete() error {
 	}
 
 	return nil
+}
+
+// IsSecurityGroup allows to check if Firewall Group is a Security Group
+func (firewallGroup *NsxtFirewallGroup) IsSecurityGroup() bool {
+	return firewallGroup.NsxtFirewallGroup.Type == types.FirewallGroupTypeSecurityGroup
+}
+
+// IsIpSet allows to check if Firewall Group is an IP Set
+func (firewallGroup *NsxtFirewallGroup) IsIpSet() bool {
+	return firewallGroup.NsxtFirewallGroup.Type == types.FirewallGroupTypeIpSet
 }
