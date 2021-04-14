@@ -80,8 +80,13 @@ func (vcd *TestVCD) Test_NsxtFirewallGroup(check *C) {
 
 	// Get Firewall Group using Edge Gateway
 	egwFirewallGroup, err := egw.GetNsxtFirewallGroupByName(updatedFwGroup.NsxtFirewallGroup.Name)
-
+	check.Assert(err, IsNil)
 	check.Assert(egwFirewallGroup.NsxtFirewallGroup, DeepEquals, fwGroupByName.NsxtFirewallGroup)
+
+	// Try to list associated VMs and expect an empty list (because not Org VDC network is attached)
+	associatedVms, err := egwFirewallGroup.GetAssociatedVms()
+	check.Assert(err, IsNil)
+	check.Assert(len(associatedVms), Equals, 0)
 
 	// Remove
 	err = createdFwGroup.Delete()

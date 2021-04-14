@@ -231,6 +231,11 @@ type OpenApiOrgVdcNetworkDhcpPools struct {
 }
 
 // NsxtFirewallGroup allows to set either SECURITY_GROUP or IP_SET which is defined by Type field.
+// SECURITY_GROUP is a dynamic structure which allows to add Routed Org VDC networks
+// IP_SET allows to enter static IPs and later on firewall rules can be created both of these objects
+//
+// When the type is SECURITY_GROUP 'Members' field is used
+// When the type is  IP_SET 'IpAddresses' field is used
 type NsxtFirewallGroup struct {
 	// ID contains Firewall Group ID (URN format)
 	// e.g. urn:vcloud:firewallGroup:d7f4e0b4-b83f-4a07-9f22-d242c9c0987a
@@ -247,7 +252,7 @@ type NsxtFirewallGroup struct {
 	// ],
 	IpAddresses []string `json:"ipAddresses,omitempty"`
 
-	// Members define list of Org VDC networks belonging to this security group
+	// Members define list of Org VDC networks belonging to this Firewall Group (only for Security groups )
 	Members []OpenApiReference `json:"members,omitempty"`
 
 	// OwnerRef replaces EdgeGatewayRef and can accept both - NSX-T Edge Gateway or a VDC group ID
@@ -264,4 +269,13 @@ type NsxtFirewallGroup struct {
 
 	// Type is either SECURITY_GROUP or IP_SET
 	Type string `json:"type"`
+}
+
+// NsxtFirewallGroupMemberVms is a structure to read NsxtFirewallGroup associated VMs when its type
+// is SECURITY_GROUP
+type NsxtFirewallGroupMemberVms struct {
+	Vmref   *OpenApiReference `json:"vmRef"`
+	Vappref *OpenApiReference `json:"vappRef"`
+	Vdcref  *OpenApiReference `json:"vdcRef"`
+	Orgref  *OpenApiReference `json:"orgRef"`
 }

@@ -254,6 +254,39 @@ func (firewallGroup *NsxtFirewallGroup) Delete() error {
 	return nil
 }
 
+// GetAssociatedVms allows to retrieve a list of references to child VMs (with vApps if exist)
+func (firewallGroup *NsxtFirewallGroup) GetAssociatedVms() ([]*types.NsxtFirewallGroupMemberVms, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups
+	minimumApiVersion, err := firewallGroup.client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if firewallGroup.NsxtFirewallGroup.ID == "" {
+		return nil, fmt.Errorf("cannot retrieve associated VMs for  NSX-T Firewall Group without ID")
+	}
+
+	if !firewallGroup.IsSecurityGroup() {
+		return nil, fmt.Errorf("only Security Groups have associated VMs. This Firewall Group has type '%s'",
+			firewallGroup.NsxtFirewallGroup.Type)
+	}
+
+	urlRef, err := firewallGroup.client.OpenApiBuildEndpoint(endpoint, firewallGroup.NsxtFirewallGroup.ID, "/associatedVMs")
+	if err != nil {
+		return nil, err
+	}
+
+	associatedVms := []*types.NsxtFirewallGroupMemberVms{{}}
+
+	err = firewallGroup.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &associatedVms)
+
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving associated VMs: %s", err)
+	}
+
+	return associatedVms, nil
+}
+
 // IsSecurityGroup allows to check if Firewall Group is a Security Group
 func (firewallGroup *NsxtFirewallGroup) IsSecurityGroup() bool {
 	return firewallGroup.NsxtFirewallGroup.Type == types.FirewallGroupTypeSecurityGroup
