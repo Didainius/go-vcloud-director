@@ -21,22 +21,46 @@ type NsxtFirewallGroup struct {
 // GetNsxtFirewallGroupByName retrieves NSX-T Firewall Group by name
 //
 // Note. Name uniqueness is enforced in the API so there can only be one result
-func (adminOrg *AdminOrg) GetNsxtFirewallGroupByName(name string) (*NsxtFirewallGroup, error) {
-	return getNsxtFirewallGroupByName(adminOrg.client, name, nil)
+func (adminOrg *AdminOrg) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*NsxtFirewallGroup, error) {
+	validateFirewallGroupType(firewallGroupType)
+
+	queryParameters := url.Values{}
+	queryParameters = queryParameterFilterAnd("type=="+firewallGroupType, queryParameters)
+	return getNsxtFirewallGroupByName(adminOrg.client, name, queryParameters)
 }
 
-func (org *Org) GetNsxtFirewallGroupByName(name string) (*NsxtFirewallGroup, error) {
-	return getNsxtFirewallGroupByName(org.client, name, nil)
+func (org *Org) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*NsxtFirewallGroup, error) {
+	validateFirewallGroupType(firewallGroupType)
+
+	queryParameters := url.Values{}
+	queryParameters = queryParameterFilterAnd("type=="+firewallGroupType, queryParameters)
+	return getNsxtFirewallGroupByName(org.client, name, queryParameters)
 }
 
-func (vdc *Vdc) GetNsxtFirewallGroupByName(name string) (*NsxtFirewallGroup, error) {
-	return getNsxtFirewallGroupByName(vdc.client, name, nil)
+func (vdc *Vdc) GetNsxtFirewallGroupByName(name, firewallGroupType string) (*NsxtFirewallGroup, error) {
+	validateFirewallGroupType(firewallGroupType)
+
+	queryParameters := url.Values{}
+	queryParameters = queryParameterFilterAnd("type=="+firewallGroupType, queryParameters)
+	return getNsxtFirewallGroupByName(vdc.client, name, queryParameters)
+}
+
+func validateFirewallGroupType(firewallGroupType string) error {
+	if firewallGroupType != "IP_SET" && firewallGroupType != "SECURITY_GROUP" {
+		return fmt.Errorf("NSX-T Firewall Group type can be 'IP_SET' or 'SECURITY_GROUP', not '%s'",
+			firewallGroupType)
+	}
+
+	return nil
 }
 
 // GetNsxtFirewallGroupByName will limit scope of Firewall Groups
-func (egw *NsxtEdgeGateway) GetNsxtFirewallGroupByName(name string) (*NsxtFirewallGroup, error) {
+func (egw *NsxtEdgeGateway) GetNsxtFirewallGroupByName(name string, firewallGroupType string) (*NsxtFirewallGroup, error) {
 	queryParameters := url.Values{}
-	queryParameters.Add("filter", "_context=="+egw.EdgeGateway.ID)
+
+	queryParameters = queryParameterFilterAnd("type=="+firewallGroupType, queryParameters)
+	queryParameters = queryParameterFilterAnd("_context=="+egw.EdgeGateway.ID, queryParameters)
+
 	return getNsxtFirewallGroupByName(egw.client, name, queryParameters)
 }
 
@@ -171,6 +195,11 @@ func (org *Org) CreateNsxtFirewallGroup(firewallGroupConfig *types.NsxtFirewallG
 // CreateNsxtFirewallGroup allows to create NSX-T Firewall Group
 func (vdc *Vdc) CreateNsxtFirewallGroup(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
 	return createNsxtFirewallGroup(vdc.client, firewallGroupConfig)
+}
+
+// CreateNsxtFirewallGroup allows to create NSX-T Firewall Group
+func (egw *NsxtEdgeGateway) CreateNsxtFirewallGroup(firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {
+	return createNsxtFirewallGroup(egw.client, firewallGroupConfig)
 }
 
 func createNsxtFirewallGroup(client *Client, firewallGroupConfig *types.NsxtFirewallGroup) (*NsxtFirewallGroup, error) {

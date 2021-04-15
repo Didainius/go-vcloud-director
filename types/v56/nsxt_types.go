@@ -240,7 +240,9 @@ type NsxtFirewallGroup struct {
 	// ID contains Firewall Group ID (URN format)
 	// e.g. urn:vcloud:firewallGroup:d7f4e0b4-b83f-4a07-9f22-d242c9c0987a
 	ID string `json:"id"`
-	// Name of firewall group
+	// Name of firewall group. Name are unique per 'Type'. There cannot be two SECURITY_GROUP or two
+	// IP_SET objects with the same name, but there can be one object of Type SECURITY_GROUP and one
+	// of Type IP_SET with the same name.
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	// IP Addresses included in the group. This is only applicable for IP_SET Firewall Groups. This
