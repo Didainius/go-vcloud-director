@@ -31,37 +31,37 @@ func (vcd *TestVCD) Test_NsxtSecurityGroup(check *C) {
 	}
 
 	// Create firewall group and add to cleanup if it was created
-	createdFwGroup, err := org.CreateNsxtFirewallGroup(fwGroupDefinition)
+	createdSecGroup, err := org.CreateNsxtFirewallGroup(fwGroupDefinition)
 	check.Assert(err, IsNil)
-	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups + createdFwGroup.NsxtFirewallGroup.ID
-	AddToCleanupListOpenApi(createdFwGroup.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups + createdSecGroup.NsxtFirewallGroup.ID
+	AddToCleanupListOpenApi(createdSecGroup.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
 
-	check.Assert(createdFwGroup.NsxtFirewallGroup.ID, Not(Equals), "")
-	check.Assert(createdFwGroup.NsxtFirewallGroup.EdgeGatewayRef.Name, Equals, vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(createdSecGroup.NsxtFirewallGroup.ID, Not(Equals), "")
+	check.Assert(createdSecGroup.NsxtFirewallGroup.EdgeGatewayRef.Name, Equals, vcd.config.VCD.Nsxt.EdgeGateway)
 
 	// On creation one sets OwnerRef field, but in GET Edge Gateway is returned in EdgeGatewayRef
 	// field
-	check.Assert(createdFwGroup.NsxtFirewallGroup.EdgeGatewayRef.ID, Equals, fwGroupDefinition.OwnerRef.ID)
-	check.Assert(createdFwGroup.NsxtFirewallGroup.Description, Equals, fwGroupDefinition.Description)
-	check.Assert(createdFwGroup.NsxtFirewallGroup.Name, Equals, fwGroupDefinition.Name)
-	check.Assert(createdFwGroup.NsxtFirewallGroup.Type, Equals, fwGroupDefinition.Type)
+	check.Assert(createdSecGroup.NsxtFirewallGroup.EdgeGatewayRef.ID, Equals, fwGroupDefinition.OwnerRef.ID)
+	check.Assert(createdSecGroup.NsxtFirewallGroup.Description, Equals, fwGroupDefinition.Description)
+	check.Assert(createdSecGroup.NsxtFirewallGroup.Name, Equals, fwGroupDefinition.Name)
+	check.Assert(createdSecGroup.NsxtFirewallGroup.Type, Equals, fwGroupDefinition.Type)
 
 	// Update and compare
-	createdFwGroup.NsxtFirewallGroup.Description = "updated-description"
-	createdFwGroup.NsxtFirewallGroup.Name = check.TestName() + "-updated"
+	createdSecGroup.NsxtFirewallGroup.Description = "updated-description"
+	createdSecGroup.NsxtFirewallGroup.Name = check.TestName() + "-updated"
 
-	updatedFwGroup, err := createdFwGroup.Update(createdFwGroup.NsxtFirewallGroup)
+	updatedSecGroup, err := createdSecGroup.Update(createdSecGroup.NsxtFirewallGroup)
 	check.Assert(err, IsNil)
-	check.Assert(updatedFwGroup.NsxtFirewallGroup, DeepEquals, createdFwGroup.NsxtFirewallGroup)
+	check.Assert(updatedSecGroup.NsxtFirewallGroup, DeepEquals, createdSecGroup.NsxtFirewallGroup)
 
-	check.Assert(updatedFwGroup, DeepEquals, createdFwGroup)
+	check.Assert(updatedSecGroup, DeepEquals, createdSecGroup)
 
 	// Get all Firewall Groups and check if the created one is there
-	allFwGroups, err := org.GetAllNsxtFirewallGroups(nil)
+	allSecGroups, err := org.GetAllNsxtFirewallGroups(nil)
 	check.Assert(err, IsNil)
 	fwGroupFound := false
-	for i := range allFwGroups {
-		if allFwGroups[i].NsxtFirewallGroup.ID == updatedFwGroup.NsxtFirewallGroup.ID {
+	for i := range allSecGroups {
+		if allSecGroups[i].NsxtFirewallGroup.ID == updatedSecGroup.NsxtFirewallGroup.ID {
 			fwGroupFound = true
 			break
 		}
@@ -69,26 +69,26 @@ func (vcd *TestVCD) Test_NsxtSecurityGroup(check *C) {
 	check.Assert(fwGroupFound, Equals, true)
 
 	// Get firewall group by name
-	fwGroupByName, err := org.GetNsxtFirewallGroupByName(updatedFwGroup.NsxtFirewallGroup.Name, types.FirewallGroupTypeSecurityGroup)
+	secGroupByName, err := org.GetNsxtFirewallGroupByName(updatedSecGroup.NsxtFirewallGroup.Name, types.FirewallGroupTypeSecurityGroup)
 	check.Assert(err, IsNil)
 
-	fwGroupById, err := org.GetNsxtFirewallGroupById(updatedFwGroup.NsxtFirewallGroup.ID)
+	secGroupById, err := org.GetNsxtFirewallGroupById(updatedSecGroup.NsxtFirewallGroup.ID)
 	check.Assert(err, IsNil)
 
-	check.Assert(fwGroupById, DeepEquals, fwGroupByName)
+	check.Assert(secGroupById, DeepEquals, secGroupByName)
 
-	// Get Firewall Group using Edge Gateway
-	edgeFirewallGroup, err := edge.GetNsxtFirewallGroupByName(updatedFwGroup.NsxtFirewallGroup.Name, types.FirewallGroupTypeSecurityGroup)
+	// Get Security Group using Edge Gateway
+	edgeSecGroup, err := edge.GetNsxtFirewallGroupByName(updatedSecGroup.NsxtFirewallGroup.Name, types.FirewallGroupTypeSecurityGroup)
 	check.Assert(err, IsNil)
-	check.Assert(edgeFirewallGroup.NsxtFirewallGroup, DeepEquals, fwGroupByName.NsxtFirewallGroup)
+	check.Assert(edgeSecGroup.NsxtFirewallGroup, DeepEquals, secGroupByName.NsxtFirewallGroup)
 
-	associatedVms, err := edgeFirewallGroup.GetAssociatedVms()
+	associatedVms, err := edgeSecGroup.GetAssociatedVms()
 	// Try to list associated VMs and expect an empty list (because no Org VDC network is attached)
 	check.Assert(err, IsNil)
 	check.Assert(len(associatedVms), Equals, 0)
 
 	// Remove
-	err = createdFwGroup.Delete()
+	err = createdSecGroup.Delete()
 	check.Assert(err, IsNil)
 }
 
@@ -121,7 +121,7 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 	vapp, vappVm := createVappVm(check, vcd, nsxtVdc, routedNet)
 	PrependToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
 
-	fwGroupDefinition := &types.NsxtFirewallGroup{
+	secGroupDefinition := &types.NsxtFirewallGroup{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-Description",
 		Type:        types.FirewallGroupTypeSecurityGroup,
@@ -132,13 +132,13 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 	}
 
 	// Create firewall group and add to cleanup if it was created
-	createdFwGroup, err := org.CreateNsxtFirewallGroup(fwGroupDefinition)
+	createdSecGroup, err := org.CreateNsxtFirewallGroup(secGroupDefinition)
 	check.Assert(err, IsNil)
-	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups + createdFwGroup.NsxtFirewallGroup.ID
-	AddToCleanupListOpenApi(createdFwGroup.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups + createdSecGroup.NsxtFirewallGroup.ID
+	AddToCleanupListOpenApi(createdSecGroup.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
 
 	// Expect to see VM created in associated VM query
-	associatedVms, err := createdFwGroup.GetAssociatedVms()
+	associatedVms, err := createdSecGroup.GetAssociatedVms()
 	check.Assert(err, IsNil)
 
 	check.Assert(len(associatedVms), Equals, 2)
@@ -158,7 +158,99 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 
 	check.Assert(foundStandalone, Equals, true)
 	check.Assert(foundVappVm, Equals, true)
+}
 
+// Test_NsxtIpSet tests out IP Set capabilities using Firewall Group endpoint
+func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	nsxtVdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	check.Assert(err, IsNil)
+
+	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(err, IsNil)
+
+	ipSetDefinition := &types.NsxtFirewallGroup{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-Description",
+		Type:        types.FirewallGroupTypeIpSet,
+		OwnerRef:    &types.OpenApiReference{ID: edge.EdgeGateway.ID},
+		IpAddresses: []string{
+			"12.12.12.1",
+			"10.10.10.0/24",
+			"11.11.11.1-11.11.11.2",
+			// represents the block of IPv6 addresses from 2001:db8:0:0:0:0:0:0 to 2001:db8:0:ffff:ffff:ffff:ffff:ffff
+			"2001:db8::/48",
+			"2001:db6:0:0:0:0:0:0-2001:db6:0:ffff:ffff:ffff:ffff:ffff",
+		},
+	}
+
+	// Create IP Set and add to cleanup if it was created
+	createdIpSet, err := org.CreateNsxtFirewallGroup(ipSetDefinition)
+	check.Assert(err, IsNil)
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups + createdIpSet.NsxtFirewallGroup.ID
+	AddToCleanupListOpenApi(createdIpSet.NsxtFirewallGroup.Name, check.TestName(), openApiEndpoint)
+
+	check.Assert(createdIpSet.NsxtFirewallGroup.ID, Not(Equals), "")
+	check.Assert(createdIpSet.NsxtFirewallGroup.EdgeGatewayRef.Name, Equals, vcd.config.VCD.Nsxt.EdgeGateway)
+
+	// On creation one sets OwnerRef field, but in GET Edge Gateway is returned in EdgeGatewayRef
+	// field
+	check.Assert(createdIpSet.NsxtFirewallGroup.EdgeGatewayRef.ID, Equals, ipSetDefinition.OwnerRef.ID)
+	check.Assert(createdIpSet.NsxtFirewallGroup.Description, Equals, ipSetDefinition.Description)
+	check.Assert(createdIpSet.NsxtFirewallGroup.Name, Equals, ipSetDefinition.Name)
+	check.Assert(createdIpSet.NsxtFirewallGroup.Type, Equals, ipSetDefinition.Type)
+
+	// Update and compare
+	createdIpSet.NsxtFirewallGroup.Description = "updated-description"
+	createdIpSet.NsxtFirewallGroup.Name = check.TestName() + "-updated"
+
+	updatedIpSet, err := createdIpSet.Update(createdIpSet.NsxtFirewallGroup)
+	check.Assert(err, IsNil)
+	check.Assert(updatedIpSet.NsxtFirewallGroup, DeepEquals, createdIpSet.NsxtFirewallGroup)
+
+	check.Assert(updatedIpSet, DeepEquals, createdIpSet)
+
+	// Get all Firewall Groups and check if the created one is there
+	allIpSets, err := org.GetAllNsxtFirewallGroups(nil)
+	check.Assert(err, IsNil)
+	fwGroupFound := false
+	for i := range allIpSets {
+		if allIpSets[i].NsxtFirewallGroup.ID == updatedIpSet.NsxtFirewallGroup.ID {
+			fwGroupFound = true
+			break
+		}
+	}
+	check.Assert(fwGroupFound, Equals, true)
+
+	// Get firewall group by name
+	ipSetByName, err := org.GetNsxtFirewallGroupByName(updatedIpSet.NsxtFirewallGroup.Name, types.FirewallGroupTypeIpSet)
+	check.Assert(err, IsNil)
+
+	ipSetById, err := org.GetNsxtFirewallGroupById(updatedIpSet.NsxtFirewallGroup.ID)
+	check.Assert(err, IsNil)
+
+	check.Assert(ipSetByName.NsxtFirewallGroup, DeepEquals, ipSetById.NsxtFirewallGroup)
+
+	// // Get Firewall Group using Edge Gateway
+	edgeIpSet, err := edge.GetNsxtFirewallGroupByName(updatedIpSet.NsxtFirewallGroup.Name, types.FirewallGroupTypeIpSet)
+	check.Assert(err, IsNil)
+	check.Assert(edgeIpSet.NsxtFirewallGroup, DeepEquals, ipSetByName.NsxtFirewallGroup)
+
+	associatedVms, err := edgeIpSet.GetAssociatedVms()
+	// IP_SET type Firewall Groups do not have VM associations and throw an error on API call.
+	// The error is: only Security Groups have associated VMs. This Firewall Group has type 'IP_SET'
+	// Not hardcodeing it here because it may change and break the test.
+	check.Assert(err, NotNil)
+	check.Assert(associatedVms, IsNil)
+
+	// Remove
+	err = createdIpSet.Delete()
+	check.Assert(err, IsNil)
 }
 
 func createNsxtRoutedNetwork(check *C, vcd *TestVCD, vdc *Vdc, edgeGatewayId string) *OpenApiOrgVdcNetwork {
