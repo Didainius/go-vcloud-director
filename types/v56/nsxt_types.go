@@ -229,3 +229,21 @@ type OpenApiOrgVdcNetworkDhcpPools struct {
 	// This applies for NSX-V Isolated network
 	DefaultLeaseTime *int `json:"defaultLeaseTime,omitempty"`
 }
+
+// NsxtAppPortProfile allows user to set custom application port definitions so that these can later be used
+// in NSX-T Firewall rules in combination with IP Sets and Security Groups.
+type NsxtAppPortProfile struct {
+	ID							string `json:"id,omitempty"`
+	Name             string                   `json:"name"`
+	Description      string                   `json:"description"`
+	ApplicationPorts []NsxtAppPortProfilePort `json:"applicationPorts"`
+	OrgRef *OpenApiReference                  `json:"orgRef"`
+	ContextEntityId string                    `json:"contextEntityId"`
+	Scope           string                    `json:"scope"`
+}
+
+// NsxtAppPortProfilePort
+type NsxtAppPortProfilePort struct {
+	Protocol         string   `json:"protocol"`
+	DestinationPorts []string `json:"destinationPorts,omitempty"`
+}
