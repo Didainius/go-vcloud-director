@@ -15,17 +15,17 @@ import (
 // NsxtAppPortProfile uses OpenAPI endpoint to operate NSX-T Application Port Profiles
 type NsxtAppPortProfile struct {
 	NsxtAppPortProfile *types.NsxtAppPortProfile
-	client            *Client
+	client             *Client
 }
 
 // CreateNsxtAppPortProfile allows users to create NSX-T Firewall Group
-func (vdc *Vdc) CreateNsxtAppPortProfile(firewallGroupConfig *types.NsxtAppPortProfile) (*NsxtAppPortProfile, error) {
-	return createNsxtAppPortProfile(vdc.client, firewallGroupConfig)
+func (vdc *Vdc) CreateNsxtAppPortProfile(appPortProfileConfig *types.NsxtAppPortProfile) (*NsxtAppPortProfile, error) {
+	return createNsxtAppPortProfile(vdc.client, appPortProfileConfig)
 }
 
 // CreateNsxtAppPortProfile allows users to create NSX-T Firewall Group
-func (egw *NsxtEdgeGateway) CreateNsxtAppPortProfile(firewallGroupConfig *types.NsxtAppPortProfile) (*NsxtAppPortProfile, error) {
-	return createNsxtAppPortProfile(egw.client, firewallGroupConfig)
+func (egw *NsxtEdgeGateway) CreateNsxtAppPortProfile(appPortProfileConfig *types.NsxtAppPortProfile) (*NsxtAppPortProfile, error) {
+	return createNsxtAppPortProfile(egw.client, appPortProfileConfig)
 }
 
 // GetAllNsxtAppPortProfiles allows users to retrieve all Firewall Groups for Org
@@ -47,17 +47,19 @@ func (egw *NsxtEdgeGateway) CreateNsxtAppPortProfile(firewallGroupConfig *types.
 // * Network Provider ID (_context==networkProviderId) - Returns all the firewall groups which are
 // available under a specific network provider. This context requires system admin privilege.
 // 'networkProviderId' is NSX-T manager ID
-func (org *Org) GetAllNsxtAppPortProfiles(queryParameters url.Values, firewallGroupType string) ([]*NsxtAppPortProfile, error) {
+//
+// scope can be SYSTEM or TENANT
+func (org *Org) GetAllNsxtAppPortProfiles(queryParameters url.Values, scope string) ([]*NsxtAppPortProfile, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
-	if firewallGroupType != "" {
-		queryParams = queryParameterFilterAnd("type=="+firewallGroupType, queryParams)
+	if scope != "" {
+		queryParams = queryParameterFilterAnd("scope=="+scope, queryParams)
 	}
 
 	return getAllNsxtAppPortProfiles(org.client, queryParams)
 }
 
 // GetAllNsxtAppPortProfiles allows users to retrieve all NSX-T Firewall Groups
-func (vdc *Vdc) GetAllNsxtAppPortProfiles(queryParameters url.Values, firewallGroupType string) ([]*NsxtAppPortProfile, error) {
+func (vdc *Vdc) GetAllNsxtAppPortProfiles(queryParameters url.Values, scope string) ([]*NsxtAppPortProfile, error) {
 	if vdc.IsNsxv() {
 		return nil, errors.New("only NSX-T VDCs support Firewall Groups")
 	}
@@ -69,15 +71,15 @@ func (vdc *Vdc) GetAllNsxtAppPortProfiles(queryParameters url.Values, firewallGr
 // * types.FirewallGroupTypeSecurityGroup - for NSX-T Security Groups
 // * types.FirewallGroupTypeIpSet - for NSX-T IP Sets
 // * "" (empty) - search will not be limited and will get both - IP Sets and Security Groups
-func (egw *NsxtEdgeGateway) GetAllNsxtAppPortProfiles(queryParameters url.Values, firewallGroupType string) ([]*NsxtAppPortProfile, error) {
+func (egw *NsxtEdgeGateway) GetAllNsxtAppPortProfiles(queryParameters url.Values, scope string) ([]*NsxtAppPortProfile, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
 
-	if firewallGroupType != "" {
-		queryParams = queryParameterFilterAnd("type=="+firewallGroupType, queryParams)
+	if scope != "" {
+		queryParams = queryParameterFilterAnd("scope=="+scope, queryParams)
 	}
 
 	// Automatically inject Edge Gateway filter because this is an Edge Gateway scoped query
-	queryParams = queryParameterFilterAnd("_context=="+egw.EdgeGateway.ID, queryParams)
+	//queryParams = queryParameterFilterAnd("_context=="+egw.EdgeGateway.ID, queryParams)
 
 	return getAllNsxtAppPortProfiles(egw.client, queryParams)
 }
@@ -171,7 +173,7 @@ func (firewallGroup *NsxtAppPortProfile) Update(firewallGroupConfig *types.NsxtA
 
 	returnObject := &NsxtAppPortProfile{
 		NsxtAppPortProfile: &types.NsxtAppPortProfile{},
-		client:            firewallGroup.client,
+		client:             firewallGroup.client,
 	}
 
 	err = firewallGroup.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtAppPortProfile)
@@ -253,7 +255,7 @@ func getNsxtAppPortProfileById(client *Client, id string) (*NsxtAppPortProfile, 
 
 	fwGroup := &NsxtAppPortProfile{
 		NsxtAppPortProfile: &types.NsxtAppPortProfile{},
-		client:            client,
+		client:             client,
 	}
 
 	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, fwGroup.NsxtAppPortProfile)
@@ -271,9 +273,7 @@ func getAllNsxtAppPortProfiles(client *Client, queryParameters url.Values) ([]*N
 		return nil, err
 	}
 
-	// This Object does not follow regular REST scheme and for get the endpoint must be
-	// 1.0.0/firewallGroups/summaries therefore bellow "summaries" is appended to the path
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, "summaries")
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +289,7 @@ func getAllNsxtAppPortProfiles(client *Client, queryParameters url.Values) ([]*N
 	for sliceIndex := range typeResponses {
 		wrappedResponses[sliceIndex] = &NsxtAppPortProfile{
 			NsxtAppPortProfile: typeResponses[sliceIndex],
-			client:            client,
+			client:             client,
 		}
 	}
 
@@ -310,7 +310,7 @@ func createNsxtAppPortProfile(client *Client, firewallGroupConfig *types.NsxtApp
 
 	returnObject := &NsxtAppPortProfile{
 		NsxtAppPortProfile: &types.NsxtAppPortProfile{},
-		client:            client,
+		client:             client,
 	}
 
 	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, firewallGroupConfig, returnObject.NsxtAppPortProfile)

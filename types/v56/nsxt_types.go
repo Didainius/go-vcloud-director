@@ -295,12 +295,12 @@ type NsxtFirewallGroupMemberVms struct {
 // in NSX-T Firewall rules in combination with IP Sets and Security Groups.
 type NsxtAppPortProfile struct {
 	ID               string                   `json:"id,omitempty"`
-	Name             string                   `json:"name"`
-	Description      string                   `json:"description"`
-	ApplicationPorts []NsxtAppPortProfilePort `json:"applicationPorts"`
-	OrgRef           *OpenApiReference        `json:"orgRef"`
-	ContextEntityId  string                   `json:"contextEntityId"`
-	Scope            string                   `json:"scope"`
+	Name             string                   `json:"name,omitempty"`
+	Description      string                   `json:"description,omitempty"`
+	ApplicationPorts []NsxtAppPortProfilePort `json:"applicationPorts,omitempty"`
+	OrgRef           *OpenApiReference        `json:"orgRef,omitempty"`
+	ContextEntityId  string                   `json:"contextEntityId,omitempty"`
+	Scope            string                   `json:"scope,omitempty"`
 }
 
 // NsxtAppPortProfilePort
