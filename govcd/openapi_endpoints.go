@@ -27,6 +27,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp:         "32.0", // VCD 9.7+ for NSX-V, 10.1+ for NSX-T
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcCapabilities:            "32.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAppPortProfiles:            "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpn:                   "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpnProfile:            "34.0", // VCD 10.1+
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with

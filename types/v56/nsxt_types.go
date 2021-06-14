@@ -331,3 +331,50 @@ type NsxtAppPortProfilePort struct {
 	// DestinationPorts is optional, but can define list of ports ("1000", "1500") or port ranges ("1200-1400")
 	DestinationPorts []string `json:"destinationPorts,omitempty"`
 }
+
+// NsxtIpSecVpn
+type NsxtIpSecVpn struct {
+	ID             string                     `json:"id,omitempty"`
+	Name           string                     `json:"name"`
+	Description    string                     `json:"description,omitempty"`
+	Enabled        bool                       `json:"enabled"`
+	LocalEndpoint  NsxtIpSecVpnLocalEndpoint  `json:"localEndpoint"`
+	RemoteEndpoint NsxtIpSecVpnRemoteEndpoint `json:"remoteEndpoint"`
+	PreSharedKey   string                     `json:"preSharedKey"`
+	SecurityType   string                     `json:"securityType"`
+	Logging        bool                       `json:"logging"`
+}
+
+type NsxtIpSecVpnLocalEndpoint struct {
+	LocalId       string   `json:"localId,omitempty"`
+	LocalAddress  string   `json:"localAddress"`
+	LocalNetworks []string `json:"localNetworks"`
+}
+
+type NsxtIpSecVpnRemoteEndpoint struct {
+	RemoteId       string   `json:"remoteId"`
+	RemoteAddress  string   `json:"remoteAddress"`
+	RemoteNetworks []string `json:"remoteNetworks"`
+}
+
+type NsxtIpSecVpnProfile struct {
+	SecurityType     string `json:"securityType"`
+	IkeConfiguration struct {
+		IkeVersion           string   `json:"ikeVersion"`
+		EncryptionAlgorithms []string `json:"encryptionAlgorithms"`
+		DigestAlgorithms     []string `json:"digestAlgorithms"`
+		DhGroups             []string `json:"dhGroups"`
+		SaLifeTime           int      `json:"saLifeTime"`
+	} `json:"ikeConfiguration"`
+	TunnelConfiguration struct {
+		PerfectForwardSecrecyEnabled bool        `json:"perfectForwardSecrecyEnabled"`
+		DfPolicy                     string      `json:"dfPolicy"`
+		EncryptionAlgorithms         []string    `json:"encryptionAlgorithms"`
+		DigestAlgorithms             interface{} `json:"digestAlgorithms"`
+		DhGroups                     []string    `json:"dhGroups"`
+		SaLifeTime                   int         `json:"saLifeTime"`
+	} `json:"tunnelConfiguration"`
+	DpdConfiguration struct {
+		ProbeInterval int `json:"probeInterval"`
+	} `json:"dpdConfiguration"`
+}

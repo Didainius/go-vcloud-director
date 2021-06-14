@@ -347,6 +347,8 @@ const (
 	OpenApiEndpointOrgVdcNetworks             = "orgVdcNetworks/"
 	OpenApiEndpointOrgVdcNetworksDhcp         = "orgVdcNetworks/%s/dhcp"
 	OpenApiEndpointAppPortProfiles            = "applicationPortProfiles/"
+	OpenApiEndpointIpSecVpn                   = "edgeGateways/%s/ipsec/tunnels/"
+	OpenApiEndpointIpSecVpnProfile            = OpenApiEndpointIpSecVpn + "%s/connectionProperties"
 )
 
 // Header keys to run operations in tenant context
