@@ -332,32 +332,87 @@ type NsxtAppPortProfilePort struct {
 	DestinationPorts []string `json:"destinationPorts,omitempty"`
 }
 
-// NsxtIpSecVpn
-type NsxtIpSecVpn struct {
-	ID             string                     `json:"id,omitempty"`
-	Name           string                     `json:"name"`
-	Description    string                     `json:"description,omitempty"`
-	Enabled        bool                       `json:"enabled"`
-	LocalEndpoint  NsxtIpSecVpnLocalEndpoint  `json:"localEndpoint"`
-	RemoteEndpoint NsxtIpSecVpnRemoteEndpoint `json:"remoteEndpoint"`
-	PreSharedKey   string                     `json:"preSharedKey"`
-	SecurityType   string                     `json:"securityType"`
-	Logging        bool                       `json:"logging"`
+// NsxtIpSecVpnTunnel specifies the IPSec VPN tunnel configuration
+type NsxtIpSecVpnTunnel struct {
+	// ID unique for IPSec VPN tunnel. On updates, the id is required for the tunnel, while for create a new id will be
+	// generated.
+	ID string `json:"id,omitempty"`
+	// Name for the tunnel
+	Name string `json:"name"`
+	// Description for the tunnel
+	Description string `json:"description,omitempty"`
+	// Enabled describes whether the tunnel is enabled or not. The default is true.
+	Enabled bool `json:"enabled"`
+	// LocalEndpoint which corresponds to the Edge Gateway the tunnel is being configured on. Local Endpoint requires an
+	// IP. That IP must be suballocated to the edge gateway
+	LocalEndpoint NsxtIpSecVpnTunnelLocalEndpoint `json:"localEndpoint"`
+	// RemoteEndpoint corresponds to the device on the remote site terminating the VPN tunnel
+	RemoteEndpoint NsxtIpSecVpnTunnelRemoteEndpoint `json:"remoteEndpoint"`
+	// PreSharedKey is key used for authentication.
+	PreSharedKey string `json:"preSharedKey"`
+	// SecurityType is the security type used for the IPSec Tunnel. If nothing is specified, this will be set to
+	// ‘DEFAULT’ in which the default settings in NSX will be used. For custom settings, one should use the
+	// connectionProperties endpoint to specify custom settings. The security type will then appropriately reflect
+	// itself as ‘CUSTOM’.
+	SecurityType string `json:"securityType,omitempty"`
+	// Logging sets whether logging for the tunnel is enabled or not. The default is false.
+	Logging bool `json:"logging"`
+
+	// AuthenticationMode is authentication mode this IPSec tunnel will use to authenticate with the peer endpoint. The
+	// default is a pre-shared key (PSK).
+	// * PSK - A known key is shared between each site before the tunnel is established.
+	// * CERTIFICATE ? Incoming connections are required to present an identifying digital certificate, which VCD verifies
+	// has been signed by a trusted certificate authority.
+	//
+	// Note. Up to version 10.3 VCD only supports PSK
+	AuthenticationMode string `json:"authenticationMode,omitempty"`
+
+	// ConnectorInitiationMode is the mode used by the local endpoint to establish an IKE Connection with the remote site.
+	// The default is INITIATOR.
+	// Possible values are: INITIATOR , RESPOND_ONLY , ON_DEMAND
+	//
+	// Note. Up to version 10.3 VCD only supports INITIATOR
+	ConnectorInitiationMode string `json:"connectorInitiationMode,omitempty"`
+
+	// Version of IPSec configuration. Must not be set when creating.
+	Version *struct {
+		// Version is incremented after each update
+		Version *int `json:"version,omitempty"`
+	} `json:"version,omitempty"`
 }
 
-type NsxtIpSecVpnLocalEndpoint struct {
-	LocalId       string   `json:"localId,omitempty"`
-	LocalAddress  string   `json:"localAddress"`
-	LocalNetworks []string `json:"localNetworks"`
+// NsxtIpSecVpnTunnelLocalEndpoint which corresponds to the Edge Gateway the tunnel is being configured on. Local
+// Endpoint requires an IP. That IP must be suballocated to the edge gateway
+type NsxtIpSecVpnTunnelLocalEndpoint struct {
+	// LocalId is the optional local identifier for the endpoint
+	LocalId string `json:"localId,omitempty"`
+	// LocalAddress is the IPv4 Address for the endpoint. This has to be a suballocated IP on the Edge Gateway. This is
+	// required
+	LocalAddress string `json:"localAddress"`
+	// LocalNetworks is the list of local networks. These must be specified in normal Network CIDR format. Specifying no
+	// value is interpreted as 0.0.0.0/0
+	LocalNetworks []string `json:"localNetworks,omitempty"`
 }
 
-type NsxtIpSecVpnRemoteEndpoint struct {
-	RemoteId       string   `json:"remoteId"`
-	RemoteAddress  string   `json:"remoteAddress"`
-	RemoteNetworks []string `json:"remoteNetworks"`
+// NsxtIpSecVpnTunnelRemoteEndpoint corresponds to the device on the remote site terminating the VPN tunnel
+type NsxtIpSecVpnTunnelRemoteEndpoint struct {
+	// RemoteId is This Remote ID is needed to uniquely identify the peer site. If this tunnel is using PSK authentication,
+	// the Remote ID is the public IP Address of the remote device terminating the VPN Tunnel. When NAT is configured on
+	// the Remote ID, enter the private IP Address of the Remote Site. If the remote ID is not set, VCD will set the
+	// remote id to the remote address. If this tunnel is using certificate authentication, enter the distinguished
+	// name of the certificate used to secure the
+	// remote endpoint (for example, C=US,ST=Massachusetts,O=VMware,OU=VCD,CN=Edge1). The remote id must be provided in
+	// this case
+	RemoteId string `json:"remoteId,omitempty"`
+	// RemoteAddress is IPv4 Address of the remote endpoint on the remote site. This is the Public IPv4 Address of the
+	// remote device terminating the VPN connection. This is required
+	RemoteAddress string `json:"remoteAddress"`
+	// RemoteNetworks is the list of remote networks. These must be specified in normal Network CIDR format.
+	// Specifying no value is interpreted as 0.0.0.0/0
+	RemoteNetworks []string `json:"remoteNetworks,omitempty"`
 }
 
-type NsxtIpSecVpnProfile struct {
+type NsxtIpSecVpnTunnelProfile struct {
 	SecurityType     string `json:"securityType"`
 	IkeConfiguration struct {
 		IkeVersion           string   `json:"ikeVersion"`
@@ -377,4 +432,17 @@ type NsxtIpSecVpnProfile struct {
 	DpdConfiguration struct {
 		ProbeInterval int `json:"probeInterval"`
 	} `json:"dpdConfiguration"`
+}
+
+// NsxtIpSecVpnTunnelStatus is used to process status
+type NsxtIpSecVpnTunnelStatus struct {
+	// TunnelStatus gives the overall IPSec VPN Tunnel Status. If IKE is properly set and the tunnel is up, the tunnel
+	// status will be UP
+	TunnelStatus string `json:"tunnelStatus"`
+	IkeStatus    struct {
+		// IkeServiceStatus status for the actual IKE Session for the given tunnel.
+		IkeServiceStatus string `json:"ikeServiceStatus"`
+		// FailReason contains more details of failure if the IKE service is not UP
+		FailReason string `json:"failReason"`
+	} `json:"ikeStatus"`
 }

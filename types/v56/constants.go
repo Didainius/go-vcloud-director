@@ -348,6 +348,7 @@ const (
 	OpenApiEndpointOrgVdcNetworksDhcp         = "orgVdcNetworks/%s/dhcp"
 	OpenApiEndpointAppPortProfiles            = "applicationPortProfiles/"
 	OpenApiEndpointIpSecVpn                   = "edgeGateways/%s/ipsec/tunnels/"
+	OpenApiEndpointIpSecVpnStatus             = "edgeGateways/%s/ipsec/tunnels/%s/status"
 	OpenApiEndpointIpSecVpnProfile            = OpenApiEndpointIpSecVpn + "%s/connectionProperties"
 )
 

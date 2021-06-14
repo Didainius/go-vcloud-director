@@ -28,6 +28,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcCapabilities:            "32.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAppPortProfiles:            "34.0", // VCD 10.1+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpn:                   "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpnStatus:             "34.0", // VCD 10.1+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSecVpnProfile:            "34.0", // VCD 10.1+
 }
 

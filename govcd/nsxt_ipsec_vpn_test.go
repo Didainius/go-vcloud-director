@@ -22,15 +22,15 @@ func (vcd *TestVCD) Test_NsxtIpSecVpn(check *C) {
 	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
 
-	ipSecDef := &types.NsxtIpSecVpn{
+	ipSecDef := &types.NsxtIpSecVpnTunnel{
 		Name:        check.TestName(),
 		Description: check.TestName() + "-description",
 		Enabled:     true,
-		LocalEndpoint: types.NsxtIpSecVpnLocalEndpoint{
+		LocalEndpoint: types.NsxtIpSecVpnTunnelLocalEndpoint{
 			LocalAddress:  edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
 			LocalNetworks: []string{"10.10.10.0/24"},
 		},
-		RemoteEndpoint: types.NsxtIpSecVpnRemoteEndpoint{
+		RemoteEndpoint: types.NsxtIpSecVpnTunnelRemoteEndpoint{
 			RemoteId:       "192.168.140.1",
 			RemoteAddress:  "192.168.140.1",
 			RemoteNetworks: []string{"20.20.20.0/24"},
