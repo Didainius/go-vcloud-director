@@ -348,7 +348,7 @@ type NsxtIpSecVpnTunnel struct {
 	LocalEndpoint NsxtIpSecVpnTunnelLocalEndpoint `json:"localEndpoint"`
 	// RemoteEndpoint corresponds to the device on the remote site terminating the VPN tunnel
 	RemoteEndpoint NsxtIpSecVpnTunnelRemoteEndpoint `json:"remoteEndpoint"`
-	// PreSharedKey is key used for authentication.
+	// PreSharedKey is key used for authentication. It must be the same on the other end of IPsec VPN tunnel
 	PreSharedKey string `json:"preSharedKey"`
 	// SecurityType is the security type used for the IPsec Tunnel. If nothing is specified, this will be set to
 	// ‘DEFAULT’ in which the default settings in NSX will be used. For custom settings, one should use the
@@ -389,8 +389,8 @@ type NsxtIpSecVpnTunnelLocalEndpoint struct {
 	// LocalAddress is the IPv4 Address for the endpoint. This has to be a suballocated IP on the Edge Gateway. This is
 	// required
 	LocalAddress string `json:"localAddress"`
-	// LocalNetworks is the list of local networks. These must be specified in normal Network CIDR format. Specifying no
-	// value is interpreted as 0.0.0.0/0
+	// LocalNetworks is the list of local networks. These must be specified in normal Network CIDR format. At least one is
+	// required
 	LocalNetworks []string `json:"localNetworks,omitempty"`
 }
 
@@ -446,8 +446,9 @@ type NsxtIpSecVpnTunnelSecurityProfile struct {
 	DpdConfiguration NsxtIpSecVpnTunnelProfileDpdConfiguration `json:"dpdConfiguration"`
 }
 
-// NsxtIpSecVpnTunnelProfileIkeConfiguration configuration captures the IKE and phase one negotiation parameters. This
-// configuration can be set for peering properly with remote peers.
+// NsxtIpSecVpnTunnelProfileIkeConfiguration is the Internet Key Exchange (IKE) profiles provide information about the
+// algorithms that are used to authenticate, encrypt, and establish a shared secret between network sites when you
+// establish an IKE tunnel.
 type NsxtIpSecVpnTunnelProfileIkeConfiguration struct {
 	// IkeVersion IKE Protocol Version to use.
 	// The default is IKE_V2.
@@ -458,30 +459,45 @@ type NsxtIpSecVpnTunnelProfileIkeConfiguration struct {
 	// Default is AES_128.
 	//
 	// Possible values are: AES_128 , AES_256 , AES_GCM_128 , AES_GCM_192 , AES_GCM_256
+	// Note. Only one value can be set inside the slice
 	EncryptionAlgorithms []string `json:"encryptionAlgorithms"`
-	// DigestAlgorithms contains list of Digest algorithms for IKE. This is used during IKE negotiation.
+	// DigestAlgorithms contains list of Digest algorithms - secure hashing algorithms to use during the IKE negotiation.
+	//
 	// Default is SHA2_256.
 	//
 	// Possible values are: SHA1 , SHA2_256 , SHA2_384 , SHA2_512
+	// Note. Only one value can be set inside the slice
 	DigestAlgorithms []string `json:"digestAlgorithms"`
-	// DhGroups contains list of Diffie-Hellman groups to be used if Perfect Forward Secrecty is enabled. Default is GROUP14.
+	// DhGroups contains list of Diffie-Hellman groups to be used if Perfect Forward Secrecy is enabled. These are
+	// cryptography schemes that allows the peer site and the edge gateway to establish a shared secret over an insecure
+	// communications channel
+	//
+	// Default is GROUP14.
 	//
 	// Possible values are: GROUP2, GROUP5, GROUP14, GROUP15, GROUP16, GROUP19, GROUP20, GROUP21
+	// Note. Only one value can be set inside the slice
 	DhGroups []string `json:"dhGroups"`
-	// SaLifeTime is the Security Association life time in seconds.
+	// SaLifeTime is the Security Association life time in seconds. It is number of seconds before the IPsec tunnel needs
+	// to reestablish
 	//
 	// Default is 86400 seconds (1 day).
 	SaLifeTime int `json:"saLifeTime"`
 }
 
 type NsxtIpSecVpnTunnelProfileTunnelConfiguration struct {
-	// PerfectForwardSecrecyEnabled enabled or disabled.
+	// PerfectForwardSecrecyEnabled enabled or disabled. PFS (Perfect Forward Secrecy) ensures the same key will not be
+	// generated and used again, and because of this, the VPN peers negotiate a new Diffie-Hellman key exchange. This
+	// would ensure if a hacker\criminal was to compromise the private key, they would only be able to access data in
+	// transit protected by that key. Any future data will not be compromised, as future data would not be associated
+	// with that compromised key. Both sides of the VPN must be able to support PFS in order for PFS to work.
 	//
 	// The default value is true.
 	PerfectForwardSecrecyEnabled bool `json:"perfectForwardSecrecyEnabled"`
 	// DfPolicy Policy for handling defragmentation bit. The default is COPY.
 	//
 	// Possible values are: COPY, CLEAR
+	// * COPY Copies the defragmentation bit from the inner IP packet to the outer packet.
+	// * CLEAR Ignores the defragmentation bit present in the inner packet.
 	DfPolicy string `json:"dfPolicy"`
 
 	// EncryptionAlgorithms contains list of Encryption algorithms to use in IPSec tunnel establishment.
@@ -491,17 +507,20 @@ type NsxtIpSecVpnTunnelProfileTunnelConfiguration struct {
 	//
 	// Possible values are: AES_128, AES_256, AES_GCM_128, AES_GCM_192, AES_GCM_256, NO_ENCRYPTION_AUTH_AES_GMAC_128,
 	// NO_ENCRYPTION_AUTH_AES_GMAC_192, NO_ENCRYPTION_AUTH_AES_GMAC_256, NO_ENCRYPTION
+	// Note. Only one value can be set inside the slice
 	EncryptionAlgorithms []string `json:"encryptionAlgorithms"`
 
 	// DigestAlgorithms contains list of Digest algorithms to be used for message digest. The default digest algorithm is
 	// implicitly covered by default encryption algorithm AES_GCM_128.
 	//
 	// Possible values are: SHA1 , SHA2_256 , SHA2_384 , SHA2_512
+	// Note. Only one value can be set inside the slice
 	DigestAlgorithms []string `json:"digestAlgorithms"`
 
 	// DhGroups contains list of Diffie-Hellman groups to be used is PFS is enabled. Default is GROUP14.
 	//
 	// Possible values are: GROUP2, GROUP5, GROUP14, GROUP15, GROUP16, GROUP19, GROUP20, GROUP21
+	// Note. Only one value can be set inside the slice
 	DhGroups []string `json:"dhGroups"`
 
 	// SaLifeTime is the Security Association life time in seconds.
