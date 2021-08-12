@@ -1,0 +1,46 @@
+// +build alb functional ALL
+
+package govcd
+
+import (
+	"fmt"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+
+	. "gopkg.in/check.v1"
+)
+
+// Tests VDC storage profile update
+func (vcd *TestVCD) Test_GetAllAlbClouds(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	controllers, err := vcd.client.GetAllAlbControllers(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(controllers), Equals, 1)
+
+	importableClouds, err := controllers[0].GetAllAlbImportableCloud(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(importableClouds) > 0, Equals, true)
+
+	albCloudConfig := &types.NsxtAlbCloud{
+		Name:        "test-1",
+		Description: "",
+		LoadBalancerCloudBacking: types.NsxtAlbCloudBacking{
+			BackingId: importableClouds[0].NsxtAlbImportableCloud.ID,
+			LoadBalancerControllerRef: types.OpenApiReference{
+				ID: controllers[0].NsxtAlbController.ID,
+			},
+		},
+		NetworkPoolRef: types.OpenApiReference{
+			ID: importableClouds[0].NsxtAlbImportableCloud.NetworkPoolRef.ID,
+		},
+	}
+
+	createdAlbCloud, err := vcd.client.CreateAlbCloud(albCloudConfig)
+	check.Assert(err, IsNil)
+
+	err = createdAlbCloud.Delete()
+	check.Assert(err, IsNil)
+
+}

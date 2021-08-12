@@ -671,3 +671,96 @@ type NsxtIpSecVpnTunnelProfileDpdConfiguration struct {
 	// minimum is 3 seconds and the maximum is 60 seconds.
 	ProbeInterval int `json:"probeInterval"`
 }
+
+// NsxtAlbController helps to integrate VMware Cloud Director with your NSX-T Advanced Load Balancer deployment. You
+// register Controller instances with your VMware Cloud Director instance. Controller instances serve as a central
+// control plane for the load-balancing services provided by NSX-T Advanced Load Balancer.
+type NsxtAlbController struct {
+	// ID holds URN for load balancer controller (e.g. urn:vcloud:loadBalancerController:aa23ef66-ba32-48b2-892f-7acdffe4587e)
+	ID string `json:"id,omitempty"`
+	// Name as shown in VCD
+	Name string `json:"name"`
+	// Description as shown in VCD
+	Description string `json:"description,omitempty"`
+	// Url of ALB controller
+	Url string `json:"url"`
+	// Username of user
+	Username string `json:"username"`
+	// Password (will not be returned on read)
+	Password string `json:"password,omitempty"`
+	// LicenseType By enabling this feature, the provider acknowledges that they have independently licensed the enterprise version of the NSX AVI LB
+	LicenseType string `json:"licenseType,omitempty"`
+	// Version of ALB (e.g. 20.1.3)
+	Version string `json:"version,omitempty"`
+}
+
+//NsxtAlbImportableCloud
+type NsxtAlbImportableCloud struct {
+	// ID (e.g. 'cloud-43726181-f73e-41f2-bf1d-8a9609502586')
+	ID string `json:"id"`
+
+	DisplayName string `json:"displayName"`
+	// AlreadyImported shows if this ALB Cloud is already imported
+	AlreadyImported bool `json:"alreadyImported"`
+
+	NetworkPoolRef    OpenApiReference `json:"networkPoolRef"`
+	TransportZoneName string           `json:"transportZoneName"`
+}
+
+// NsxtAlbCloud TBD
+type NsxtAlbCloud struct {
+	ID                       string              `json:"id,omitempty"`
+	Status                   string              `json:"status,omitempty"`
+	Name                     string              `json:"name"`
+	Description              string              `json:"description"`
+	LoadBalancerCloudBacking NsxtAlbCloudBacking `json:"loadBalancerCloudBacking"`
+	NetworkPoolRef           OpenApiReference    `json:"networkPoolRef"`
+	HealthStatus             string              `json:"healthStatus,omitempty"`
+	DetailedHealthMessage    string              `json:"detailedHealthMessage,omitempty"`
+}
+
+// NsxtAlbCloudBacking is embedded into NsxtAlbCloud
+type NsxtAlbCloudBacking struct {
+	BackingId                 string           `json:"backingId"`
+	BackingType               string           `json:"backingType,omitempty"`
+	LoadBalancerControllerRef OpenApiReference `json:"loadBalancerControllerRef"`
+}
+
+//NsxtAlbServiceEngineGroup
+//type NsxtAlbServiceEngineGroup struct {
+//}
+
+type NsxtAlbServiceEngineGroup struct {
+	Status                     string                    `json:"status,omitempty"`
+	ID                         string                    `json:"id,omitempty"`
+	Name                       string                    `json:"name"`
+	Description                string                    `json:"description"`
+	ServiceEngineGroupBacking  ServiceEngineGroupBacking `json:"serviceEngineGroupBacking"`
+	HaMode                     string                    `json:"haMode,omitempty"`
+	ReservationType            string                    `json:"reservationType"`
+	MaxVirtualServices         int                       `json:"maxVirtualServices,omitempty"`
+	NumDeployedVirtualServices int                       `json:"numDeployedVirtualServices,omitempty"`
+	ReservedVirtualServices    int                       `json:"reservedVirtualServices,omitempty"`
+	OverAllocated              bool                      `json:"overAllocated,omitempty"`
+}
+
+//
+//type NsxtAlbServiceEngineGroupa struct {
+//	Name        string `json:"name"`
+//	Description string `json:"description"`
+//	// ReservationType 'DEDICATED' or 'SHARED'
+//	ReservationType           string                    `json:"reservationType"`
+//	ServiceEngineGroupBacking ServiceEngineGroupBacking `json:"serviceEngineGroupBacking"`
+//}
+
+type ServiceEngineGroupBacking struct {
+	BackingId            string           `json:"backingId"`
+	BackingType          string           `json:"backingType,omitempty"`
+	LoadBalancerCloudRef OpenApiReference `json:"loadBalancerCloudRef"`
+}
+
+type NsxtAlbImportableServiceEngineGroups struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"displayName"`
+	HaMode      string `json:"haMode"`
+}
