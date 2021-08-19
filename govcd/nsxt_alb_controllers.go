@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -21,7 +22,7 @@ type NsxtAlbController struct {
 func (vcdClient *VCDClient) GetAllAlbControllers(queryParameters url.Values) ([]*NsxtAlbController, error) {
 	client := vcdClient.Client
 	if !client.IsSysAdmin {
-		return nil, errors.New("reading NSX-T ALB controllers require System user")
+		return nil, errors.New("reading NSX-T ALB Controllers require System user")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController
@@ -52,4 +53,109 @@ func (vcdClient *VCDClient) GetAllAlbControllers(queryParameters url.Values) ([]
 	}
 
 	return wrappedResponses, nil
+}
+
+// GetAlbControllerByName returns all configured NSX-T ALB controllers
+func (vcdClient *VCDClient) GetAlbControllerByName(name string) (*NsxtAlbController, error) {
+
+	queryParameters := copyOrNewUrlValues(nil)
+	queryParameters.Add("filter", "name=="+name)
+
+	controllers, err := vcdClient.GetAllAlbControllers(queryParameters)
+	if err != nil {
+		return nil, fmt.Errorf("error reading ALB Controller with Name '%s': %s", name, err)
+	}
+
+	if len(controllers) == 0 {
+		return nil, fmt.Errorf("%s could not find ALB Controller by Name '%s'", ErrorEntityNotFound, name)
+	}
+
+	if len(controllers) > 1 {
+		return nil, fmt.Errorf("found more than 1 ALB Controller by Name '%s'", name)
+	}
+
+	return controllers[0], nil
+}
+
+// GetAlbControllerByUrl returns all configured NSX-T ALB controllers
+func (vcdClient *VCDClient) GetAlbControllerByUrl(url string) (*NsxtAlbController, error) {
+	// Ideally this function could filter on VCD side, but API does not support filtering on URL
+
+	controllers, err := vcdClient.GetAllAlbControllers(nil)
+	if err != nil {
+		return nil, fmt.Errorf("error reading ALB Controller with Url '%s': %s", url, err)
+	}
+
+	// Search for controllers
+	filteredControllers := make([]*NsxtAlbController, 0)
+	for _, controller := range controllers {
+		if controller.NsxtAlbController.Url == url {
+			filteredControllers = append(filteredControllers, controller)
+		}
+	}
+
+	if len(filteredControllers) == 0 {
+		return nil, fmt.Errorf("%s could not find ALB Controller by Url '%s'", ErrorEntityNotFound, url)
+	}
+
+	if len(filteredControllers) > 1 {
+		return nil, fmt.Errorf("found more than 1 ALB Controller by Url '%s'", url)
+	}
+
+	return filteredControllers[0], nil
+}
+
+func (vcdClient *VCDClient) CreateNsxtAlbController(albController *types.NsxtAlbController) (*NsxtAlbController, error) {
+	client := vcdClient.Client
+	if !client.IsSysAdmin {
+		return nil, errors.New("handling NSX-T ALB Controllers require System user")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	returnObject := &NsxtAlbController{
+		NsxtAlbController: &types.NsxtAlbController{},
+		client:            &client,
+	}
+
+	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, albController, returnObject.NsxtAlbController, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating NSX-T ALB Controller: %s", err)
+	}
+
+	return returnObject, nil
+}
+
+func (nsxtAlbController *NsxtAlbController) Delete() error {
+	client := nsxtAlbController.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return err
+	}
+
+	if nsxtAlbController.NsxtAlbController.ID == "" {
+		return fmt.Errorf("cannot delete NSX-T ALB Controller without ID")
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, nsxtAlbController.NsxtAlbController.ID)
+	if err != nil {
+		return err
+	}
+
+	err = client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
+	if err != nil {
+		return fmt.Errorf("error deleting NSX-T ALB Controller: %s", err)
+	}
+
+	return nil
 }

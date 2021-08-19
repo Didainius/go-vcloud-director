@@ -170,6 +170,10 @@ type TestConfig struct {
 			ExternalNetwork   string `yaml:"externalNetwork"`
 			EdgeGateway       string `yaml:"edgeGateway"`
 			NsxtImportSegment string `yaml:"nsxtImportSegment"`
+
+			NsxtAlbControllerUrl      string `yaml:"nsxtAlbControllerUrl"`
+			NsxtAlbControllerUser     string `yaml:"nsxtAlbControllerUser"`
+			NsxtAlbControllerPassword string `yaml:"nsxtAlbControllerPassword"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Logging struct {
@@ -1832,6 +1836,23 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 
 	if vcd.config.VCD.Nsxt.EdgeGateway == "" {
 		check.Skip(generalMessage + "No NSX-T Edge Gateway specified in configuration")
+	}
+}
+
+func skipNoNsxtAlbConfiguration(vcd *TestVCD, check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	generalMessage := "Missing NSX-T ALB config: "
+
+	if vcd.config.VCD.Nsxt.NsxtAlbControllerUrl == "" {
+		check.Skip(generalMessage + "No NSX-T ALB Controller URL specified in configuration")
+	}
+
+	if vcd.config.VCD.Nsxt.NsxtAlbControllerUser == "" {
+		check.Skip(generalMessage + "No NSX-T ALB Controller Name specified in configuration")
+	}
+
+	if vcd.config.VCD.Nsxt.NsxtAlbControllerPassword == "" {
+		check.Skip(generalMessage + "No NSX-T ALB Controller Password specified in configuration")
 	}
 }
 
