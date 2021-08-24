@@ -12,21 +12,22 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// NsxtAlbImportableCloud allows user to list importable NSX-T ALB Clouds. Each importable cloud can only be imported
+// once. It has a flag AlreadyImported which hints if it is already consumed or not.
 type NsxtAlbImportableCloud struct {
 	NsxtAlbImportableCloud *types.NsxtAlbImportableCloud
 	client                 *Client
-	// edgeGatewayId is stored here so that pointer receiver functions can embed edge gateway ID into path
-	// edgeGatewayId string
 }
 
-// GetAllAlbImportableCloud returns ALB NSX-T
-func (vcdClient *VCDClient) GetAllAlbImportableCloud(parentAlbControllerUrn string, queryParameters url.Values) ([]*NsxtAlbImportableCloud, error) {
+// GetAllAlbImportableClouds returns importable NSX-T ALB Clouds.
+// ID of parentAlbControllerUrn is mandatory
+func (vcdClient *VCDClient) GetAllAlbImportableClouds(parentAlbControllerUrn string, queryParameters url.Values) ([]*NsxtAlbImportableCloud, error) {
 	client := vcdClient.Client
 	if parentAlbControllerUrn == "" {
 		return nil, fmt.Errorf("parentAlbControllerUrn is required")
 	}
 	if !client.IsSysAdmin {
-		return nil, errors.New("handling NSX-T ALB clouds require System user")
+		return nil, errors.New("handling NSX-T ALB Clouds require System user")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbImportableClouds
@@ -59,6 +60,7 @@ func (vcdClient *VCDClient) GetAllAlbImportableCloud(parentAlbControllerUrn stri
 	return wrappedResponses, nil
 }
 
-func (nsxtAlbController *NsxtAlbController) GetAllAlbImportableCloud(queryParameters url.Values) ([]*NsxtAlbImportableCloud, error) {
-	return nsxtAlbController.vcdClient.GetAllAlbImportableCloud(nsxtAlbController.NsxtAlbController.ID, queryParameters)
+// GetAllAlbImportableClouds is attached to NsxtAlbController type for a convenient parent/child relationship
+func (nsxtAlbController *NsxtAlbController) GetAllAlbImportableClouds(queryParameters url.Values) ([]*NsxtAlbImportableCloud, error) {
+	return nsxtAlbController.vcdClient.GetAllAlbImportableClouds(nsxtAlbController.NsxtAlbController.ID, queryParameters)
 }

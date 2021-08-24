@@ -8,21 +8,24 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Tests VDC storage profile update
+// Test_GetAllAlbImportableClouds tests if if there is at least one importable cloud available
 func (vcd *TestVCD) Test_GetAllAlbImportableClouds(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
+	skipNoNsxtAlbConfiguration(vcd, check)
 
 	controllers, err := vcd.client.GetAllAlbControllers(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(controllers), Equals, 1)
+	check.Assert(len(controllers) > 0, Equals, true)
 
-	clientImportableClouds, err := vcd.client.GetAllAlbImportableCloud(controllers[0].NsxtAlbController.ID, nil)
+	// Test client function with explicit ALB Controller ID requirement
+	clientImportableClouds, err := vcd.client.GetAllAlbImportableClouds(controllers[0].NsxtAlbController.ID, nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(clientImportableClouds), Equals, 1)
+	check.Assert(len(clientImportableClouds) > 0, Equals, true)
 
-	controllerImportableClouds, err := controllers[0].GetAllAlbImportableCloud(nil)
+	// Test function attached directly to NsxtAlbController
+	controllerImportableClouds, err := controllers[0].GetAllAlbImportableClouds(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(controllerImportableClouds), Equals, 1)
+	check.Assert(len(controllerImportableClouds) > 0, Equals, true)
 }

@@ -12,15 +12,17 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// NsxtAlbCloud is a service provider-level construct that consists of an NSX-T Manager and an NSX-T Data Center
+// transport zone. An NSX-T Data Center transport zone dictates which hosts and virtual machines can participate in the
+// use of a particular network. An NSX-T Cloud has a one-to-one relationship with a network pool backed by an NSX-T Data
+// Center transport zone.
 type NsxtAlbCloud struct {
 	NsxtAlbCloud *types.NsxtAlbCloud
 	client       *Client
-	// edgeGatewayId is stored here so that pointer receiver functions can embed edge gateway ID into path
-	// edgeGatewayId string
 }
 
-// GetAllAlbCloud
-func (vcdClient *VCDClient) GetAllAlbCloud(queryParameters url.Values) ([]*NsxtAlbCloud, error) {
+// GetAllAlbClouds
+func (vcdClient *VCDClient) GetAllAlbClouds(queryParameters url.Values) ([]*NsxtAlbCloud, error) {
 	client := vcdClient.Client
 	if !client.IsSysAdmin {
 		return nil, errors.New("handling NSX-T ALB clouds require System user")

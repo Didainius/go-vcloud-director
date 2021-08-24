@@ -59,6 +59,6 @@ func (vcdClient *VCDClient) GetAllAlbImportableServiceEngineGroups(parentAlbClou
 }
 
 //
-//func (nsxtAlbController *NsxtAlbController) GetAllAlbImportableCloud(queryParameters url.Values) ([]*NsxtAlbImportableCloud, error) {
-//	return nsxtAlbController.vcdClient.GetAllAlbImportableCloud(nsxtAlbController.NsxtAlbController.ID, queryParameters)
+//func (nsxtAlbController *NsxtAlbController) GetAllAlbImportableClouds(queryParameters url.Values) ([]*NsxtAlbImportableCloud, error) {
+//	return nsxtAlbController.vcdClient.GetAllAlbImportableClouds(nsxtAlbController.NsxtAlbController.ID, queryParameters)
 //}

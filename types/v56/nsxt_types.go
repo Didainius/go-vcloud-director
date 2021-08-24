@@ -696,7 +696,8 @@ type NsxtAlbController struct {
 	Version string `json:"version,omitempty"`
 }
 
-//NsxtAlbImportableCloud
+// NsxtAlbImportableCloud allows user to list importable NSX-T ALB Clouds. Each importable cloud can only be imported
+// once. It has a flag AlreadyImported which hints if it is already consumed or not.
 type NsxtAlbImportableCloud struct {
 	// ID (e.g. 'cloud-43726181-f73e-41f2-bf1d-8a9609502586')
 	ID string `json:"id"`

@@ -19,7 +19,7 @@ type NsxtAlbServiceEngineGroup struct {
 	// edgeGatewayId string
 }
 
-// GetAllAlbImportableCloud returns ALB NSX-T
+// GetAllAlbImportableClouds returns ALB NSX-T
 func (vcdClient *VCDClient) GetNsxtAlbServiceEngineGroup(parentAlbControllerUrn string, queryParameters url.Values) ([]*NsxtAlbServiceEngineGroup, error) {
 	client := vcdClient.Client
 	if parentAlbControllerUrn == "" {

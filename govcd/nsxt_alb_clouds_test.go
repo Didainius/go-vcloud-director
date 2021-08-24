@@ -19,7 +19,7 @@ func (vcd *TestVCD) Test_GetAllAlbClouds(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(controllers), Equals, 1)
 
-	importableClouds, err := controllers[0].GetAllAlbImportableCloud(nil)
+	importableClouds, err := controllers[0].GetAllAlbImportableClouds(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(importableClouds) > 0, Equals, true)
 
