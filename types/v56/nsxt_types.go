@@ -672,8 +672,8 @@ type NsxtIpSecVpnTunnelProfileDpdConfiguration struct {
 	ProbeInterval int `json:"probeInterval"`
 }
 
-// NsxtAlbController helps to integrate VMware Cloud Director with your NSX-T Advanced Load Balancer deployment. You
-// register Controller instances with your VMware Cloud Director instance. Controller instances serve as a central
+// NsxtAlbController helps to integrate VMware Cloud Director with NSX-T Advanced Load Balancer deployment.
+// Controller instances are registered with VMware Cloud Director instance. Controller instances serve as a central
 // control plane for the load-balancing services provided by NSX-T Advanced Load Balancer.
 type NsxtAlbController struct {
 	// ID holds URN for load balancer controller (e.g. urn:vcloud:loadBalancerController:aa23ef66-ba32-48b2-892f-7acdffe4587e)
@@ -688,7 +688,9 @@ type NsxtAlbController struct {
 	Username string `json:"username"`
 	// Password (will not be returned on read)
 	Password string `json:"password,omitempty"`
-	// LicenseType By enabling this feature, the provider acknowledges that they have independently licensed the enterprise version of the NSX AVI LB
+	// LicenseType By enabling this feature, the provider acknowledges that they have independently licensed the
+	// enterprise version of the NSX AVI LB.
+	// Possible options: 'BASIC', 'ENTERPRISE'
 	LicenseType string `json:"licenseType,omitempty"`
 	// Version of ALB (e.g. 20.1.3)
 	Version string `json:"version,omitempty"`

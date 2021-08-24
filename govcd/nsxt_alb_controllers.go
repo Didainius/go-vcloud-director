@@ -12,6 +12,9 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+// NsxtAlbController helps to integrate VMware Cloud Director with NSX-T Advanced Load Balancer deployment.
+// Controller instances are registered with VMware Cloud Director instance. Controller instances serve as a central
+// control plane for the load-balancing services provided by NSX-T Advanced Load Balancer.
 type NsxtAlbController struct {
 	NsxtAlbController *types.NsxtAlbController
 	client            *Client
@@ -55,7 +58,8 @@ func (vcdClient *VCDClient) GetAllAlbControllers(queryParameters url.Values) ([]
 	return wrappedResponses, nil
 }
 
-// GetAlbControllerByName returns all configured NSX-T ALB controllers
+// GetAlbControllerByName returns ALB Controller by Name
+// Note. Filtering is performed on server side
 func (vcdClient *VCDClient) GetAlbControllerByName(name string) (*NsxtAlbController, error) {
 
 	queryParameters := copyOrNewUrlValues(nil)
@@ -77,7 +81,8 @@ func (vcdClient *VCDClient) GetAlbControllerByName(name string) (*NsxtAlbControl
 	return controllers[0], nil
 }
 
-// GetAlbControllerByUrl returns all configured NSX-T ALB controllers
+// GetAlbControllerByUrl returns configured ALB Controller by URL
+// Note. Filtering is performed on client side.
 func (vcdClient *VCDClient) GetAlbControllerByUrl(url string) (*NsxtAlbController, error) {
 	// Ideally this function could filter on VCD side, but API does not support filtering on URL
 
@@ -105,7 +110,8 @@ func (vcdClient *VCDClient) GetAlbControllerByUrl(url string) (*NsxtAlbControlle
 	return filteredControllers[0], nil
 }
 
-func (vcdClient *VCDClient) CreateNsxtAlbController(albController *types.NsxtAlbController) (*NsxtAlbController, error) {
+// CreateNsxtAlbController creates controller with supplied albControllerConfig configuration
+func (vcdClient *VCDClient) CreateNsxtAlbController(albControllerConfig *types.NsxtAlbController) (*NsxtAlbController, error) {
 	client := vcdClient.Client
 	if !client.IsSysAdmin {
 		return nil, errors.New("handling NSX-T ALB Controllers require System user")
@@ -127,7 +133,7 @@ func (vcdClient *VCDClient) CreateNsxtAlbController(albController *types.NsxtAlb
 		client:            &client,
 	}
 
-	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, albController, returnObject.NsxtAlbController, nil)
+	err = client.OpenApiPostItem(minimumApiVersion, urlRef, nil, albControllerConfig, returnObject.NsxtAlbController, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating NSX-T ALB Controller: %s", err)
 	}
@@ -135,6 +141,39 @@ func (vcdClient *VCDClient) CreateNsxtAlbController(albController *types.NsxtAlb
 	return returnObject, nil
 }
 
+// Update updates existing ALB Controller with new supplied albControllerConfig configuration
+func (nsxtAlbController *NsxtAlbController) Update(albControllerConfig *types.NsxtAlbController) (*NsxtAlbController, error) {
+	client := nsxtAlbController.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController
+	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if nsxtAlbController.NsxtAlbController.ID == "" {
+		return nil, fmt.Errorf("cannot update NSX-T ALB Controller without ID")
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, nsxtAlbController.NsxtAlbController.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	responseAlbController := &NsxtAlbController{
+		NsxtAlbController: &types.NsxtAlbController{},
+		client:            nsxtAlbController.client,
+		vcdClient:         nsxtAlbController.vcdClient,
+	}
+
+	err = client.OpenApiPutItem(minimumApiVersion, urlRef, nil, albControllerConfig, responseAlbController.NsxtAlbController, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error updating NSX-T ALB Controller: %s", err)
+	}
+
+	return responseAlbController, nil
+}
+
+// Delete deletes existing ALB Controller
 func (nsxtAlbController *NsxtAlbController) Delete() error {
 	client := nsxtAlbController.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController
