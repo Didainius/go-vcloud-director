@@ -20,7 +20,7 @@ type NsxtAlbImportableCloud struct {
 }
 
 // GetAllAlbImportableClouds returns importable NSX-T ALB Clouds.
-// ID of parentAlbControllerUrn is mandatory
+// Id of parentAlbControllerUrn is mandatory
 func (vcdClient *VCDClient) GetAllAlbImportableClouds(parentAlbControllerUrn string, queryParameters url.Values) ([]*NsxtAlbImportableCloud, error) {
 	client := vcdClient.Client
 	if parentAlbControllerUrn == "" {
