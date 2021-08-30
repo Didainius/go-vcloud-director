@@ -15,8 +15,6 @@ import (
 type NsxtAlbImportableServiceEngineGroups struct {
 	NsxtAlbImportableServiceEngineGroups *types.NsxtAlbImportableServiceEngineGroups
 	client                               *Client
-	// edgeGatewayId is stored here so that pointer receiver functions can embed edge gateway ID into path
-	// edgeGatewayId string
 }
 
 func (vcdClient *VCDClient) GetAllAlbImportableServiceEngineGroups(parentAlbCloudUrn string, queryParameters url.Values) ([]*NsxtAlbImportableServiceEngineGroups, error) {

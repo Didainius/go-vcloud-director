@@ -38,6 +38,8 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 
 	createdAlbCloud, err := vcd.client.CreateAlbCloud(albCloudConfig)
 	check.Assert(err, IsNil)
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbCloud + createdAlbCloud.NsxtAlbCloud.ID
+	AddToCleanupListOpenApi(createdAlbCloud.NsxtAlbCloud.Name, check.TestName(), openApiEndpoint)
 
 	importableSeGroups, err := vcd.client.GetAllAlbImportableServiceEngineGroups(createdAlbCloud.NsxtAlbCloud.ID, nil)
 	check.Assert(err, IsNil)
@@ -53,35 +55,17 @@ func (vcd *TestVCD) Test_GetAllAlbServiceEngineGroups(check *C) {
 		ReservationType: "DEDICATED",
 		ServiceEngineGroupBacking: types.ServiceEngineGroupBacking{
 			BackingId: importableSeGroups[0].NsxtAlbImportableServiceEngineGroups.ID,
-			//BackingType:               "",
 			LoadBalancerCloudRef: types.OpenApiReference{
-				//Name: "",
 				ID: createdAlbCloud.NsxtAlbCloud.ID,
 			},
 		},
-		//	HaMode:                     "",
-		//	ReservationType:            "",
-		//	MaxVirtualServices:         0,
-		//	NumDeployedVirtualServices: 0,
-		//	ReservedVirtualServices:    0,
-		//	OverAllocated:              false,
 	}
 
-	//{
-	//	"description": "",
-	//	"name": "asdasd",
-	//	"reservationType": "DEDICATED",
-	//	"serviceEngineGroupBacking": {
-	//	"backingId": "serviceenginegroup-b494f4df-1aee-464b-bfb8-e4709decb2ed",
-	//		"loadBalancerCloudRef": {
-	//		"id": "urn:vcloud:loadBalancerCloud:575b56cb-abba-4128-8d1d-7261212a0ffb",
-	//			"name": "test-1"
-	//	}
-	//}
-	//}
-	//
 	createdSeGroup, err := vcd.client.CreateNsxtAlbServiceEngineGroup(albSeGroup)
 	check.Assert(err, IsNil)
+
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups + createdSeGroup.NsxtAlbServiceEngineGroup.ID
+	AddToCleanupListOpenApi(createdSeGroup.NsxtAlbServiceEngineGroup.Name, check.TestName(), openApiEndpoint)
 
 	err = createdSeGroup.Delete()
 	check.Assert(err, IsNil)
