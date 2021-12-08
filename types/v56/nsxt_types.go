@@ -860,6 +860,10 @@ type NsxtAlbPool struct {
 	Name string `json:"name"`
 	// Description is optional
 	Description string `json:"description,omitempty"`
+
+	// Enabled defines if the Pool is enabled
+	Enabled *bool `json:"enabled"`
+
 	// GatewayRef is mandatory and associates NSX-T Edge Gateway with this Load Balancer Pool.
 	GatewayRef OpenApiReference `json:"gatewayRef"`
 
@@ -1003,4 +1007,57 @@ type NsxtAlbPoolPersistenceProfile struct {
 	// HTTP_COOKIE, APP_COOKIE must have cookie name set as the value and CUSTOM_HTTP_HEADER must have header name set as
 	// the value.
 	Value string `json:"value,omitempty"`
+}
+
+type NsxtAlbVirtualService struct {
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	Enabled     *bool  `json:"enabled"`
+
+	ApplicationProfile NsxtAlbVirtualServiceApplicationProfile `json:"applicationProfile"`
+
+	GatewayRef            OpenApiReference `json:"gatewayRef"`
+	LoadBalancerPoolRef   OpenApiReference `json:"loadBalancerPoolRef"`
+	ServiceEngineGroupRef OpenApiReference `json:"serviceEngineGroupRef"`
+
+	CertificateRef *OpenApiReference `json:"certificateRef,omitempty"`
+
+	ServicePorts []NsxtAlbVirtualServicePort `json:"servicePorts"`
+
+	VirtualIpAddress string `json:"virtualIpAddress"`
+
+	HealthStatus string `json:"healthStatus,omitempty"`
+
+	// HealthMessage shows a pool health status (e.g. "The pool is unassigned.")
+	HealthMessage string `json:"healthMessage,omitempty"`
+
+	DetailedHealthMessage string `json:"detailedHealthMessage ,omitempty"`
+}
+
+type NsxtAlbVirtualServicePort struct {
+	PortStart     *int                                    `json:"portStart,omitempty"`
+	PortEnd       *int                                    `json:"portEnd,omitempty"`
+	SslEnabled    *bool                                   `json:"sslEnabled,omitempty"`
+	TcpUdpProfile *NsxtAlbVirtualServicePortTcpUdpProfile `json:"tcpUdpProfile,omitempty"`
+}
+
+// NsxtAlbVirtualServicePortTcpUdpProfile must be specified for L4 Application Profiles
+type NsxtAlbVirtualServicePortTcpUdpProfile struct {
+	SystemDefined bool `json:"systemDefined"`
+	// Type defines L4 or L4_TLS profiles:
+	// * TCP_PROXY (the only possible type when L4_TLS is used)
+	// * TCP_FAST_PATH
+	// * UDP_FAST_PATH
+	Type string `json:"type"`
+}
+
+type NsxtAlbVirtualServiceApplicationProfile struct {
+	SystemDefined bool `json:"systemDefined"`
+	// Type defines Traffic
+	// * HTTP
+	// * HTTPS (certificate reference is mandatory)
+	// * L4
+	// * L4 TLS (certificate reference is mandatory)
+	Type string `json:"type"`
 }
