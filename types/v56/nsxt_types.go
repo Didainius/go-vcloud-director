@@ -862,7 +862,7 @@ type NsxtAlbPool struct {
 	Description string `json:"description,omitempty"`
 
 	// Enabled defines if the Pool is enabled
-	Enabled *bool `json:"enabled"`
+	Enabled *bool `json:"enabled,omitempty"`
 
 	// GatewayRef is mandatory and associates NSX-T Edge Gateway with this Load Balancer Pool.
 	GatewayRef OpenApiReference `json:"gatewayRef"`
