@@ -484,4 +484,11 @@ const (
 const (
 	UrnTypeVdcGroup = "vdcGroup"
 	UrnTypeVdc      = "vdc"
+}
+// Metadata type constants
+const (
+	MetadataStringValue   string = "MetadataStringValue"
+	MetadataNumberValue   string = "MetadataNumberValue"
+	MetadataDateTimeValue string = "MetadataDateTimeValue"
+	MetadataBooleanValue  string = "MetadataBooleanValue"
 )
