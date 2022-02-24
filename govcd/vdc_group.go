@@ -6,8 +6,10 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
+	"strings"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // VdcGroup is a structure defining a VdcGroup in Organization
@@ -499,4 +501,39 @@ func (vdcGroup *VdcGroup) DisableDefaultPolicy() (*VdcGroup, error) {
 	}
 	dfwPolicies.DefaultPolicy.Enabled = takeBoolPointer(false)
 	return vdcGroup.UpdateDefaultDfwPolicies(*dfwPolicies.DefaultPolicy)
+}
+
+func GetOwnerTypeFromUrn(urn string) (string, error) {
+	if !isUrn(urn) {
+		return "", fmt.Errorf("supplied ID is not URN: %s", urn)
+	}
+
+	ss := strings.Split(urn, ":")
+	return ss[2], nil
+}
+
+func OwnerIsVdcGroup(urn string) bool {
+	ownerType, err := GetOwnerTypeFromUrn(urn)
+	if err != nil {
+		return false
+	}
+
+	if strings.ToLower(ownerType) == strings.ToLower("vdcGroup") {
+		return true
+	}
+
+	return false
+}
+
+func OwnerIsVdc(urn string) bool {
+	ownerType, err := GetOwnerTypeFromUrn(urn)
+	if err != nil {
+		return false
+	}
+
+	if strings.ToLower(ownerType) == strings.ToLower("vdc") {
+		return true
+	}
+
+	return false
 }

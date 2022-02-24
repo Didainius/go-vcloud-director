@@ -480,3 +480,8 @@ const (
 	// NsxtAlbCloudBackingTypeNsxtAlb is a backing type for NSX-T ALB used in types.NsxtAlbCloudBacking
 	NsxtAlbCloudBackingTypeNsxtAlb = "NSXALB_NSXT"
 )
+
+const (
+	UrnTypeVdcGroup = "vdcGroup"
+	UrnTypeVdc      = "vdc"
+)
