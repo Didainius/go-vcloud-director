@@ -211,8 +211,12 @@ func (egw *NsxtEdgeGateway) Delete() error {
 	return nil
 }
 
-// MoveToVdcGroup moves NSX-T Edge Gateway to VDC Group
-func (egw *NsxtEdgeGateway) MoveToVdcGroup(vdcGroupId string) (*NsxtEdgeGateway, error) {
+// MoveToVdc moves NSX-T Edge Gateway to another VDC. This can cover such scenarios:
+// * Move from VDC to VDC Group
+// * Move from VDC Group to VDC (which is part of that VDC Group)
+//
+// Note. NSX-T Edge Gateway cannot be moved directly from one VDC to another
+func (egw *NsxtEdgeGateway) MoveToVdc(vdcGroupId string) (*NsxtEdgeGateway, error) {
 	if !egw.client.IsSysAdmin {
 		return nil, fmt.Errorf("only System Administrator can update Edge Gateway")
 	}

@@ -317,6 +317,43 @@ func (adminOrg *AdminOrg) GetVdcGroupById(id string) (*VdcGroup, error) {
 	return vdcGroup, nil
 }
 
+// GetVdcGroupById Returns VDC group using provided ID
+func (org *Org) GetVdcGroupById(id string) (*VdcGroup, error) {
+	tenantContext, err := org.getTenantContext()
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroups
+	minimumApiVersion, err := org.client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if id == "" {
+		return nil, fmt.Errorf("empty VDC group ID")
+	}
+
+	urlRef, err := org.client.OpenApiBuildEndpoint(endpoint, id)
+	if err != nil {
+		return nil, err
+	}
+
+	vdcGroup := &VdcGroup{
+		VdcGroup: &types.VdcGroup{},
+		client:   org.client,
+		Href:     urlRef.String(),
+		parent:   org,
+	}
+
+	err = org.client.OpenApiGetItem(minimumApiVersion, urlRef, nil, vdcGroup.VdcGroup, getTenantContextHeader(tenantContext))
+	if err != nil {
+		return nil, err
+	}
+
+	return vdcGroup, nil
+}
+
 // Update updates existing Vdc group. Allows changing only name and description and participating VCDs
 // Not restrictive update method also available - GenericUpdate
 func (vdcGroup *VdcGroup) Update(name, description string, participatingOrgVddIs []string) (*VdcGroup, error) {
@@ -536,4 +573,55 @@ func OwnerIsVdc(urn string) bool {
 	}
 
 	return false
+}
+
+// GetCapabilities allows to retrieve a list of VDC capabilities. It has a list of values. Some particularly useful are:
+// * networkProvider - overlay stack responsible for providing network functionality. (NSX_V or NSX_T)
+// * crossVdc - supports cross vDC network creation
+func (vdcGroup *VdcGroup) GetCapabilities() ([]types.VdcCapability, error) {
+	if vdcGroup.VdcGroup.Id == "" {
+		return nil, fmt.Errorf("VDC ID must be set to get capabilities")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcCapabilities
+	minimumApiVersion, err := vdcGroup.client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vdcGroup.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, url.QueryEscape(vdcGroup.VdcGroup.Id)))
+	if err != nil {
+		return nil, err
+	}
+
+	capabilities := make([]types.VdcCapability, 0)
+	err = vdcGroup.client.OpenApiGetAllItems(minimumApiVersion, urlRef, nil, &capabilities, nil)
+	if err != nil {
+		return nil, err
+	}
+	return capabilities, nil
+}
+
+// IsNsxt is a convenience function to check if VDC is backed by NSX-T pVdc
+// If error occurs - it returns false
+func (vdcGroup *VdcGroup) IsNsxt() bool {
+	vdcCapabilities, err := vdcGroup.GetCapabilities()
+	if err != nil {
+		return false
+	}
+
+	networkProviderCapability := getCapabilityValue(vdcCapabilities, "networkProvider")
+	return networkProviderCapability == types.VdcCapabilityNetworkProviderNsxt
+}
+
+// IsNsxv is a convenience function to check if VDC is backed by NSX-V pVdc
+// If error occurs - it returns false
+func (vdcGroup *VdcGroup) IsNsxv() bool {
+	vdcCapabilities, err := vdcGroup.GetCapabilities()
+	if err != nil {
+		return false
+	}
+
+	networkProviderCapability := getCapabilityValue(vdcCapabilities, "networkProvider")
+	return networkProviderCapability == types.VdcCapabilityNetworkProviderNsxv
 }
