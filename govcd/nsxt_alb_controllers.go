@@ -67,15 +67,12 @@ func (vcdClient *VCDClient) GetAlbControllerByName(name string) (*NsxtAlbControl
 		return nil, fmt.Errorf("error reading ALB Controller with Name '%s': %s", name, err)
 	}
 
-	if len(controllers) == 0 {
-		return nil, fmt.Errorf("%s: could not find ALB Controller with Name '%s'", ErrorEntityNotFound, name)
+	singleEntity, err := oneOrError(controllers)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T ALB Controller with name '%s': %s", name, err)
 	}
 
-	if len(controllers) > 1 {
-		return nil, fmt.Errorf("found more than 1 ALB Controller with Name '%s'", name)
-	}
-
-	return controllers[0], nil
+	return singleEntity, nil
 }
 
 // GetAlbControllerById returns NSX-T ALB Controller by ID
@@ -132,15 +129,12 @@ func (vcdClient *VCDClient) GetAlbControllerByUrl(url string) (*NsxtAlbControlle
 		}
 	}
 
-	if len(filteredControllers) == 0 {
-		return nil, fmt.Errorf("%s could not find ALB Controller by Url '%s'", ErrorEntityNotFound, url)
+	singleEntity, err := oneOrError(filteredControllers)
+	if err != nil {
+		return nil, fmt.Errorf("error finding ALB Controller by Url '%s': %s", url, err)
 	}
 
-	if len(filteredControllers) > 1 {
-		return nil, fmt.Errorf("found more than 1 ALB Controller by Url '%s'", url)
-	}
-
-	return filteredControllers[0], nil
+	return singleEntity, nil
 }
 
 // CreateNsxtAlbController creates controller with supplied albControllerConfig configuration

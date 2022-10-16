@@ -297,15 +297,12 @@ func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Value
 // returnSingleNsxtEdgeGateway helps to reduce code duplication for `GetNsxtEdgeGatewayByName` functions with different
 // receivers
 func returnSingleNsxtEdgeGateway(name string, allEdges []*NsxtEdgeGateway) (*NsxtEdgeGateway, error) {
-	if len(allEdges) > 1 {
-		return nil, fmt.Errorf("got more than 1 Edge Gateway by name '%s' %d", name, len(allEdges))
+	singleEntity, err := oneOrError(allEdges)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T Edge Gateway with name '%s': %s", name, err)
 	}
 
-	if len(allEdges) < 1 {
-		return nil, fmt.Errorf("%s: got 0 Edge Gateways by name '%s'", ErrorEntityNotFound, name)
-	}
-
-	return allEdges[0], nil
+	return singleEntity, nil
 }
 
 // getAllNsxtEdgeGateways is a private parent for wrapped functions:

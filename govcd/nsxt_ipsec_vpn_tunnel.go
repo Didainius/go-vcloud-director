@@ -113,17 +113,13 @@ func (egw *NsxtEdgeGateway) GetIpSecVpnTunnelByName(name string) (*NsxtIpSecVpnT
 		}
 	}
 
-	if len(allResults) > 1 {
-		return nil, fmt.Errorf("error - found %d NSX-T IPsec VPN Tunnel configuratios with Name '%s'. Expected 1",
-			len(allResults), name)
-	}
-
-	if len(allResults) == 0 {
-		return nil, ErrorEntityNotFound
+	singleEntity, err := oneOrError(allResults)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T IPsec VPN Tunnel configuration with name '%s': %s", name, err)
 	}
 
 	// Retrieving again the object by ID, because only it includes Pre-shared Key
-	return egw.GetIpSecVpnTunnelById(allResults[0].NsxtIpSecVpn.ID)
+	return egw.GetIpSecVpnTunnelById(singleEntity.NsxtIpSecVpn.ID)
 }
 
 // CreateIpSecVpnTunnel creates IPsec VPN Tunnel and returns it

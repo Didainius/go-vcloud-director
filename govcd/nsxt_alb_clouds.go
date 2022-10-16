@@ -65,15 +65,12 @@ func (vcdClient *VCDClient) GetAlbCloudByName(name string) (*NsxtAlbCloud, error
 		return nil, fmt.Errorf("error reading NSX-T ALB Cloud with Name '%s': %s", name, err)
 	}
 
-	if len(albClouds) == 0 {
-		return nil, fmt.Errorf("%s could not find NSX-T ALB Cloud with Name '%s'", ErrorEntityNotFound, name)
+	singleEntity, err := oneOrError(albClouds)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T ALB Cloud with name '%s': %s", name, err)
 	}
 
-	if len(albClouds) > 1 {
-		return nil, fmt.Errorf("found more than 1 NSX-T ALB Cloud with Name '%s'", name)
-	}
-
-	return albClouds[0], nil
+	return singleEntity, nil
 }
 
 // GetAlbCloudById returns NSX-T ALB Cloud by ID

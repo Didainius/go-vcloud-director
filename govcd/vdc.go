@@ -931,17 +931,12 @@ func (vdc *Vdc) QueryVappVmTemplate(catalogName, vappTemplateName, vmNameInTempl
 		vmResults = results.Results.AdminVMRecord
 	}
 
-	if len(vmResults) == 0 {
-		return nil, fmt.Errorf("[QueryVappVmTemplate] did not find any result with catalog name: %s, "+
-			"vApp template name: %s, VM name: %s", catalogName, vappTemplateName, vmNameInTemplate)
+	singleEntity, err := oneOrError(vmResults)
+	if err != nil {
+		return nil, fmt.Errorf("error finding vApp template '%s' in catalog '%s': %s", vappTemplateName, catalogName, err)
 	}
 
-	if len(vmResults) > 1 {
-		return nil, fmt.Errorf("[QueryVappVmTemplate] found more than 1 result: %d with with catalog name: %s, "+
-			"vApp template name: %s, VM name: %s", len(vmResults), catalogName, vappTemplateName, vmNameInTemplate)
-	}
-
-	return vmResults[0], nil
+	return singleEntity, nil
 }
 
 // getLinkHref returns a link HREF for a wanted combination of rel and type
@@ -1085,13 +1080,13 @@ func queryVmById(id string, client *Client, queryFunc queryVmListFunc) (*VM, err
 			foundVM = append(foundVM, vm)
 		}
 	}
-	if len(foundVM) == 0 {
-		return nil, ErrorEntityNotFound
+
+	singleEntity, err := oneOrError(foundVM)
+	if err != nil {
+		return nil, fmt.Errorf("error finding VM with ID '%s': %s", id, err)
 	}
-	if len(foundVM) > 1 {
-		return nil, fmt.Errorf("more than one VM found with ID %s", id)
-	}
-	return client.GetVMByHref(foundVM[0].HREF)
+
+	return client.GetVMByHref(singleEntity.HREF)
 }
 
 // CreateStandaloneVMFromTemplateAsync starts a standalone VM creation using a template

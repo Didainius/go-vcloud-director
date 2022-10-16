@@ -82,15 +82,12 @@ func (egw *NsxtEdgeGateway) GetNatRuleByName(name string) (*NsxtNatRule, error) 
 		}
 	}
 
-	if len(allResults) > 1 {
-		return nil, fmt.Errorf("error - found %d NSX-T NAT rules with name '%s'. Expected 1", len(allResults), name)
+	singleEntity, err := oneOrError(allResults)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T NAT rules with name '%s': %s", name, err)
 	}
 
-	if len(allResults) == 0 {
-		return nil, ErrorEntityNotFound
-	}
-
-	return allResults[0], nil
+	return singleEntity, nil
 }
 
 // GetNatRuleById finds a NAT rule by ID and returns it

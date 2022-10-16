@@ -67,22 +67,12 @@ func (vcdClient *VCDClient) GetAlbImportableCloudByName(parentAlbControllerUrn, 
 		return nil, fmt.Errorf("error finding NSX-T ALB Importable Cloud by Name '%s': %s", name, err)
 	}
 
-	// Filtering by Name is not supported by API therefore it must be filtered on client side
-	var foundResult bool
-	var foundAlbImportableCloud *NsxtAlbImportableCloud
-	for i, value := range albImportableClouds {
-		if albImportableClouds[i].NsxtAlbImportableCloud.DisplayName == name {
-			foundResult = true
-			foundAlbImportableCloud = value
-			break
-		}
+	singleEntity, err := oneOrError(albImportableClouds)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T ALB Importable Cloud with name '%s': %s", name, err)
 	}
 
-	if !foundResult {
-		return nil, fmt.Errorf("%s: could not find NSX-T ALB Importable Cloud by Name %s", ErrorEntityNotFound, name)
-	}
-
-	return foundAlbImportableCloud, nil
+	return singleEntity, nil
 }
 
 // GetAlbImportableCloudById returns importable NSX-T ALB Clouds.

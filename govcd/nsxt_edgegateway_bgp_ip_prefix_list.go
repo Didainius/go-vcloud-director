@@ -149,15 +149,12 @@ func (egw *NsxtEdgeGateway) GetBgpIpPrefixListByName(name string) (*EdgeBgpIpPre
 		}
 	}
 
-	if len(filteredBgpIpPrefixLists) > 1 {
-		return nil, fmt.Errorf("more than one NSX-T Edge Gateway BGP IP Prefix List found with Name '%s'", name)
+	singleEntity, err := oneOrError(filteredBgpIpPrefixLists)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T Edge Gateway BGP IP Prefix List with name '%s': %s", name, err)
 	}
 
-	if len(filteredBgpIpPrefixLists) == 0 {
-		return nil, fmt.Errorf("%s: no NSX-T Edge Gateway BGP IP Prefix List found with name '%s'", ErrorEntityNotFound, name)
-	}
-
-	return filteredBgpIpPrefixLists[0], nil
+	return singleEntity, nil
 }
 
 // GetBgpIpPrefixListById retrieves BGP IP Prefix List By ID

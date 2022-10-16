@@ -43,18 +43,12 @@ func (vdc *Vdc) GetNsxtEdgeClusterByName(name string) (*NsxtEdgeCluster, error) 
 	nsxtEdgeClusters = filterNsxtEdgeClusters(name, nsxtEdgeClusters)
 	// EOF TODO remove this when FIQL supports filtering on 'name'
 
-	if len(nsxtEdgeClusters) == 0 {
-		// ErrorEntityNotFound is injected here for the ability to validate problem using ContainsNotFound()
-		return nil, fmt.Errorf("%s: no NSX-T Tier-0 Edge Cluster with name '%s' for Org VDC with id '%s' found",
-			ErrorEntityNotFound, name, vdc.Vdc.ID)
+	singleEntity, err := oneOrError(nsxtEdgeClusters)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T Tier-0 Edge Cluster with name '%s': %s", name, err)
 	}
 
-	if len(nsxtEdgeClusters) > 1 {
-		return nil, fmt.Errorf("more than one (%d) NSX-T Edge Cluster with name '%s' for Org VDC with id '%s' found",
-			len(nsxtEdgeClusters), name, vdc.Vdc.ID)
-	}
-
-	return nsxtEdgeClusters[0], nil
+	return singleEntity, nil
 }
 
 // filterNsxtEdgeClusters is a helper to filter NSX-T Edge Clusters by name because the FIQL filter does not support

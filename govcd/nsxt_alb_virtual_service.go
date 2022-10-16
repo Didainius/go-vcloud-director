@@ -84,15 +84,12 @@ func (vcdClient *VCDClient) GetAlbVirtualServiceByName(edgeGatewayId string, nam
 		return nil, fmt.Errorf("error reading ALB Virtual Service with Name '%s': %s", name, err)
 	}
 
-	if len(allAlbVirtualServices) == 0 {
-		return nil, fmt.Errorf("%s: could not find ALB Virtual Service with Name '%s'", ErrorEntityNotFound, name)
+	singleEntity, err := oneOrError(allAlbVirtualServices)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T ALB Virtual Service with name '%s': %s", name, err)
 	}
 
-	if len(allAlbVirtualServices) > 1 {
-		return nil, fmt.Errorf("found more than 1 ALB Virtual Service with Name '%s'", name)
-	}
-
-	return allAlbVirtualServices[0], nil
+	return singleEntity, nil
 }
 
 // GetAlbVirtualServiceById fetches ALB Virtual Service By ID

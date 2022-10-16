@@ -65,13 +65,10 @@ func GetNetworkContextProfilesByNameScopeAndContext(client *Client, name, scope,
 }
 
 func returnSingleNetworkContextProfile(allProfiles []*types.NsxtNetworkContextProfile) (*types.NsxtNetworkContextProfile, error) {
-	if len(allProfiles) > 1 {
-		return nil, fmt.Errorf("got more than 1 NSX-T Network Context Profile %d", len(allProfiles))
+	singleEntity, err := oneOrError(allProfiles)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T Network Context Profile configuration: %s", err)
 	}
 
-	if len(allProfiles) < 1 {
-		return nil, fmt.Errorf("%s: got 0 NSX-T Network Context Profiles", ErrorEntityNotFound)
-	}
-
-	return allProfiles[0], nil
+	return singleEntity, nil
 }

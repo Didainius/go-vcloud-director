@@ -85,19 +85,12 @@ func (vcdClient *VCDClient) GetAlbServiceEngineGroupAssignmentByName(name string
 		return nil, err
 	}
 
-	var foundGroup *NsxtAlbServiceEngineGroupAssignment
-
-	for _, serviceEngineGroupAssignment := range allServiceEngineGroupAssignments {
-		if serviceEngineGroupAssignment.NsxtAlbServiceEngineGroupAssignment.ServiceEngineGroupRef.Name == name {
-			foundGroup = serviceEngineGroupAssignment
-		}
+	singleEntity, err := oneOrError(allServiceEngineGroupAssignments)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T ALB Service Engine Group Assignment with name '%s': %s", name, err)
 	}
 
-	if foundGroup == nil {
-		return nil, ErrorEntityNotFound
-	}
-
-	return foundGroup, nil
+	return singleEntity, nil
 }
 
 // GetFilteredAlbServiceEngineGroupAssignmentByName will get all ALB Service Engine Group assignments based on filters

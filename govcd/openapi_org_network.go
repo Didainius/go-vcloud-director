@@ -256,15 +256,12 @@ func getOpenApiOrgVdcNetworkById(client *Client, id string, queryParameters url.
 // returnSingleOpenApiOrgVdcNetwork helps to reduce code duplication for `GetOpenApiOrgVdcNetworkByName` functions with different
 // receivers
 func returnSingleOpenApiOrgVdcNetwork(name string, allEdges []*OpenApiOrgVdcNetwork) (*OpenApiOrgVdcNetwork, error) {
-	if len(allEdges) > 1 {
-		return nil, fmt.Errorf("got more than one Org VDC network by name '%s' %d", name, len(allEdges))
+	singleEntity, err := oneOrError(allEdges)
+	if err != nil {
+		return nil, fmt.Errorf("error finding Org VDC network with name '%s': %s", name, err)
 	}
 
-	if len(allEdges) < 1 {
-		return nil, fmt.Errorf("%s: got zero Org VDC networks by name '%s'", ErrorEntityNotFound, name)
-	}
-
-	return allEdges[0], nil
+	return singleEntity, nil
 }
 
 // getAllOpenApiOrgVdcNetworks is a private parent for wrapped functions:

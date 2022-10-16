@@ -142,15 +142,12 @@ func (egw *NsxtEdgeGateway) GetBgpNeighborByIp(neighborIpAddress string) (*EdgeB
 		}
 	}
 
-	if len(filteredBgpNeighbors) > 1 {
-		return nil, fmt.Errorf("more than one NSX-T Edge Gateway BGP Neighbor found with IP Address '%s'", neighborIpAddress)
+	singleEntity, err := oneOrError(filteredBgpNeighbors)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T Edge Gateway BGP Neighbor found with IP Address '%s': %s", neighborIpAddress, err)
 	}
 
-	if len(filteredBgpNeighbors) == 0 {
-		return nil, fmt.Errorf("%s: no NSX-T Edge Gateway BGP Neighbor found with IP Address '%s'", ErrorEntityNotFound, neighborIpAddress)
-	}
-
-	return filteredBgpNeighbors[0], nil
+	return singleEntity, nil
 }
 
 // GetBgpNeighborById retrieves BGP Neighbor By ID

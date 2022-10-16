@@ -308,12 +308,9 @@ func getNsxtFirewallGroupByName(client *Client, name string, queryParameters url
 		return nil, fmt.Errorf("could not find NSX-T Firewall Group with name '%s': %s", name, err)
 	}
 
-	if len(allGroups) == 0 {
-		return nil, fmt.Errorf("%s: expected exactly one NSX-T Firewall Group with name '%s'. Got %d", ErrorEntityNotFound, name, len(allGroups))
-	}
-
-	if len(allGroups) > 1 {
-		return nil, fmt.Errorf("expected exactly one NSX-T Firewall Group with name '%s'. Got %d", name, len(allGroups))
+	singleEntity, err := oneOrError(allGroups)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T Firewall Group with name '%s': %s", name, err)
 	}
 
 	// TODO API V36.0 - maybe it is fixed
@@ -323,7 +320,7 @@ func getNsxtFirewallGroupByName(client *Client, name string, queryParameters url
 	//
 	// return allGroups[0], nil
 
-	return getNsxtFirewallGroupById(client, allGroups[0].NsxtFirewallGroup.ID)
+	return getNsxtFirewallGroupById(client, singleEntity.NsxtFirewallGroup.ID)
 }
 
 func getNsxtFirewallGroupById(client *Client, id string) (*NsxtFirewallGroup, error) {

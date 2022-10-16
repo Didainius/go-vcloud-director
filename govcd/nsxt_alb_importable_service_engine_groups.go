@@ -63,27 +63,17 @@ func (vcdClient *VCDClient) GetAllAlbImportableServiceEngineGroups(parentAlbClou
 
 // GetAlbImportableServiceEngineGroupByName returns importable NSX-T ALB Clouds.
 func (vcdClient *VCDClient) GetAlbImportableServiceEngineGroupByName(parentAlbCloudUrn, name string) (*NsxtAlbImportableServiceEngineGroups, error) {
-	albClouds, err := vcdClient.GetAllAlbImportableServiceEngineGroups(parentAlbCloudUrn, nil)
+	albImportableSEGroups, err := vcdClient.GetAllAlbImportableServiceEngineGroups(parentAlbCloudUrn, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error finding NSX-T ALB Importable Service Engine Group by Name '%s': %s", name, err)
 	}
 
-	// Filtering by Name is not supported by API therefore it must be filtered on client side
-	var foundResult bool
-	var foundAlbCloud *NsxtAlbImportableServiceEngineGroups
-	for i, value := range albClouds {
-		if albClouds[i].NsxtAlbImportableServiceEngineGroups.DisplayName == name {
-			foundResult = true
-			foundAlbCloud = value
-			break
-		}
+	singleEntity, err := oneOrError(albImportableSEGroups)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T ALB Importable Service Engine Group with name '%s': %s", name, err)
 	}
 
-	if !foundResult {
-		return nil, fmt.Errorf("%s: could not find NSX-T ALB Importable Service Engine Group by Name %s", ErrorEntityNotFound, name)
-	}
-
-	return foundAlbCloud, nil
+	return singleEntity, nil
 }
 
 // GetAlbImportableServiceEngineGroupById

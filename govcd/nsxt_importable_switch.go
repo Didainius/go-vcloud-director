@@ -42,18 +42,12 @@ func (vdc *Vdc) GetNsxtImportableSwitchByName(name string) (*NsxtImportableSwitc
 		}
 	}
 
-	if len(filteredNsxtImportableSwitches) == 0 {
-		// ErrorEntityNotFound is injected here for the ability to validate problem using ContainsNotFound()
-		return nil, fmt.Errorf("%s: no NSX-T Importable Switch with name '%s' for Org VDC with ID '%s' found",
-			ErrorEntityNotFound, name, vdc.Vdc.ID)
+	singleEntity, err := oneOrError(filteredNsxtImportableSwitches)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T Importable Switch with name '%s': %s", name, err)
 	}
 
-	if len(filteredNsxtImportableSwitches) > 1 {
-		return nil, fmt.Errorf("more than one (%d) NSX-T Importable Switch with name '%s' for Org VDC with ID '%s' found",
-			len(filteredNsxtImportableSwitches), name, vdc.Vdc.ID)
-	}
-
-	return filteredNsxtImportableSwitches[0], nil
+	return singleEntity, nil
 }
 
 // GetNsxtImportableSwitchByName retrieves a particular NSX-T Segment by name available for that VDC
@@ -78,18 +72,12 @@ func (vdcGroup *VdcGroup) GetNsxtImportableSwitchByName(name string) (*NsxtImpor
 		}
 	}
 
-	if len(filteredNsxtImportableSwitches) == 0 {
-		// ErrorEntityNotFound is injected here for the ability to validate problem using ContainsNotFound()
-		return nil, fmt.Errorf("%s: no NSX-T Importable Switch with name '%s' for VDC Group with ID '%s' found",
-			ErrorEntityNotFound, name, vdcGroup.VdcGroup.Id)
+	singleEntity, err := oneOrError(filteredNsxtImportableSwitches)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T Importable Switch with name '%s': %s", name, err)
 	}
 
-	if len(filteredNsxtImportableSwitches) > 1 {
-		return nil, fmt.Errorf("more than one (%d) NSX-T Importable Switch with name '%s' for VDC Group with ID '%s' found",
-			len(filteredNsxtImportableSwitches), name, vdcGroup.VdcGroup.Id)
-	}
-
-	return filteredNsxtImportableSwitches[0], nil
+	return singleEntity, nil
 }
 
 // GetAllNsxtImportableSwitches retrieves all available importable switches which can be consumed for creating NSX-T

@@ -57,18 +57,12 @@ func (vcdClient *VCDClient) GetImportableNsxtTier0RouterByName(name, nsxtManager
 	nsxtTier0Routers = filterNsxtTier0RoutersInExternalNetworks(name, nsxtTier0Routers)
 	// EOF TODO remove this when FIQL supports filtering on 'displayName'
 
-	if len(nsxtTier0Routers) == 0 {
-		// ErrorEntityNotFound is injected here for the ability to validate problem using ContainsNotFound()
-		return nil, fmt.Errorf("%s: no NSX-T Tier-0 router with name '%s' for NSX-T manager with id '%s' found",
-			ErrorEntityNotFound, name, nsxtManagerId)
+	singleEntity, err := oneOrError(nsxtTier0Routers)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T Tier-0 router with name '%s': %s", name, err)
 	}
 
-	if len(nsxtTier0Routers) > 1 {
-		return nil, fmt.Errorf("more than one (%d) NSX-T Tier-0 router with name '%s' for NSX-T manager with id '%s' found",
-			len(nsxtTier0Routers), name, nsxtManagerId)
-	}
-
-	return nsxtTier0Routers[0], nil
+	return singleEntity, nil
 }
 
 // filterNsxtTier0RoutersInExternalNetworks is created as a fix for local filtering instead of using

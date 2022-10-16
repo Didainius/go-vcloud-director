@@ -85,15 +85,12 @@ func (vcdClient *VCDClient) GetAlbPoolByName(edgeGatewayId string, name string) 
 		return nil, fmt.Errorf("error retrieving ALB Pool with Name '%s': %s", name, err)
 	}
 
-	if len(allAlbPools) == 0 {
-		return nil, fmt.Errorf("%s: could not find ALB Pool with Name '%s'", ErrorEntityNotFound, name)
+	singleEntity, err := oneOrError(allAlbPools)
+	if err != nil {
+		return nil, fmt.Errorf("error finding ALB Pool with Name '%s': %s", name, err)
 	}
 
-	if len(allAlbPools) > 1 {
-		return nil, fmt.Errorf("found more than 1 ALB Pool with Name '%s'", name)
-	}
-
-	return allAlbPools[0], nil
+	return singleEntity, nil
 }
 
 // GetAlbPoolById fetches ALB Pool By Id

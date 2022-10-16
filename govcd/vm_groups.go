@@ -2,8 +2,9 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // LogicalVmGroup is used to create VM Placement Policies.
@@ -152,14 +153,14 @@ func getVmGroupWithFilter(vcdClient *VCDClient, filter map[string]string) (*VmGr
 	if err != nil {
 		return nil, err
 	}
-	if len(foundVmGroups.Results.VmGroupsRecord) == 0 {
-		return nil, ErrorEntityNotFound
+
+	singleEntity, err := oneOrError(foundVmGroups.Results.VmGroupsRecord)
+	if err != nil {
+		return nil, fmt.Errorf("error finding VM Group found with the filter '%v': %s", filter, err)
 	}
-	if len(foundVmGroups.Results.VmGroupsRecord) > 1 {
-		return nil, fmt.Errorf("more than one VM Group found with the filter: %v", filter)
-	}
+
 	vmGroup := &VmGroup{
-		VmGroup: foundVmGroups.Results.VmGroupsRecord[0],
+		VmGroup: singleEntity,
 		client:  &vcdClient.Client,
 	}
 	return vmGroup, nil
@@ -175,11 +176,11 @@ func getResourcePool(vcdClient *VCDClient, pvdcUrn string) (*types.QueryResultRe
 	if err != nil {
 		return nil, fmt.Errorf("could not get the Resource pool: %s", err)
 	}
-	if len(foundResourcePools.Results.ResourcePoolRecord) == 0 {
-		return nil, ErrorEntityNotFound
+
+	singleEntity, err := oneOrError(foundResourcePools.Results.ResourcePoolRecord)
+	if err != nil {
+		return nil, fmt.Errorf("error finding Resource Pool found for the pVDC '%s': %s", pvdcUrn, err)
 	}
-	if len(foundResourcePools.Results.ResourcePoolRecord) > 1 {
-		return nil, fmt.Errorf("more than one Resource Pool found for the pVDC: %s", pvdcUrn)
-	}
-	return foundResourcePools.Results.ResourcePoolRecord[0], nil
+
+	return singleEntity, nil
 }

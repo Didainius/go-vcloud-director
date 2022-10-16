@@ -61,13 +61,13 @@ func (adminOrg *AdminOrg) GetRoleByName(name string) (*Role, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(roles) == 0 {
-		return nil, ErrorEntityNotFound
+
+	singleEntity, err := oneOrError(roles)
+	if err != nil {
+		return nil, fmt.Errorf("error finding Role with name '%s': %s", name, err)
 	}
-	if len(roles) > 1 {
-		return nil, fmt.Errorf("more than one role found with name '%s'", name)
-	}
-	return roles[0], nil
+
+	return singleEntity, nil
 }
 
 // getAllRoles retrieves all roles using OpenAPI endpoint. Query parameters can be supplied to perform additional

@@ -177,15 +177,12 @@ func getNsxtAppPortProfileByName(client *Client, name string, queryParameters ur
 		return nil, fmt.Errorf("could not find NSX-T Application Port Profile with name '%s': %s", name, err)
 	}
 
-	if len(allAppPortProfiles) == 0 {
-		return nil, fmt.Errorf("%s: expected exactly one NSX-T Application Port Profile with name '%s'. Got %d", ErrorEntityNotFound, name, len(allAppPortProfiles))
+	singleEntity, err := oneOrError(allAppPortProfiles)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T Application Port Profile with name '%s': %s", name, err)
 	}
 
-	if len(allAppPortProfiles) > 1 {
-		return nil, fmt.Errorf("expected exactly one NSX-T Application Port Profile with name '%s'. Got %d", name, len(allAppPortProfiles))
-	}
-
-	return getNsxtAppPortProfileById(client, allAppPortProfiles[0].NsxtAppPortProfile.ID)
+	return getNsxtAppPortProfileById(client, singleEntity.NsxtAppPortProfile.ID)
 }
 
 func getNsxtAppPortProfileById(client *Client, id string) (*NsxtAppPortProfile, error) {

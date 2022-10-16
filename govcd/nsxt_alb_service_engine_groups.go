@@ -90,15 +90,12 @@ func (vcdClient *VCDClient) GetAlbServiceEngineGroupByName(optionalContext, name
 		return nil, fmt.Errorf("error retrieving NSX-T ALB Service Engine Group By Name '%s': %s", name, err)
 	}
 
-	if len(albSeGroups) == 0 {
-		return nil, fmt.Errorf("%s", ErrorEntityNotFound)
+	singleEntity, err := oneOrError(albSeGroups)
+	if err != nil {
+		return nil, fmt.Errorf("error finding NSX-T ALB Service Engine Group with name '%s': %s", name, err)
 	}
 
-	if len(albSeGroups) > 1 {
-		return nil, fmt.Errorf("more than 1 NSX-T ALB Service Engine Group with Name '%s' found", name)
-	}
-
-	return albSeGroups[0], nil
+	return singleEntity, nil
 }
 
 // GetAlbServiceEngineGroupById returns importable NSX-T ALB Cloud by ID
