@@ -49,3 +49,20 @@ func Test_gebn3(t *testing.T) {
 
 	spew.Dump(initializedType)
 }
+
+func Test_gebn33(t *testing.T) {
+	internalField := &types.NsxtAlbController{ID: "testing-id"}
+	vcdClient := &VCDClient{
+		Client: Client{
+			APIVersion: "2000",
+		},
+	}
+
+	client := &Client{APIVersion: "3000"}
+
+	// aaaa := &NsxtAlbControllerExp2{}
+
+	initializedType := genericNew22[NsxtAlbControllerExp2, *types.NsxtAlbController, *VCDClient, *Client](internalField, vcdClient, client)
+
+	spew.Dump(initializedType)
+}

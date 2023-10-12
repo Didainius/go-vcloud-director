@@ -102,11 +102,11 @@ type NsxtAlbControllerExp2 struct {
 	vcdClient         *VCDClient               `vcd:"VCDClient"`
 }
 
-func (t *NsxtAlbControllerExp2) New(ct *types.NsxtAlbController, vcdClient *VCDClient, client *Client) *NsxtAlbControllerExp2 {
+func (t NsxtAlbControllerExp2) New(ct *types.NsxtAlbController, vcdClient *VCDClient, client *Client) *NsxtAlbControllerExp2 {
 	t.vcdClient = vcdClient
 	t.NsxtAlbController = ct
 
-	return t
+	return &t
 }
 
 // func [T any] New(tt *T) {
@@ -136,6 +136,11 @@ func genericNew[T, X, Y, Z any](constr AnyConstructor[T, X, Y, Z], child X, vvv 
 
 	return ret
 
+}
+
+func genericNew22[T AnyConstructor[T, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc Z) *T {
+	aaa := new(T)
+	return T.New(*aaa, child, vvv, ccc)
 }
 
 // func genConstructorExp2[T any, Y any](a Constructor[T, Y]) *T {
