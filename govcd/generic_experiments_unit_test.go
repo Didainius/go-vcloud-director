@@ -82,4 +82,6 @@ func Test_gebn33wrappedResponses(t *testing.T) {
 	allwrap := wrappedResponses[NsxtAlbControllerExp3, types.NsxtAlbController](typeResponses)
 	spew.Dump(allwrap)
 
+	allwrap2 := wrappedResponses[NsxtAlbController, types.NsxtAlbController](typeResponses)
+
 }
