@@ -17,8 +17,8 @@ import (
 // control plane for the load-balancing services provided by NSX-T Advanced Load Balancer.
 // To configure an NSX-T ALB one needs to supply AVI Controller endpoint, credentials and license to be used.
 type NsxtAlbController struct {
-	NsxtAlbController *types.NsxtAlbController
-	vcdClient         *VCDClient
+	NsxtAlbController *types.NsxtAlbController `vcd:"types.NsxtAlbController" json:"nsxt_alb_controller,omitempty"`
+	vcdClient         *VCDClient               `vcd:"VCDClient"`
 }
 
 // GetAllAlbControllers returns all configured NSX-T ALB Controllers

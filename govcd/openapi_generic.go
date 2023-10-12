@@ -1,9 +1,12 @@
 package govcd
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // genericCreateBareEntity implements a common pattern for creating an entity throughout codebase
@@ -208,4 +211,39 @@ func urlFromEndpoint(endpoint string, endpointParams []string) (string, error) {
 	}
 
 	return endpoint, nil
+}
+
+func (vcdClient *VCDClient) anything(queryParameters url.Values) ([]*NsxtAlbController, error) {
+	client := vcdClient.Client
+	if !client.IsSysAdmin {
+		return nil, errors.New("reading NSX-T ALB Controllers require System user")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.NsxtAlbController{{}}
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wrap all typeResponses into NsxtAlbController types with client
+	wrappedResponses := make([]*NsxtAlbController, len(typeResponses))
+	for sliceIndex := range typeResponses {
+		wrappedResponses[sliceIndex] = &NsxtAlbController{
+			NsxtAlbController: typeResponses[sliceIndex],
+			vcdClient:         vcdClient,
+		}
+	}
+
+	return wrappedResponses, nil
 }
