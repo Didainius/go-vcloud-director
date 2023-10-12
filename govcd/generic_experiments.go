@@ -148,3 +148,44 @@ func genericNew22[T AnyConstructor[T, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc
 
 // 	return ret
 // }
+
+type NsxtAlbControllerExp3 struct {
+	NsxtAlbController *types.NsxtAlbController `vcd:"types.NsxtAlbController" json:"nsxt_alb_controller,omitempty"`
+	vcdClient         *VCDClient               `vcd:"VCDClient"`
+}
+
+func (t NsxtAlbControllerExp3) New(ct *types.NsxtAlbController) *NsxtAlbControllerExp3 {
+	// t.vcdClient = vcdClient
+	t.NsxtAlbController = ct
+
+	return &t
+}
+
+type TinyConstructor[P any, C any] interface {
+	New(*C) *P
+}
+
+func wrappedResponse[P TinyConstructor[P, C], C any](child *C) *P {
+	ppp := new(P)
+	return P.New(*ppp, child)
+}
+
+func wrappedResponses[P TinyConstructor[P, C], C any](children []*C) []*P {
+	ppp := new(P)
+
+	res := make([]*P, len(children))
+
+	for index, value := range children {
+		res[index] = P.New(*ppp, value)
+	}
+
+	return res
+}
+
+// wrappedResponses := make([]*NsxtAlbController, len(typeResponses))
+// for sliceIndex := range typeResponses {
+// 	wrappedResponses[sliceIndex] = &NsxtAlbController{
+// 		NsxtAlbController: typeResponses[sliceIndex],
+// 		vcdClient:         vcdClient,
+// 	}
+// // }

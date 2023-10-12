@@ -66,3 +66,20 @@ func Test_gebn33(t *testing.T) {
 
 	spew.Dump(initializedType)
 }
+
+func Test_gebn33wrappedResponses(t *testing.T) {
+
+	// typeResponses := make([]*types.NsxtAlbController, 0)
+
+	wrappedResp := wrappedResponse[NsxtAlbControllerExp3, types.NsxtAlbController](&types.NsxtAlbController{ID: "one"})
+
+	spew.Dump(wrappedResp)
+
+	typeResponses := make([]*types.NsxtAlbController, 2)
+	typeResponses[0] = &types.NsxtAlbController{ID: "one"}
+	typeResponses[1] = &types.NsxtAlbController{ID: "two"}
+
+	allwrap := wrappedResponses[NsxtAlbControllerExp3, types.NsxtAlbController](typeResponses)
+	spew.Dump(allwrap)
+
+}
