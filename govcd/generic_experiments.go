@@ -161,16 +161,16 @@ func (t NsxtAlbControllerExp3) New(ct *types.NsxtAlbController) *NsxtAlbControll
 	return &t
 }
 
-type TinyConstructor[P any, C any] interface {
+type tinyConstructor[P any, C any] interface {
 	New(*C) *P
 }
 
-func wrappedResponse[P TinyConstructor[P, C], C any](child *C) *P {
+func wrappedResponse[P tinyConstructor[P, C], C any](child *C) *P {
 	ppp := new(P)
 	return P.New(*ppp, child)
 }
 
-func wrappedResponses[P TinyConstructor[P, C], C any](children []*C) []*P {
+func wrappedResponses[P tinyConstructor[P, C], C any](children []*C) []*P {
 	ppp := new(P)
 
 	res := make([]*P, len(children))
