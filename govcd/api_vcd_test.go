@@ -110,10 +110,12 @@ type Tenant struct {
 // specifies
 type TestConfig struct {
 	Provider struct {
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		Token    string `yaml:"token"`
-		ApiToken string `yaml:"api_token"`
+		User       string `yaml:"user"`
+		Password   string `yaml:"password"`
+		Token      string `yaml:"token"`
+		ApiToken   string `yaml:"api_token"`
+		VcdVersion string `yaml:"vcdVersion,omitempty"`
+		ApiVersion string `yaml:"apiVersion,omitempty"`
 
 		// UseSamlAdfs specifies if SAML auth is used for authenticating vCD instead of local login.
 		// The above `User` and `Password` will be used to authenticate against ADFS IdP when true.
@@ -201,6 +203,11 @@ type TestConfig struct {
 			NsxtAlbControllerPassword string `yaml:"nsxtAlbControllerPassword"`
 			NsxtAlbImportableCloud    string `yaml:"nsxtAlbImportableCloud"`
 			NsxtAlbServiceEngineGroup string `yaml:"nsxtAlbServiceEngineGroup"`
+			IpDiscoveryProfile        string `yaml:"ipDiscoveryProfile"`
+			MacDiscoveryProfile       string `yaml:"macDiscoveryProfile"`
+			SpoofGuardProfile         string `yaml:"spoofGuardProfile"`
+			QosProfile                string `yaml:"qosProfile"`
+			SegmentSecurityProfile    string `yaml:"segmentSecurityProfile"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Vsphere struct {
@@ -845,6 +852,26 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+	case "OpenApiEntityGlobalDefaultSegmentProfileTemplate":
+		// Check if any default settings are applied
+		gdSpt, err := vcd.client.GetGlobalDefaultSegmentProfileTemplates()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		if gdSpt.VappNetworkSegmentProfileTemplateRef == nil && gdSpt.VdcNetworkSegmentProfileTemplateRef == nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		_, err = vcd.client.UpdateGlobalDefaultSegmentProfileTemplates(&types.NsxtGlobalDefaultSegmentProfileTemplate{})
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	// 	OpenApiEntityAlbSettingsDisable has different API structure therefore generic `OpenApiEntity` case does not fit cleanup
 	case "OpenApiEntityAlbSettingsDisable":
 		edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(entity.Parent)
@@ -979,22 +1006,16 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
-		for _, catalogItems := range catalog.Catalog.CatalogItems {
-			for _, catalogItem := range catalogItems.CatalogItem {
-				if catalogItem.Name == entity.Name {
-					catalogItemApi, err := catalog.GetCatalogItemByName(catalogItem.Name, false)
-					if catalogItemApi == nil || err != nil {
-						vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
-						return
-					}
-					err = catalogItemApi.Delete()
-					vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
-					if err != nil {
-						vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
-					}
-				}
-			}
+		catalogItem, err := catalog.GetCatalogItemByName(entity.Name, false)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
 		}
+		err = catalogItem.Delete()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 	case "edgegateway":
 		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
@@ -1680,6 +1701,29 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
+	case "nsxtEdgeGatewayDns":
+		edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(entity.Name)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		dns, err := edge.GetDnsConfig()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		if dns.NsxtEdgeGatewayDns.Enabled == false && dns.NsxtEdgeGatewayDns.DefaultForwarderZone == nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		err = dns.Delete()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
 	case "slaacProfile":
 		edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(entity.Name)
 		if err != nil {
@@ -1940,6 +1984,14 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 
 	if vcd.config.VCD.Nsxt.EdgeGateway == "" {
 		check.Skip(generalMessage + "No NSX-T Edge Gateway specified in configuration")
+	}
+
+	if vcd.config.VCD.Nsxt.IpDiscoveryProfile == "" ||
+		vcd.config.VCD.Nsxt.MacDiscoveryProfile == "" ||
+		vcd.config.VCD.Nsxt.SpoofGuardProfile == "" ||
+		vcd.config.VCD.Nsxt.QosProfile == "" ||
+		vcd.config.VCD.Nsxt.SegmentSecurityProfile == "" {
+		check.Skip(generalMessage + "NSX-T Segment Profiles are not specified in configuration")
 	}
 }
 
