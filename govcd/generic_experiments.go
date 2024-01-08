@@ -161,6 +161,8 @@ func (t NsxtAlbControllerExp3) New(ct *types.NsxtAlbController) *NsxtAlbControll
 	return &t
 }
 
+// P - parent
+// C - child
 type tinyConstructor[P any, C any] interface {
 	New(*C) *P
 }
@@ -171,6 +173,29 @@ func wrappedResponse[P tinyConstructor[P, C], C any](child *C) *P {
 }
 
 func wrappedResponses[P tinyConstructor[P, C], C any](children []*C) []*P {
+	ppp := new(P)
+
+	res := make([]*P, len(children))
+
+	for index, value := range children {
+		res[index] = P.New(*ppp, value)
+	}
+
+	return res
+}
+
+// func genericNew22[T AnyConstructor[T, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc Z) *T {
+// 	aaa := new(T)
+// 	return T.New(*aaa, child, vvv, ccc)
+// }
+
+// func genericWrappedResponse[P tinyConstructor[P, C], C any](child *C) *P {
+func genericWrappedResponse[P AnyConstructor[P, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc Z) *P {
+	ppp := new(P)
+	return P.New(*ppp, child, vvv, ccc)
+}
+
+func genericWrappedResponses[P tinyConstructor[P, C], C any](children []*C) []*P {
 	ppp := new(P)
 
 	res := make([]*P, len(children))
