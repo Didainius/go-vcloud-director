@@ -52,6 +52,16 @@ func (vcdClient *VCDClient) GenericCreateIpSpace(ipSpaceConfig *types.IpSpace) (
 	return wrappedEntry, nil
 }
 
+// CreateIpSpace creates IP Space with desired configuration
+func (vcdClient *VCDClient) GenericCreateIpSpace2(ipSpaceConfig *types.IpSpace) (*GenericIpSpace, error) {
+	c := genericCrudConfig{
+		endpoint:   types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
+		entityName: "IP Space",
+	}
+
+	return genericCreateEntity[GenericIpSpace, *types.IpSpace, *VCDClient, *Client](&vcdClient.Client, &ipSpaceConfig, c, vcdClient, &vcdClient.Client)
+}
+
 // GetIpSpaceById retrieves IP Space with a given ID
 func (vcdClient *VCDClient) GenericGetIpSpaceById(id string) (*GenericIpSpace, error) {
 

@@ -1,5 +1,11 @@
 package govcd
 
+import (
+	"fmt"
+
+	"github.com/davecgh/go-spew/spew"
+)
+
 // layer 2 abstractions
 
 // create
@@ -21,33 +27,35 @@ return wrappedEntry, nil */
 // P - parent
 // C - child
 // [P AnyConstructor[P, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc Z) *P {
-func genericCreateEntity[P AnyConstructor[P, X, Y, Z], X, Y, Z any](client *Client, entityConfig *X, c genericCrudConfig, gVcdClient Y, gClient Z) (*P, error) {
-	// c := genericCrudConfig{
-	// 	endpoint:   types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
-	// 	entityName: "IP Space",
-	// }
-
+func genericCreateEntity[P AnyParentConstructor[P, X, Y, Z], X, Y, Z any](client *Client, entityConfig *X, c genericCrudConfig, gVcdClient Y, gClient Z) (*P, error) {
 	createdEntity, err := genericCreateBareEntity(client, entityConfig, c)
 	if err != nil {
 		return nil, err
 	}
 
-	//P AnyConstructor[P, X, Y, Z], X, Y, Z any
-	// Response wrapper
+	fmt.Println("created entity")
+	spew.Dump(createdEntity)
+
+	// Works, but is more confusing
 	wrappedEntry := genericWrappedResponse[P, X, Y, Z](*createdEntity, gVcdClient, gClient)
 
+	// construcFunc := func() GenericIpSpace {
+	// 	return P.New()
+	// }
+
+	// wrappedEntry := genericWrapper[GenericIpSpace](construcFunc)
+
 	return wrappedEntry, nil
+}
 
-	// Dublis 2
-	// ppp := new(P)
+// func genericWrappedResponse[P AnyConstructor[P, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc Z) *P {
+// 	ppp := new(P)
+// 	return P.New(*ppp, child, vvv, ccc)
+// }
 
-	// // vcdClient := VCDClient{}
+func genericWrapper[T any](wrapFunc func() T) *T {
 
-	// y := new(Y)
-	// z := new(Z)
-
-	// return P.New(*ppp, *createdEntity, *y, *z), nil
-	// return wrappedEntry, nil
+	return nil
 }
 
 // func genericCreateBareEntity[T any](client *Client, entityConfig *T, c genericCrudConfig) (*T, error) {

@@ -125,11 +125,11 @@ func demo[E Builder[F, E], F any](bldr E, foo F) E {
 	return bldr.SetFoo(foo)
 }
 
-type AnyConstructor[T any, X any, Y any, Z any] interface {
+type AnyParentConstructor[T any, X any, Y any, Z any] interface {
 	New(X, Y, Z) *T
 }
 
-func genericNew[T, X, Y, Z any](constr AnyConstructor[T, X, Y, Z], child X, vvv Y, ccc Z) *T {
+func genericNew[T, X, Y, Z any](constr AnyParentConstructor[T, X, Y, Z], child X, vvv Y, ccc Z) *T {
 	ret := new(T)
 
 	ret = constr.New(child, vvv, ccc)
@@ -138,7 +138,7 @@ func genericNew[T, X, Y, Z any](constr AnyConstructor[T, X, Y, Z], child X, vvv 
 
 }
 
-func genericNew22[T AnyConstructor[T, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc Z) *T {
+func genericNew22[T AnyParentConstructor[T, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc Z) *T {
 	aaa := new(T)
 	return T.New(*aaa, child, vvv, ccc)
 }
@@ -190,7 +190,7 @@ func wrappedResponses[P tinyConstructor[P, C], C any](children []*C) []*P {
 // }
 
 // func genericWrappedResponse[P tinyConstructor[P, C], C any](child *C) *P {
-func genericWrappedResponse[P AnyConstructor[P, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc Z) *P {
+func genericWrappedResponse[P AnyParentConstructor[P, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc Z) *P {
 	ppp := new(P)
 	return P.New(*ppp, child, vvv, ccc)
 }
