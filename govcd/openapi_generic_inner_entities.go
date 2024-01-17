@@ -40,7 +40,7 @@ func (g *crudConfig) validate() error {
 // * `client` is a *Client
 // * `entityConfig` is the new entity type
 // * `c` holds settings for performing API call
-func genericCreateInnerEntity[T any](client *Client, c crudConfig, innerConfig *T) (*T, error) {
+func genericCreateInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", c.entityName, err)
@@ -56,7 +56,7 @@ func genericCreateInnerEntity[T any](client *Client, c crudConfig, innerConfig *
 		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", c.entityName, err)
 	}
 
-	createdInnerEntityConfig := new(T)
+	createdInnerEntityConfig := new(I)
 	err = client.OpenApiPostItem(apiVersion, urlRef, c.queryParameters, innerConfig, createdInnerEntityConfig, c.additionalHeader)
 	if err != nil {
 		return nil, fmt.Errorf("error creating entity of type '%s': %s", c.entityName, err)
@@ -73,7 +73,7 @@ func genericCreateInnerEntity[T any](client *Client, c crudConfig, innerConfig *
 // * `client` is a *Client
 // * `entityConfig` is the new entity type
 // * `c` holds settings for performing API call
-func genericUpdateInnerEntity[T any](client *Client, c crudConfig, innerConfig *T) (*T, error) {
+func genericUpdateInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", c.entityName, err)
@@ -89,7 +89,7 @@ func genericUpdateInnerEntity[T any](client *Client, c crudConfig, innerConfig *
 		return nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", c.entityName, err)
 	}
 
-	updatedInnerEntityConfig := new(T)
+	updatedInnerEntityConfig := new(I)
 	err = client.OpenApiPutItem(apiVersion, urlRef, c.queryParameters, innerConfig, updatedInnerEntityConfig, c.additionalHeader)
 	if err != nil {
 		return nil, fmt.Errorf("error updating entity of type '%s': %s", c.entityName, err)
@@ -103,7 +103,7 @@ func genericUpdateInnerEntity[T any](client *Client, c crudConfig, innerConfig *
 // Parameters:
 // * `client` is a *Client
 // * `c` holds settings for performing API call
-func genericGetInnerEntity[T any](client *Client, c crudConfig) (*T, error) {
+func genericGetInnerEntity[I any](client *Client, c crudConfig) (*I, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityName, err)
@@ -119,7 +119,7 @@ func genericGetInnerEntity[T any](client *Client, c crudConfig) (*T, error) {
 		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityName, err)
 	}
 
-	typeResponse := new(T)
+	typeResponse := new(I)
 	err = client.OpenApiGetItem(apiVersion, urlRef, c.queryParameters, typeResponse, c.additionalHeader)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving entity of type '%s': %s", c.entityName, err)
@@ -137,7 +137,7 @@ func genericGetInnerEntity[T any](client *Client, c crudConfig) (*T, error) {
 // Parameters:
 // * `client` is a *Client
 // * `c` holds settings for performing API call
-func genericGetAllInnerEntities[T any](client *Client, c crudConfig) ([]*T, error) {
+func genericGetAllInnerEntities[I any](client *Client, c crudConfig) ([]*I, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityName, err)
@@ -153,7 +153,7 @@ func genericGetAllInnerEntities[T any](client *Client, c crudConfig) ([]*T, erro
 		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityName, err)
 	}
 
-	typeResponses := make([]*T, 0)
+	typeResponses := make([]*I, 0)
 	err = client.OpenApiGetAllItems(apiVersion, urlRef, c.queryParameters, &typeResponses, c.additionalHeader)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving all entities of type '%s': %s", c.entityName, err)

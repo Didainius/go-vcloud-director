@@ -40,8 +40,8 @@ func (vcdClient *VCDClient) GenCreateIpSpace(ipSpaceConfig *types.IpSpace) (*Gen
 		endpoint:   types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		entityName: "IP Space",
 	}
-	initializedParentType := GenericIpSpace2{vcdClient: vcdClient}
-	return genericCreateEntity(&vcdClient.Client, initializedParentType, c, ipSpaceConfig)
+	outerType := GenericIpSpace2{vcdClient: vcdClient}
+	return genericCreateEntity(&vcdClient.Client, outerType, c, ipSpaceConfig)
 }
 
 // GetAllIpSpaceSummaries retrieve summaries of all IP Spaces with an optional filter
@@ -71,8 +71,8 @@ func (vcdClient *VCDClient) GenGetIpSpaceById(id string) (*GenericIpSpace2, erro
 		entityName:     "IP Space",
 	}
 
-	initializedParentType := GenericIpSpace2{vcdClient: vcdClient}
-	return genericGetSingleEntity[GenericIpSpace2, types.IpSpace](&vcdClient.Client, initializedParentType, c)
+	outerType := GenericIpSpace2{vcdClient: vcdClient}
+	return genericGetSingleEntity[GenericIpSpace2, types.IpSpace](&vcdClient.Client, outerType, c)
 }
 
 // GetIpSpaceByName retrieves IP Space with a given name
@@ -133,8 +133,8 @@ func (ipSpace *GenericIpSpace2) Update(ipSpaceConfig *types.IpSpace) (*GenericIp
 		endpointParams: []string{ipSpaceConfig.ID},
 		entityName:     "IP Space",
 	}
-	initializedParentType := GenericIpSpace2{vcdClient: ipSpace.vcdClient}
-	return genericUpdateEntity(&ipSpace.vcdClient.Client, initializedParentType, c, ipSpaceConfig)
+	outerType := GenericIpSpace2{vcdClient: ipSpace.vcdClient}
+	return genericUpdateEntity(&ipSpace.vcdClient.Client, outerType, c, ipSpaceConfig)
 }
 
 // Delete deletes IP Space

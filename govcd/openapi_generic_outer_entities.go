@@ -7,11 +7,15 @@ import "fmt"
 // O - Outer type that is in the `govcd` package. (e.g. 'IpSpace')
 // I - Inner type the type that is being marshalled/unmarshalled (usually in `types` package. E.g. `types.IpSpace`)
 
-type genericOuterConstructor[O any, I any] interface {
-	wrap(child *I) *O
+// outerWrapper is used as a type constraint that outer entities must support in order
+// to use generic CRUD functions
+type outerWrapper[O any, I any] interface {
+	// wrap is a value receiver function that must implement one thing for a concrete type - wrap
+	// pointer to innter entity I and return pointer to outer entity O
+	wrap(inner *I) *O
 }
 
-func genericCreateEntity[O genericOuterConstructor[O, I], I any](client *Client, outerEntity O, c crudConfig, innerConfig *I) (*O, error) {
+func genericCreateEntity[O outerWrapper[O, I], I any](client *Client, outerEntity O, c crudConfig, innerConfig *I) (*O, error) {
 	if innerConfig == nil {
 		return nil, fmt.Errorf("entity config '%s' cannot be empty for create operation", c.entityName)
 	}
@@ -24,7 +28,7 @@ func genericCreateEntity[O genericOuterConstructor[O, I], I any](client *Client,
 	return outerEntity.wrap(createdInnerEntity), nil
 }
 
-func genericUpdateEntity[O genericOuterConstructor[O, I], I any](client *Client, outerEntity O, c crudConfig, innerConfig *I) (*O, error) {
+func genericUpdateEntity[O outerWrapper[O, I], I any](client *Client, outerEntity O, c crudConfig, innerConfig *I) (*O, error) {
 	if innerConfig == nil {
 		return nil, fmt.Errorf("entity config '%s' cannot be empty for update operation", c.entityName)
 	}
@@ -37,7 +41,7 @@ func genericUpdateEntity[O genericOuterConstructor[O, I], I any](client *Client,
 	return outerEntity.wrap(updatedInnerEntity), nil
 }
 
-func genericGetSingleEntity[O genericOuterConstructor[O, I], I any](client *Client, outerEntity O, c crudConfig) (*O, error) {
+func genericGetSingleEntity[O outerWrapper[O, I], I any](client *Client, outerEntity O, c crudConfig) (*O, error) {
 	retrievedInnerEntity, err := genericGetInnerEntity[I](client, c)
 	if err != nil {
 		return nil, err
@@ -46,7 +50,7 @@ func genericGetSingleEntity[O genericOuterConstructor[O, I], I any](client *Clie
 	return outerEntity.wrap(retrievedInnerEntity), nil
 }
 
-func genericGetAllEntities[O genericOuterConstructor[O, I], I any](client *Client, outerEntity O, c crudConfig) ([]*O, error) {
+func genericGetAllEntities[O outerWrapper[O, I], I any](client *Client, outerEntity O, c crudConfig) ([]*O, error) {
 	retrievedAllInnerEntities, err := genericGetAllInnerEntities[I](client, c)
 	if err != nil {
 		return nil, err
