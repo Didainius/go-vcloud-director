@@ -29,9 +29,10 @@ type GenericIpSpace2 struct {
 
 // initialize is a hidden helper that helps to facilitate generic components
 // It should fill all parent type (GenericIpSpace2) fields, except the "child" entity type that
-func (g *GenericIpSpace2) initialize(child *types.IpSpace) *GenericIpSpace2 {
+func (g GenericIpSpace2) initialize(child *types.IpSpace) *GenericIpSpace2 {
+	// TODO TODO TODO note - a copy of the structure happens because it is value receiver
 	g.IpSpace = child
-	return g
+	return &g
 }
 
 // CreateIpSpace creates IP Space with desired configuration
@@ -40,8 +41,8 @@ func (vcdClient *VCDClient) GenCreateIpSpace(ipSpaceConfig *types.IpSpace) (*Gen
 		endpoint:   types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		entityName: "IP Space",
 	}
-	initializedParentType := &GenericIpSpace2{vcdClient: vcdClient}
-	return genericInitializerCreateEntity[GenericIpSpace2, types.IpSpace](&vcdClient.Client, ipSpaceConfig, c, initializedParentType)
+	initializedParentType := GenericIpSpace2{vcdClient: vcdClient}
+	return genericInitializerCreateEntity(&vcdClient.Client, ipSpaceConfig, c, initializedParentType)
 }
 
 // GetAllIpSpaceSummaries retrieve summaries of all IP Spaces with an optional filter
@@ -55,7 +56,7 @@ func (vcdClient *VCDClient) GenGetAllIpSpaceSummaries(queryParameters url.Values
 		queryParameters: queryParameters,
 	}
 
-	initializedParentType := &GenericIpSpace2{vcdClient: vcdClient}
+	initializedParentType := GenericIpSpace2{vcdClient: vcdClient}
 	return genericGetAllEntities[GenericIpSpace2, types.IpSpace](&vcdClient.Client, c, initializedParentType)
 }
 
@@ -71,7 +72,7 @@ func (vcdClient *VCDClient) GenGetIpSpaceById(id string) (*GenericIpSpace2, erro
 		entityName:     "IP Space",
 	}
 
-	initializedParentType := &GenericIpSpace2{vcdClient: vcdClient}
+	initializedParentType := GenericIpSpace2{vcdClient: vcdClient}
 	return genericGetSingleEntity[GenericIpSpace2, types.IpSpace](&vcdClient.Client, c, initializedParentType)
 }
 
@@ -133,7 +134,7 @@ func (ipSpace *GenericIpSpace2) Update(ipSpaceConfig *types.IpSpace) (*GenericIp
 		endpointParams: []string{ipSpaceConfig.ID},
 		entityName:     "IP Space",
 	}
-	initializedParentType := &GenericIpSpace2{vcdClient: ipSpace.vcdClient}
+	initializedParentType := GenericIpSpace2{vcdClient: ipSpace.vcdClient}
 	return genericInitializerUpdateEntity[GenericIpSpace2, types.IpSpace](&ipSpace.vcdClient.Client, ipSpaceConfig, c, initializedParentType)
 }
 

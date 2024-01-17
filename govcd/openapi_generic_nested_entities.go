@@ -7,16 +7,15 @@ import "fmt"
 // P - Parent. The parent "container" type that is not in the `types` package. E.g. 'IpSpace'
 // C - Child. The child of parent - the data that is being marshalled unmarshaled residing in `types` package. E.g. `types.IpSpace`
 
-type genericInitializerType2[P any, C any] interface {
+// type genericInitializerType2[P any, C any] interface {
+// 	initialize(child *C) *P
+// }
+
+type GenericContainerConstructor[P any, C any] interface {
 	initialize(child *C) *P
 }
 
-type CustomConstructor[P any, C any] interface {
-	// New2(C) *P
-	// initialize(child *C) *P
-}
-
-func genericInitializerCreateEntity[P CustomConstructor[P, C], C any](client *Client, entityConfig *C, c genericCrudConfig, i genericInitializerType2[P, C]) (*P, error) {
+func genericInitializerCreateEntity[P GenericContainerConstructor[P, C], C any](client *Client, entityConfig *C, c genericCrudConfig, i P) (*P, error) {
 	if entityConfig == nil {
 		return nil, fmt.Errorf("entity config '%s' cannot be empty for create operation", c.entityName)
 	}
@@ -29,7 +28,7 @@ func genericInitializerCreateEntity[P CustomConstructor[P, C], C any](client *Cl
 	return i.initialize(createdEntity), nil
 }
 
-func genericInitializerUpdateEntity[P CustomConstructor[P, C], C any](client *Client, entityConfig *C, c genericCrudConfig, i genericInitializerType2[P, C]) (*P, error) {
+func genericInitializerUpdateEntity[P GenericContainerConstructor[P, C], C any](client *Client, entityConfig *C, c genericCrudConfig, i P) (*P, error) {
 	if entityConfig == nil {
 		return nil, fmt.Errorf("entity config '%s' cannot be empty for update operation", c.entityName)
 	}
@@ -42,7 +41,7 @@ func genericInitializerUpdateEntity[P CustomConstructor[P, C], C any](client *Cl
 	return i.initialize(createdEntity), nil
 }
 
-func genericGetSingleEntity[P CustomConstructor[P, C], C any](client *Client, c genericCrudConfig, i genericInitializerType2[P, C]) (*P, error) {
+func genericGetSingleEntity[P GenericContainerConstructor[P, C], C any](client *Client, c genericCrudConfig, i P) (*P, error) {
 	retrievedEntity, err := genericGetSingleBareEntity[C](client, c)
 	if err != nil {
 		return nil, err
@@ -51,7 +50,7 @@ func genericGetSingleEntity[P CustomConstructor[P, C], C any](client *Client, c 
 	return i.initialize(retrievedEntity), nil
 }
 
-func genericGetAllEntities[P CustomConstructor[P, C], C any](client *Client, c genericCrudConfig, i genericInitializerType2[P, C]) ([]*P, error) {
+func genericGetAllEntities[P GenericContainerConstructor[P, C], C any](client *Client, c genericCrudConfig, i P) ([]*P, error) {
 	retrievedEntities, err := genericGetAllBareFilteredEntities[C](client, c)
 	if err != nil {
 		return nil, err
