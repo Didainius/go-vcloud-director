@@ -1,10 +1,17 @@
 package govcd
 
+import "fmt"
+
 type genericInitializerType2[P any, C any] interface {
 	initialize(child *C) *P
 }
 
 func genericInitializerCreateEntity[P CustomConstructor[P, C], C any](client *Client, entityConfig *C, c genericCrudConfig, i genericInitializerType2[P, C]) (*P, error) {
+
+	if entityConfig == nil {
+		return nil, fmt.Errorf("entity config '%s' cannot be empty for create operation", c.entityName)
+	}
+
 	createdEntity, err := genericCreateBareEntity(client, entityConfig, c)
 	if err != nil {
 		return nil, err
@@ -14,6 +21,10 @@ func genericInitializerCreateEntity[P CustomConstructor[P, C], C any](client *Cl
 }
 
 func genericInitializerUpdateEntity[P CustomConstructor[P, C], C any](client *Client, entityConfig *C, c genericCrudConfig, i genericInitializerType2[P, C]) (*P, error) {
+	if entityConfig == nil {
+		return nil, fmt.Errorf("entity config '%s' cannot be empty for update operation", c.entityName)
+	}
+
 	createdEntity, err := genericUpdateBareEntity(client, entityConfig, c)
 	if err != nil {
 		return nil, err

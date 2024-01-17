@@ -15,12 +15,21 @@ type genericCrudConfig struct {
 	// afterwards
 	endpointParams []string
 	// entityName contains friendly entity name that is used for logging meaningful errors
+
+	// requiredParams can be specified to automatically perform validation
+	requiredParams map[string]string
+
+	// entityName contains friendly entity name that is used for logging meaningful errors
 	entityName string
 	// queryParameters will be passed as GET queries to the URL. Usually they are used for API filtering parameters
 	queryParameters url.Values
 	// additionalHeader can be used to pass additional headers for API calls. One of the common purposes is to pass
 	// tenant context
 	additionalHeader map[string]string
+}
+
+func (g *genericCrudConfig) validate() error {
+	return nil
 }
 
 // genericCreateBareEntity implements a common pattern for creating an entity throughout codebase
