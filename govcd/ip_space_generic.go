@@ -124,9 +124,9 @@ func (vcdClient *VCDClient) GenGetIpSpaceByNameAndOrgId(name, orgId string) (*Ge
 
 // Update updates IP Space with new config
 func (ipSpace *GenericIpSpace2) Update(ipSpaceConfig *types.IpSpace) (*GenericIpSpace2, error) {
-	// if ipSpaceConfig.ID == "" { // TODO - `genericCrudConfig` or `genericGetSingleBareEntity` could do such validation?
-	// 	return nil, fmt.Errorf("cannot update IP Space without ID")
-	// }
+	if ipSpaceConfig.ID == "" { // TODO - `genericCrudConfig` or `genericGetSingleBareEntity` could do such validation?
+		return nil, fmt.Errorf("cannot update IP Space without ID")
+	}
 
 	c := genericCrudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
