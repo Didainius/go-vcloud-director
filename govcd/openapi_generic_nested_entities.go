@@ -11,6 +11,11 @@ type genericInitializerType2[P any, C any] interface {
 	initialize(child *C) *P
 }
 
+type CustomConstructor[P any, C any] interface {
+	// New2(C) *P
+	// initialize(child *C) *P
+}
+
 func genericInitializerCreateEntity[P CustomConstructor[P, C], C any](client *Client, entityConfig *C, c genericCrudConfig, i genericInitializerType2[P, C]) (*P, error) {
 	if entityConfig == nil {
 		return nil, fmt.Errorf("entity config '%s' cannot be empty for create operation", c.entityName)
