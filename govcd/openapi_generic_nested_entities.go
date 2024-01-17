@@ -11,55 +11,55 @@ import "fmt"
 // 	initialize(child *C) *P
 // }
 
-type GenericContainerConstructor[P any, C any] interface {
-	initialize(child *C) *P
+type GenericParentConstructor[P any, C any] interface {
+	wrap(child *C) *P
 }
 
-func genericInitializerCreateEntity[P GenericContainerConstructor[P, C], C any](client *Client, entityConfig *C, c genericCrudConfig, i P) (*P, error) {
+func genericInitializerCreateEntity[P GenericParentConstructor[P, C], C any](client *Client, parentEntity P, c genericCrudConfig, entityConfig *C) (*P, error) {
 	if entityConfig == nil {
 		return nil, fmt.Errorf("entity config '%s' cannot be empty for create operation", c.entityName)
 	}
 
-	createdEntity, err := genericCreateBareEntity(client, entityConfig, c)
+	createdBareEntity, err := genericCreateBareEntity(client, c, entityConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return i.initialize(createdEntity), nil
+	return parentEntity.wrap(createdBareEntity), nil
 }
 
-func genericInitializerUpdateEntity[P GenericContainerConstructor[P, C], C any](client *Client, entityConfig *C, c genericCrudConfig, i P) (*P, error) {
+func genericInitializerUpdateEntity[P GenericParentConstructor[P, C], C any](client *Client, parentEntity P, c genericCrudConfig, entityConfig *C) (*P, error) {
 	if entityConfig == nil {
 		return nil, fmt.Errorf("entity config '%s' cannot be empty for update operation", c.entityName)
 	}
 
-	createdEntity, err := genericUpdateBareEntity(client, entityConfig, c)
+	updatedBareEntity, err := genericUpdateBareEntity(client, c, entityConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return i.initialize(createdEntity), nil
+	return parentEntity.wrap(updatedBareEntity), nil
 }
 
-func genericGetSingleEntity[P GenericContainerConstructor[P, C], C any](client *Client, c genericCrudConfig, i P) (*P, error) {
-	retrievedEntity, err := genericGetSingleBareEntity[C](client, c)
+func genericGetSingleEntity[P GenericParentConstructor[P, C], C any](client *Client, parentEntity P, c genericCrudConfig) (*P, error) {
+	retrievedBareEntity, err := genericGetSingleBareEntity[C](client, c)
 	if err != nil {
 		return nil, err
 	}
 
-	return i.initialize(retrievedEntity), nil
+	return parentEntity.wrap(retrievedBareEntity), nil
 }
 
-func genericGetAllEntities[P GenericContainerConstructor[P, C], C any](client *Client, c genericCrudConfig, i P) ([]*P, error) {
-	retrievedEntities, err := genericGetAllBareFilteredEntities[C](client, c)
+func genericGetAllEntities[P GenericParentConstructor[P, C], C any](client *Client, parentEntity P, c genericCrudConfig) ([]*P, error) {
+	retrievedAllBareEntities, err := genericGetAllBareFilteredEntities[C](client, c)
 	if err != nil {
 		return nil, err
 	}
 
 	/// TODO - double check if there are no issues to call initialize each time on the same entry
-	wrappedResults := make([]*P, len(retrievedEntities))
-	for index, singleChildEntity := range retrievedEntities {
-		wrappedResults[index] = i.initialize(singleChildEntity)
+	wrappedResults := make([]*P, len(retrievedAllBareEntities))
+	for index, singleChildEntity := range retrievedAllBareEntities {
+		wrappedResults[index] = parentEntity.wrap(singleChildEntity)
 	}
 
 	return wrappedResults, nil

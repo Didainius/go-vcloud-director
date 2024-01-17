@@ -5,7 +5,6 @@ package govcd
 import (
 	"fmt"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -63,9 +62,6 @@ func (vcd *TestVCD) Test_GenericIpSpacePublic(check *C) {
 	createdIpSpace, err := vcd.client.GenCreateIpSpace(ipSpaceConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdIpSpace, NotNil)
-
-	fmt.Println("in test")
-	spew.Dump(createdIpSpace.IpSpace)
 
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces + createdIpSpace.IpSpace.ID
 	AddToCleanupListOpenApi(createdIpSpace.IpSpace.Name, check.TestName(), openApiEndpoint)

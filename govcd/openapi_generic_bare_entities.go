@@ -40,7 +40,7 @@ func (g *genericCrudConfig) validate() error {
 // * `client` is a *Client
 // * `entityConfig` is the new entity type
 // * `c` holds settings for performing API call
-func genericCreateBareEntity[T any](client *Client, entityConfig *T, c genericCrudConfig) (*T, error) {
+func genericCreateBareEntity[T any](client *Client, c genericCrudConfig, entityConfig *T) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", c.entityName, err)
@@ -73,7 +73,7 @@ func genericCreateBareEntity[T any](client *Client, entityConfig *T, c genericCr
 // * `client` is a *Client
 // * `entityConfig` is the new entity type
 // * `c` holds settings for performing API call
-func genericUpdateBareEntity[T any](client *Client, entityConfig *T, c genericCrudConfig) (*T, error) {
+func genericUpdateBareEntity[T any](client *Client, c genericCrudConfig, entityConfig *T) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", c.entityName, err)
