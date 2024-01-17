@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// genericCrudConfig contains configuration that must be supplied when invoking generic functions
-type genericCrudConfig struct {
+// crudConfig contains configuration that must be supplied when invoking generic functions
+type crudConfig struct {
 	// endpoint in the usual format (e.g. types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentIpDiscoveryProfiles)
 	endpoint string
 	// endpointParams contains a slice of strings that will be used to contruct request URL. It will
@@ -28,19 +28,19 @@ type genericCrudConfig struct {
 	additionalHeader map[string]string
 }
 
-func (g *genericCrudConfig) validate() error {
+func (g *crudConfig) validate() error {
 	return nil
 }
 
-// genericCreateBareEntity implements a common pattern for creating an entity throughout codebase
+// genericCreateInnerEntity implements a common pattern for creating an entity throughout codebase
 // Two types of invocation are possible because the type T can be identified (it is a required parameter)
-// * genericCreateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig, entityName)
-// * genericCreateBareEntity(&client, endpoint, endpoint, entityConfig, entityName)
+// * genericCreateInnerEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig, entityName)
+// * genericCreateInnerEntity(&client, endpoint, endpoint, entityConfig, entityName)
 // Parameters:
 // * `client` is a *Client
 // * `entityConfig` is the new entity type
 // * `c` holds settings for performing API call
-func genericCreateBareEntity[T any](client *Client, c genericCrudConfig, entityConfig *T) (*T, error) {
+func genericCreateInnerEntity[T any](client *Client, c crudConfig, innerConfig *T) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", c.entityName, err)
@@ -56,16 +56,16 @@ func genericCreateBareEntity[T any](client *Client, c genericCrudConfig, entityC
 		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", c.entityName, err)
 	}
 
-	createdEntityConfig := new(T)
-	err = client.OpenApiPostItem(apiVersion, urlRef, c.queryParameters, entityConfig, createdEntityConfig, c.additionalHeader)
+	createdInnerEntityConfig := new(T)
+	err = client.OpenApiPostItem(apiVersion, urlRef, c.queryParameters, innerConfig, createdInnerEntityConfig, c.additionalHeader)
 	if err != nil {
 		return nil, fmt.Errorf("error creating entity of type '%s': %s", c.entityName, err)
 	}
 
-	return createdEntityConfig, nil
+	return createdInnerEntityConfig, nil
 }
 
-// genericUpdateBareEntity implements a common pattern for updating entity throughout codebase
+// genericUpdateInnerEntity implements a common pattern for updating entity throughout codebase
 // Two types of invocation are possible because the type T can be identified (it is a required parameter)
 // * genericCreateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig, entityName)
 // * genericCreateBareEntity(&client, endpoint, endpoint, entityConfig, entityName)
@@ -73,7 +73,7 @@ func genericCreateBareEntity[T any](client *Client, c genericCrudConfig, entityC
 // * `client` is a *Client
 // * `entityConfig` is the new entity type
 // * `c` holds settings for performing API call
-func genericUpdateBareEntity[T any](client *Client, c genericCrudConfig, entityConfig *T) (*T, error) {
+func genericUpdateInnerEntity[T any](client *Client, c crudConfig, innerConfig *T) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", c.entityName, err)
@@ -89,21 +89,21 @@ func genericUpdateBareEntity[T any](client *Client, c genericCrudConfig, entityC
 		return nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", c.entityName, err)
 	}
 
-	updatedEntityConfig := new(T)
-	err = client.OpenApiPutItem(apiVersion, urlRef, c.queryParameters, entityConfig, updatedEntityConfig, c.additionalHeader)
+	updatedInnerEntityConfig := new(T)
+	err = client.OpenApiPutItem(apiVersion, urlRef, c.queryParameters, innerConfig, updatedInnerEntityConfig, c.additionalHeader)
 	if err != nil {
 		return nil, fmt.Errorf("error updating entity of type '%s': %s", c.entityName, err)
 	}
 
-	return updatedEntityConfig, nil
+	return updatedInnerEntityConfig, nil
 }
 
-// genericGetSingleBareEntity is an implementation for a common pattern in our code where we have to
+// genericGetInnerEntity is an implementation for a common pattern in our code where we have to
 // retrieve bare entity (usually *types.XXXX) and does not need to be wrapped in a parent container.
 // Parameters:
 // * `client` is a *Client
 // * `c` holds settings for performing API call
-func genericGetSingleBareEntity[T any](client *Client, c genericCrudConfig) (*T, error) {
+func genericGetInnerEntity[T any](client *Client, c crudConfig) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityName, err)
@@ -128,16 +128,16 @@ func genericGetSingleBareEntity[T any](client *Client, c genericCrudConfig) (*T,
 	return typeResponse, nil
 }
 
-// genericGetAllBareFilteredEntities can be used to retrieve a slice of any entity in the OpenAPI
+// genericGetAllInnerEntities can be used to retrieve a slice of any entity in the OpenAPI
 // endpoints that are not nested into a parent type
 //
 // An example usage which can be found in nsxt_manager.go:
 // endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentMacDiscoveryProfiles
-// return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplateMacDiscovery](client, endpoint, queryParameters)
+// return genericGetAllInnerEntities[types.NsxtSegmentProfileTemplateMacDiscovery](client, endpoint, queryParameters)
 // Parameters:
 // * `client` is a *Client
 // * `c` holds settings for performing API call
-func genericGetAllBareFilteredEntities[T any](client *Client, c genericCrudConfig) ([]*T, error) {
+func genericGetAllInnerEntities[T any](client *Client, c crudConfig) ([]*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityName, err)
@@ -167,7 +167,7 @@ func genericGetAllBareFilteredEntities[T any](client *Client, c genericCrudConfi
 // Parameters:
 // * `client` is a *Client
 // * `c` holds settings for performing API call
-func deleteById(client *Client, c genericCrudConfig) error {
+func deleteById(client *Client, c crudConfig) error {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
 		return err

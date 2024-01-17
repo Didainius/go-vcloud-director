@@ -28,20 +28,20 @@ type GenericIpSpace2 struct {
 }
 
 // wrap is a hidden helper that helps to facilitate usage of generic CRUD function
-func (g GenericIpSpace2) wrap(child *types.IpSpace) *GenericIpSpace2 {
+func (g GenericIpSpace2) wrap(inner *types.IpSpace) *GenericIpSpace2 {
 	// TODO TODO TODO note - a copy of the structure happens because it is value receiver
-	g.IpSpace = child
+	g.IpSpace = inner
 	return &g
 }
 
 // CreateIpSpace creates IP Space with desired configuration
 func (vcdClient *VCDClient) GenCreateIpSpace(ipSpaceConfig *types.IpSpace) (*GenericIpSpace2, error) {
-	c := genericCrudConfig{
+	c := crudConfig{
 		endpoint:   types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		entityName: "IP Space",
 	}
 	initializedParentType := GenericIpSpace2{vcdClient: vcdClient}
-	return genericInitializerCreateEntity(&vcdClient.Client, initializedParentType, c, ipSpaceConfig)
+	return genericCreateEntity(&vcdClient.Client, initializedParentType, c, ipSpaceConfig)
 }
 
 // GetAllIpSpaceSummaries retrieve summaries of all IP Spaces with an optional filter
@@ -49,7 +49,7 @@ func (vcdClient *VCDClient) GenCreateIpSpace(ipSpaceConfig *types.IpSpace) (*Gen
 // "summaries" endpoint exists, but it does not include all fields. To retrieve complete structure
 // one can use `GetIpSpaceById` or `GetIpSpaceByName`
 func (vcdClient *VCDClient) GenGetAllIpSpaceSummaries(queryParameters url.Values) ([]*GenericIpSpace2, error) {
-	c := genericCrudConfig{
+	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceSummaries,
 		entityName:      "IP Space",
 		queryParameters: queryParameters,
@@ -65,7 +65,7 @@ func (vcdClient *VCDClient) GenGetIpSpaceById(id string) (*GenericIpSpace2, erro
 		return nil, fmt.Errorf("IP Space ID cannot be empty")
 	}
 
-	c := genericCrudConfig{
+	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		endpointParams: []string{id},
 		entityName:     "IP Space",
@@ -128,18 +128,18 @@ func (ipSpace *GenericIpSpace2) Update(ipSpaceConfig *types.IpSpace) (*GenericIp
 		return nil, fmt.Errorf("cannot update IP Space without ID")
 	}
 
-	c := genericCrudConfig{
+	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		endpointParams: []string{ipSpaceConfig.ID},
 		entityName:     "IP Space",
 	}
 	initializedParentType := GenericIpSpace2{vcdClient: ipSpace.vcdClient}
-	return genericInitializerUpdateEntity(&ipSpace.vcdClient.Client, initializedParentType, c, ipSpaceConfig)
+	return genericUpdateEntity(&ipSpace.vcdClient.Client, initializedParentType, c, ipSpaceConfig)
 }
 
 // Delete deletes IP Space
 func (ipSpace *GenericIpSpace2) Delete() error {
-	c := genericCrudConfig{
+	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		endpointParams: []string{ipSpace.IpSpace.ID},
 		entityName:     "IP Space",
