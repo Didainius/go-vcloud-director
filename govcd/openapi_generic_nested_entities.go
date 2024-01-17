@@ -2,12 +2,16 @@ package govcd
 
 import "fmt"
 
+// Generic type explanations
+// Common generic parameter names seen in this code
+// P - Parent. The parent "container" type that is not in the `types` package. E.g. 'IpSpace'
+// C - Child. The child of parent - the data that is being marshalled unmarshaled residing in `types` package. E.g. `types.IpSpace`
+
 type genericInitializerType2[P any, C any] interface {
 	initialize(child *C) *P
 }
 
 func genericInitializerCreateEntity[P CustomConstructor[P, C], C any](client *Client, entityConfig *C, c genericCrudConfig, i genericInitializerType2[P, C]) (*P, error) {
-
 	if entityConfig == nil {
 		return nil, fmt.Errorf("entity config '%s' cannot be empty for create operation", c.entityName)
 	}
