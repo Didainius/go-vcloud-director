@@ -22,12 +22,57 @@ type GenericIpSpace struct {
 	vcdClient *VCDClient
 }
 
+func (g *GenericIpSpace) initialize(child *types.IpSpace) *GenericIpSpace {
+	g.IpSpace = child
+	return g
+}
+
+func genericInitializerSquared(vcdClient *VCDClient) *GenericIpSpace {
+	return &GenericIpSpace{vcdClient: vcdClient}
+}
+
+func genericIpSpaceInitializer222(vcdClient *VCDClient) genericInitializerType[GenericIpSpace, types.IpSpace] {
+	// genericInitializerType[P any, C any] func(child *C) *P
+	retFunc := func(c *types.IpSpace) *GenericIpSpace {
+		return &GenericIpSpace{
+			IpSpace:   c,
+			vcdClient: vcdClient,
+		}
+	}
+
+	return retFunc
+}
+
+func genericIpSpaceInitializer(vcdClient *VCDClient) genericInitializerType[GenericIpSpace, types.IpSpace] {
+	// genericInitializerType[P any, C any] func(child *C) *P
+	retFunc := func(c *types.IpSpace) *GenericIpSpace {
+		return &GenericIpSpace{
+			IpSpace:   c,
+			vcdClient: vcdClient,
+		}
+	}
+
+	return retFunc
+}
+
 func (t GenericIpSpace) New(ct *types.IpSpace, vcdClient *VCDClient, client *Client) *GenericIpSpace {
 	t.IpSpace = ct
 	t.vcdClient = vcdClient
 
 	return &t
 }
+
+func (t GenericIpSpace) New2(ct *types.IpSpace) *GenericIpSpace {
+	t.IpSpace = ct
+	// t.vcdClient = vcdClient
+
+	return &t
+}
+
+/* func genericInitializer[P any]() *P {
+	p := new(P)
+	return p
+} */
 
 func NewGenericIpSpace(vcdClient *VCDClient) *GenericIpSpace {
 	internalTypeField := &types.IpSpace{ID: "one"}
@@ -59,7 +104,27 @@ func (vcdClient *VCDClient) GenericCreateIpSpace2(ipSpaceConfig *types.IpSpace) 
 		entityName: "IP Space",
 	}
 
-	return genericCreateEntity[GenericIpSpace, *types.IpSpace, *VCDClient, *Client](&vcdClient.Client, &ipSpaceConfig, c, vcdClient, &vcdClient.Client)
+	return genericCreateEntityVcdClient[GenericIpSpace, *types.IpSpace](vcdClient, &ipSpaceConfig, c)
+}
+
+func (vcdClient *VCDClient) GenericCreateIpSpace3(ipSpaceConfig *types.IpSpace) (*GenericIpSpace, error) {
+	c := genericCrudConfig{
+		endpoint:   types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
+		entityName: "IP Space",
+	}
+
+	// genericInitializerType[P any, C any] func(child *C) *P
+
+	// initializer := genericIpSpaceInitializer(vcdClient)
+	// g := new(GenericIpSpace)
+	// // initializer := g.initialize(vcdClient)
+
+	gggg := &GenericIpSpace{vcdClient: vcdClient}
+
+	intermediate, err := genericInitializerCreateEntity[GenericIpSpace, types.IpSpace](&vcdClient.Client, ipSpaceConfig, c, gggg)
+
+	return intermediate, err
+	// return nil, nil
 }
 
 // GetIpSpaceById retrieves IP Space with a given ID

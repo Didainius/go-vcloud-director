@@ -27,7 +27,7 @@ return wrappedEntry, nil */
 // P - parent
 // C - child
 // [P AnyConstructor[P, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc Z) *P {
-func genericCreateEntity[P AnyParentConstructor[P, X, Y, Z], X, Y, Z any](client *Client, entityConfig *X, c genericCrudConfig, gVcdClient Y, gClient Z) (*P, error) {
+func genericCreateEntity[P AnyParentConstructorClientVcdClient[P, X, Y, Z], X, Y, Z any](client *Client, entityConfig *X, c genericCrudConfig, gVcdClient Y, gClient Z) (*P, error) {
 	createdEntity, err := genericCreateBareEntity(client, entityConfig, c)
 	if err != nil {
 		return nil, err
@@ -46,6 +46,32 @@ func genericCreateEntity[P AnyParentConstructor[P, X, Y, Z], X, Y, Z any](client
 	// wrappedEntry := genericWrapper[GenericIpSpace](construcFunc)
 
 	return wrappedEntry, nil
+}
+
+func genericCreateEntityVcdClient[P ParentConstructorVcdClient[P, C, *VCDClient], C any](vcdClient *VCDClient, entityConfig *C, c genericCrudConfig) (*P, error) {
+	createdEntity, err := genericCreateBareEntity(&vcdClient.Client, entityConfig, c)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("created entity")
+	spew.Dump(createdEntity)
+
+	// Works, but is more confusing
+	wrappedEntry := genericWrappedResponseVcdClient[P, C](*createdEntity, vcdClient)
+
+	// construcFunc := func() GenericIpSpace {
+	// 	return P.New()
+	// }
+
+	// wrappedEntry := genericWrapper[GenericIpSpace](construcFunc)
+
+	return wrappedEntry, nil
+}
+
+func genericWrappedResponseVcdClient[P ParentConstructorVcdClient[P, C, *VCDClient], C any](child C, vcdClient *VCDClient) *P {
+	ppp := new(P)
+	return P.New2(*ppp, child)
 }
 
 // func genericWrappedResponse[P AnyConstructor[P, X, Y, Z], X, Y, Z any](child X, vvv Y, ccc Z) *P {

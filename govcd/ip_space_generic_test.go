@@ -60,7 +60,7 @@ func (vcd *TestVCD) Test_GenericIpSpacePublic(check *C) {
 		},
 	}
 
-	createdIpSpace, err := vcd.client.GenericCreateIpSpace2(ipSpaceConfig)
+	createdIpSpace, err := vcd.client.GenCreateIpSpace(ipSpaceConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdIpSpace, NotNil)
 
@@ -71,17 +71,17 @@ func (vcd *TestVCD) Test_GenericIpSpacePublic(check *C) {
 	AddToCleanupListOpenApi(createdIpSpace.IpSpace.Name, check.TestName(), openApiEndpoint)
 
 	// Get by ID
-	byId, err := vcd.client.GetIpSpaceById(createdIpSpace.IpSpace.ID)
+	byId, err := vcd.client.GenGetIpSpaceById(createdIpSpace.IpSpace.ID)
 	check.Assert(err, IsNil)
 	check.Assert(byId.IpSpace, DeepEquals, createdIpSpace.IpSpace)
 
 	// Get by Name
-	byName, err := vcd.client.GetIpSpaceByName(createdIpSpace.IpSpace.Name)
+	byName, err := vcd.client.GenGetIpSpaceByName(createdIpSpace.IpSpace.Name)
 	check.Assert(err, IsNil)
 	check.Assert(byName.IpSpace, DeepEquals, createdIpSpace.IpSpace)
 
 	// Get all and make sure it is found
-	allIpSpaces, err := vcd.client.GetAllIpSpaceSummaries(nil)
+	allIpSpaces, err := vcd.client.GenGetAllIpSpaceSummaries(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allIpSpaces) > 0, Equals, true)
 	var found bool
@@ -95,7 +95,7 @@ func (vcd *TestVCD) Test_GenericIpSpacePublic(check *C) {
 
 	// If an Org is assigned - attempt to lookup by name and Org ID
 	if byId.IpSpace.OrgRef != nil && byId.IpSpace.OrgRef.ID != "" {
-		byNameAndOrgId, err := vcd.client.GetIpSpaceByNameAndOrgId(byId.IpSpace.Name, byId.IpSpace.OrgRef.ID)
+		byNameAndOrgId, err := vcd.client.GenGetIpSpaceByNameAndOrgId(byId.IpSpace.Name, byId.IpSpace.OrgRef.ID)
 		check.Assert(err, IsNil)
 		check.Assert(byNameAndOrgId, NotNil)
 		check.Assert(byNameAndOrgId.IpSpace, DeepEquals, createdIpSpace.IpSpace)
@@ -131,7 +131,7 @@ func (vcd *TestVCD) Test_GenericIpSpacePublic(check *C) {
 	check.Assert(err, IsNil)
 
 	// Check that the entity is not found
-	notFoundById, err := vcd.client.GetIpSpaceById(byId.IpSpace.ID)
+	notFoundById, err := vcd.client.GenGetIpSpaceById(byId.IpSpace.ID)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundById, IsNil)
 }
