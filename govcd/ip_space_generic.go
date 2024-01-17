@@ -29,7 +29,6 @@ type GenericIpSpace2 struct {
 
 // wrap is a hidden helper that helps to facilitate usage of generic CRUD function
 func (g GenericIpSpace2) wrap(inner *types.IpSpace) *GenericIpSpace2 {
-	// TODO TODO TODO note - a copy of the structure happens because it is value receiver
 	g.IpSpace = inner
 	return &g
 }
@@ -55,8 +54,8 @@ func (vcdClient *VCDClient) GenGetAllIpSpaceSummaries(queryParameters url.Values
 		queryParameters: queryParameters,
 	}
 
-	initializedParentType := GenericIpSpace2{vcdClient: vcdClient}
-	return genericGetAllEntities[GenericIpSpace2, types.IpSpace](&vcdClient.Client, initializedParentType, c)
+	outerType := GenericIpSpace2{vcdClient: vcdClient}
+	return genericGetAllEntities[GenericIpSpace2, types.IpSpace](&vcdClient.Client, outerType, c)
 }
 
 // GetIpSpaceById retrieves IP Space with a given ID
