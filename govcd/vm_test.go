@@ -2177,6 +2177,27 @@ func (vcd *TestVCD) Test_VmConsolidateDisks(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
 
+	vdc, err := vm.GetParentVdc()
+	check.Assert(err, IsNil)
+	org, err := vdc.getParentOrg()
+	check.Assert(err, IsNil)
+
+	// Trigger disk consolidation - it is a lengthy procedure
+	err = vm.ConsolidateDisks()
+	check.Assert(err, IsNil)
+
+	// Resize disk
+	vmSpecSection := vm.VM.VmSpecSection
+	vmSizeBeforeGrowing := vmSpecSection.DiskSection.DiskSettings[0].SizeMb
+	vmSpecSection.DiskSection.DiskSettings[0].SizeMb = vmSizeBeforeGrowing + 1024
+	_, err = vm.UpdateInternalDisks(vmSpecSection)
+	check.Assert(err, IsNil)
+
+	// Refresh VM and verify size
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.VmSpecSection.DiskSection.DiskSettings[0].SizeMb, Equals, vmSizeBeforeGrowing+1024)
+
 	// Cleanup
 	task, err := vapp.Undeploy()
 	check.Assert(err, IsNil)
