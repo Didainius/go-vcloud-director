@@ -1995,6 +1995,10 @@ func createNsxtVAppAndVm(vcd *TestVCD, check *C) (*VApp, *VM) {
 	check.Assert(err, IsNil)
 	check.Assert(vapptemplate.VAppTemplate.Children.VM[0].HREF, NotNil)
 
+	return createNsxtVAppAndVmFromCustomTemplate(vcd, check, &vapptemplate)
+}
+
+func createNsxtVAppAndVmFromCustomTemplate(vcd *TestVCD, check *C, vapptemplate *VAppTemplate) (*VApp, *VM) {
 	vapp, err := vcd.nsxtVdc.CreateRawVApp(check.TestName(), check.TestName())
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
@@ -2160,8 +2164,38 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 	check.Assert(err, IsNil)
 }
 
+// Test_VmConsolidateDisks attempts to validate vm.ConsolidateDisks by performing the following
+// operations:
+// * setting up a vApp and a VM
+// * trying to resize VM disk and expecting to get an error (cannot be modified while the virtual machine has snapshots)
+// * consolidating disks
+// * resizing VM disk (growing by 1024MB)
+// * verifying that new size is correct
+// * attempting to consolidate once more (it is already consolidated so expecting a quick return)
+// * cleanup
 func (vcd *TestVCD) Test_VmConsolidateDisks(check *C) {
-	vapp, vm := createNsxtVAppAndVm(vcd, check)
+	org := vcd.org
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
+	check.Assert(err, IsNil)
+	vappTemplateName := vcd.config.VCD.Catalog.CatalogItemWithMultiVms
+	if vappTemplateName == "" {
+		check.Skip(fmt.Sprintf("vApp template missing in configuration - Make sure there is such template in catalog %s -"+
+			" Using test_resources/vapp_with_3_vms.ova",
+			vcd.config.VCD.Catalog.NsxtBackedCatalogName))
+	}
+	vappTemplate, err := catalog.GetVAppTemplateByName(vappTemplateName)
+	if err != nil {
+		if ContainsNotFound(err) {
+			check.Skip(fmt.Sprintf("vApp template %s not found - Make sure there is such template in catalog %s -"+
+				" Using test_resources/vapp_with_3_vms.ova",
+				vappTemplateName, vcd.config.VCD.Catalog.NsxtBackedCatalogName))
+		}
+	}
+	check.Assert(err, IsNil)
+	check.Assert(vappTemplate.VAppTemplate.Children, NotNil)
+	check.Assert(vappTemplate.VAppTemplate.Children.VM, NotNil)
+
+	vapp, vm := createNsxtVAppAndVmFromCustomTemplate(vcd, check, vappTemplate)
 	check.Assert(vapp, NotNil)
 	check.Assert(vm, NotNil)
 
@@ -2177,19 +2211,24 @@ func (vcd *TestVCD) Test_VmConsolidateDisks(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_OFF")
 
-	vdc, err := vm.GetParentVdc()
-	check.Assert(err, IsNil)
-	org, err := vdc.getParentOrg()
-	check.Assert(err, IsNil)
-
-	// Trigger disk consolidation - it is a lengthy procedure
-	err = vm.ConsolidateDisks()
-	check.Assert(err, IsNil)
-
-	// Resize disk
+	// Attempt to resize before consolidating disks - it should fail
 	vmSpecSection := vm.VM.VmSpecSection
 	vmSizeBeforeGrowing := vmSpecSection.DiskSection.DiskSettings[0].SizeMb
 	vmSpecSection.DiskSection.DiskSettings[0].SizeMb = vmSizeBeforeGrowing + 1024
+	_, err = vm.UpdateInternalDisks(vmSpecSection)
+	check.Assert(strings.Contains(err.Error(), "cannot be modified while the virtual machine has snapshots"), Equals, true)
+
+	// Trigger disk consolidation
+	err = vm.ConsolidateDisks()
+	check.Assert(err, IsNil)
+
+	// Resize disk after consolidation - it should work now
+	err = vm.Refresh() // reloading VM structure to avoid
+	check.Assert(err, IsNil)
+	vmSpecSection = vm.VM.VmSpecSection
+	vmSizeBeforeGrowing = vmSpecSection.DiskSection.DiskSettings[0].SizeMb
+	vmSpecSection.DiskSection.DiskSettings[0].SizeMb = vmSizeBeforeGrowing + 1024
+
 	_, err = vm.UpdateInternalDisks(vmSpecSection)
 	check.Assert(err, IsNil)
 
@@ -2198,8 +2237,15 @@ func (vcd *TestVCD) Test_VmConsolidateDisks(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vm.VM.VmSpecSection.DiskSection.DiskSettings[0].SizeMb, Equals, vmSizeBeforeGrowing+1024)
 
+	// Trigger async disk consolidation - it will return instantly because the disk is already
+	// consolidated and there is nothing to do
+	task, err := vm.ConsolidateDisksAsync()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
 	// Cleanup
-	task, err := vapp.Undeploy()
+	task, err = vapp.Undeploy()
 	check.Assert(err, IsNil)
 	check.Assert(task, Not(Equals), Task{})
 
