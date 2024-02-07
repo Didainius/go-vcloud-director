@@ -363,6 +363,9 @@ type InstantiationParams struct {
 	NetworkConfigSection         *NetworkConfigSection         `xml:"NetworkConfigSection,omitempty"`
 	NetworkConnectionSection     *NetworkConnectionSection     `xml:"NetworkConnectionSection,omitempty"`
 	ProductSection               *ProductSection               `xml:"ProductSection,omitempty"`
+
+	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"`
+
 	// TODO: Not Implemented
 	// SnapshotSection              SnapshotSection              `xml:"SnapshotSection,omitempty"`
 }
@@ -1581,6 +1584,9 @@ type VAppTemplate struct {
 	NetworkConnectionSection *NetworkConnectionSection `xml:"NetworkConnectionSection,omitempty"`
 	LeaseSettingsSection     *LeaseSettingsSection     `xml:"LeaseSettingsSection,omitempty"`
 	CustomizationSection     *CustomizationSection     `xml:"CustomizationSection,omitempty"`
+
+	VmSpecSection *VmSpecSection `xml:"VmSpecSection,omitempty"`
+
 	// OVF Section needs to be added
 	// Section               Section              `xml:"Section,omitempty"`
 }
@@ -1853,6 +1859,26 @@ type GuestCustomizationSection struct {
 // Since: 0.9
 type InstantiateVAppTemplateParams struct {
 	XMLName xml.Name `xml:"InstantiateVAppTemplateParams"`
+	Ovf     string   `xml:"xmlns:ovf,attr"`
+	Xsi     string   `xml:"xmlns:xsi,attr,omitempty"`
+	Xmlns   string   `xml:"xmlns,attr"`
+	// Attributes
+	Name        string `xml:"name,attr,omitempty"`        // Typically used to name or identify the subject of the request. For example, the name of the object being created or modified.
+	Deploy      bool   `xml:"deploy,attr"`                // True if the vApp should be deployed at instantiation. Defaults to true.
+	PowerOn     bool   `xml:"powerOn,attr"`               // True if the vApp should be powered-on at instantiation. Defaults to true.
+	LinkedClone bool   `xml:"linkedClone,attr,omitempty"` // Reserved. Unimplemented.
+	// Elements
+	Description         string                       `xml:"Description,omitempty"`         // Optional description.
+	VAppParent          *Reference                   `xml:"VAppParent,omitempty"`          // Reserved. Unimplemented.
+	InstantiationParams *InstantiationParams         `xml:"InstantiationParams,omitempty"` // Instantiation parameters for the composed vApp.
+	Source              *Reference                   `xml:"Source"`                        // A reference to a source object such as a vApp or vApp template.
+	IsSourceDelete      bool                         `xml:"IsSourceDelete,omitempty"`      // Set to true to delete the source object after the operation completes.
+	SourcedItem         *SourcedCompositionItemParam `xml:"SourcedItem,omitempty"`         // Composition item. One of: vApp vAppTemplate VM.
+	AllEULAsAccepted    bool                         `xml:"AllEULAsAccepted,omitempty"`    // True confirms acceptance of all EULAs in a vApp template. Instantiation fails if this element is missing, empty, or set to false and one or more EulaSection elements are present.
+}
+
+type InstantiateVAppVmTemplateParams struct {
+	XMLName xml.Name `xml:"InstantiateVmTemplateParams"`
 	Ovf     string   `xml:"xmlns:ovf,attr"`
 	Xsi     string   `xml:"xmlns:xsi,attr,omitempty"`
 	Xmlns   string   `xml:"xmlns,attr"`

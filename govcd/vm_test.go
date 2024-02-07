@@ -1982,155 +1982,6 @@ func (vcd *TestVCD) Test_AddRawVm(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) Test_AddRawVmAndResize(check *C) {
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
-	check.Assert(err, IsNil)
-	check.Assert(cat, NotNil)
-	// Populate Catalog Item
-	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.NsxtCatalogItem, false)
-	check.Assert(err, IsNil)
-	check.Assert(catitem, NotNil)
-	// Get VAppTemplate
-	vapptemplate, err := catitem.GetVAppTemplate()
-	check.Assert(err, IsNil)
-	check.Assert(vapptemplate.VAppTemplate.Children.VM[0].HREF, NotNil)
-
-	vapp, err := vcd.nsxtVdc.CreateRawVApp(check.TestName(), check.TestName())
-	check.Assert(err, IsNil)
-	check.Assert(vapp, NotNil)
-	// After a successful creation, the entity is added to the cleanup list.
-	AddToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
-
-	// Check that vApp is powered-off
-	vappStatus, err := vapp.GetStatus()
-	check.Assert(err, IsNil)
-	check.Assert(vappStatus, Equals, "RESOLVED")
-
-	task, err := vapp.PowerOn()
-	check.Assert(err, IsNil)
-	check.Assert(task, NotNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	vappStatus, err = vapp.GetStatus()
-	check.Assert(err, IsNil)
-	check.Assert(vappStatus, Equals, "POWERED_ON")
-
-	// Once the operation is successful, we won't trigger a failure
-	// until after the vApp deletion
-	check.Check(vapp.VApp.Name, Equals, check.TestName())
-	check.Check(vapp.VApp.Description, Equals, check.TestName())
-
-	// vapptemplate.VAppTemplate.Children.VM[0].
-
-	// <DiskSection>
-	// 	<DiskSettings>
-	// 		<DiskId>2000</DiskId>
-	// 		<SizeMb>16384</SizeMb>
-	// 		<UnitNumber>0</UnitNumber>
-	// 		<BusNumber>0</BusNumber>
-	// 		<AdapterType>5</AdapterType>
-	// 		<ThinProvisioned>true</ThinProvisioned>
-	// 		<StorageProfile href="https://atl1-vcd-static-129-29.eng.vmware.com/api/vdcStorageProfile/82d2663f-2141-4a3f-9f74-b0632d44be31" id="urn:vcloud:vdcstorageProfile:82d2663f-2141-4a3f-9f74-b0632d44be31" type="application/vnd.vmware.vcloud.vdcStorageProfile+xml" name="*"/>
-	// 		<overrideVmDefault>false</overrideVmDefault>
-	// 		<VirtualQuantityUnit>byte</VirtualQuantityUnit>
-	// 		<resizable>false</resizable>
-	// 		<shareable>false</shareable>
-	// 		<sharingType>None</sharingType>
-	// 	</DiskSettings>
-	// </DiskSection>
-
-	// Construct VM
-	vmDef := &types.ReComposeVAppParams{
-		Ovf:              types.XMLNamespaceOVF,
-		Xsi:              types.XMLNamespaceXSI,
-		Xmlns:            types.XMLNamespaceVCloud,
-		AllEULAsAccepted: true,
-		// Deploy:           false,
-		Name: vapp.VApp.Name,
-		// PowerOn: false, // Not touching power state at this phase
-		SourcedItem: &types.SourcedCompositionItemParam{
-			Source: &types.Reference{
-				HREF: vapptemplate.VAppTemplate.Children.VM[0].HREF,
-				Name: check.TestName() + "-vm-tmpl",
-			},
-			VMGeneralParams: &types.VMGeneralParams{
-				Description: "test-vm-description",
-			},
-			InstantiationParams: &types.InstantiationParams{
-				NetworkConnectionSection: &types.NetworkConnectionSection{},
-				VmSpecSection: &types.VmSpecSection{
-					Modified: addrOf(true),
-					// vapptemplate.VAppTemplate.Children.VM[0].VmSpecSection
-					HardwareVersion: vapptemplate.VAppTemplate.Children.VM[0].VmSpecSection.HardwareVersion,
-					DiskSection:     vapptemplate.VAppTemplate.Children.VM[0].VmSpecSection.DiskSection,
-				},
-				// VmSpecSection: &types.VmSpecSection{
-				// 	Modified:        addrOf(true),
-				// 	HardwareVersion: vapptemplate.VAppTemplate.Children.VM[0].VmSpecSection.HardwareVersion,
-				// 	DiskSection: &types.DiskSection{
-				// 		DiskSettings: []*types.DiskSettings{
-				// 			&types.DiskSettings{
-				// 				DiskId:              "2000",
-				// 				SizeMb:              30000,
-				// 				UnitNumber:          0,
-				// 				BusNumber:           0,
-				// 				AdapterType:         "5",
-				// 				ThinProvisioned:     addrOf(true),
-				// 				VirtualQuantityUnit: "byte",
-				// 			},
-				// 		},
-				// 	},
-				// },
-			},
-		},
-	}
-
-	vmDef.SourcedItem.InstantiationParams.VmSpecSection.DiskSection.DiskSettings[0].SizeMb = 30000
-	// vmDef.SourcedItem.InstantiationParams.VmSpecSection.Modified = addrOf(true)
-
-	vm, err := vapp.AddRawVM(vmDef)
-	fmt.Println("sleeping for X time")
-	time.Sleep(2 * time.Minute)
-
-	check.Assert(err, IsNil)
-	check.Assert(vm, NotNil)
-	check.Assert(vm.VM.Name, Equals, vmDef.SourcedItem.Source.Name)
-
-	// Refresh vApp to have latest state
-	err = vapp.Refresh()
-	check.Assert(err, IsNil)
-	check.Assert(vapp, NotNil)
-	check.Assert(vm, NotNil)
-
-	// Check that vApp did not lose its state
-	vappStatus, err = vapp.GetStatus()
-	check.Assert(err, IsNil)
-	check.Assert(vappStatus, Equals, "MIXED") //vApp is powered on, but the VM within is powered off
-	check.Assert(vapp.VApp.Name, Equals, check.TestName())
-	check.Assert(vapp.VApp.Description, Equals, check.TestName())
-
-	// Check that VM is not powered on
-	vmStatus, err := vm.GetStatus()
-	check.Assert(err, IsNil)
-	check.Assert(vmStatus, Equals, "POWERED_OFF")
-
-	// Cleanup
-	task, err = vapp.Undeploy()
-	check.Assert(err, IsNil)
-	check.Assert(task, Not(Equals), Task{})
-
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	task, err = vapp.Delete()
-	check.Assert(err, IsNil)
-	check.Assert(task, Not(Equals), Task{})
-
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-}
-
 func createNsxtVAppAndVm(vcd *TestVCD, check *C) (*VApp, *VM) {
 	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
 	check.Assert(err, IsNil)
@@ -2267,7 +2118,6 @@ func createNsxtVAppAndVmWithEfiSupport(vcd *TestVCD, check *C) (*VApp, *VM) {
 }
 
 func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
-
 	version, err := vcd.client.Client.GetVcdShortVersion()
 	check.Assert(err, IsNil)
 	if version == "10.5.0" {
@@ -2307,5 +2157,38 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 	}
 
 	err = deleteNsxtVapp(vcd, check.TestName())
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_VmConsolidateDisks(check *C) {
+	vapp, vm := createNsxtVAppAndVm(vcd, check)
+	check.Assert(vapp, NotNil)
+	check.Assert(vm, NotNil)
+
+	// Check that vApp did not lose its state
+	vappStatus, err := vapp.GetStatus()
+	check.Assert(err, IsNil)
+	check.Assert(vappStatus, Equals, "MIXED") //vApp is powered on, but the VM within is powered off
+	check.Assert(vapp.VApp.Name, Equals, check.TestName())
+	check.Assert(vapp.VApp.Description, Equals, check.TestName())
+
+	// Check that VM is not powered on
+	vmStatus, err := vm.GetStatus()
+	check.Assert(err, IsNil)
+	check.Assert(vmStatus, Equals, "POWERED_OFF")
+
+	// Cleanup
+	task, err := vapp.Undeploy()
+	check.Assert(err, IsNil)
+	check.Assert(task, Not(Equals), Task{})
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	check.Assert(task, Not(Equals), Task{})
+
+	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 }
