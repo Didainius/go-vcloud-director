@@ -145,6 +145,16 @@ type TestConfig struct {
 		Org    string `yaml:"org"`
 		Region string `yaml:"region"`
 		Vdc    string `yaml:"vdc"`
+
+		CreateVcenter   bool   `yaml:"createVcenter"`
+		VcenterUsername string `yaml:"vcenterUsername"`
+		VcenterPassword string `yaml:"vcenterPassword"`
+		VcenterUrl      string `yaml:"vcenterUrl"`
+
+		CreateNsxtManager   bool   `yaml:"createNsxtManager"`
+		NsxtManagerUsername string `yaml:"nsxtManagerUsername"`
+		NsxtManagerPassword string `yaml:"nsxtManagerPassword"`
+		NsxtManagerUrl      string `yaml:"nsxtManagerUrl"`
 	} `yaml:"tm"`
 	VCD struct {
 		Org         string `yaml:"org"`

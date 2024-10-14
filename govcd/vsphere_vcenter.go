@@ -26,6 +26,7 @@ func (v VCenter) wrap(inner *types.VSphereVirtualCenter) *VCenter {
 	return &v
 }
 
+// CreateVcenter
 func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*VCenter, error) {
 	c := crudConfig{
 		entityLabel: labelVirtualCenter,
@@ -35,6 +36,7 @@ func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// GetAllVCenters retrieves all vCenter servers based on optional query filtering
 func (vcdClient *VCDClient) GetAllVCenters(queryParams url.Values) ([]*VCenter, error) {
 	c := crudConfig{
 		entityLabel:     labelVirtualCenter,
@@ -46,6 +48,7 @@ func (vcdClient *VCDClient) GetAllVCenters(queryParams url.Values) ([]*VCenter, 
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
+// GetVCenterByName retrieves vCenter server by name
 func (vcdClient *VCDClient) GetVCenterByName(name string) (*VCenter, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelVirtualCenter)
@@ -67,6 +70,7 @@ func (vcdClient *VCDClient) GetVCenterByName(name string) (*VCenter, error) {
 	return singleEntity, nil
 }
 
+// GetVCenterById retrieves vCenter server by id
 func (vcdClient *VCDClient) GetVCenterById(id string) (*VCenter, error) {
 	c := crudConfig{
 		entityLabel:    labelVirtualCenter,

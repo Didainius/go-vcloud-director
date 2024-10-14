@@ -469,6 +469,7 @@ const (
 	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
 	OpenApiEndpointImportableTransportZones           = "nsxTResources/importableTransportZones"
 	OpenApiEndpointVCenterDistributedSwitch           = "virtualCenters/resources/dvSwitches"
+	OpenApiEndpointTrustedCertificates                = "ssl/trustedCertificates/"
 
 	OpenApiEndpointNsxtSegmentProfileTemplates              = "segmentProfileTemplates/"
 	OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates = "segmentProfileTemplates/default"
