@@ -60,3 +60,34 @@ type ContentLibrarySubscriptionConfig struct {
 	// Password to use to authenticate with the publisher
 	Password string `json:"password,omitempty"`
 }
+
+type Region struct {
+	ID string `json:"id,omitempty"`
+	// The name of the region. It must follow RFC 1123 Label Names to conform with Kubernetes standards.
+	Name string `json:"name"`
+	// The NSX manager for the region.
+	NsxManager *OpenApiReference `json:"nsxManager"`
+	// Total CPU resources in MHz available to this Region.
+	CPUCapacityMHz int `json:"cpuCapacityMHz,omitempty"`
+	// Total CPU reservation resources in MHz available to this Region.
+	CPUReservationCapacityMHz int `json:"cpuReservationCapacityMHz,omitempty"`
+	// The description of the region.
+	Description string `json:"description,omitempty"`
+	// Whether the region is enabled or not.
+	IsEnabled bool `json:"isEnabled,omitempty"`
+	// Total memory resources (in mebibytes) available to this Region.
+	MemoryCapacityMiB int `json:"memoryCapacityMiB,omitempty"`
+	// Total memory reservation resources (in mebibytes) available to this Region.
+	MemoryReservationCapacityMiB int `json:"memoryReservationCapacityMiB,omitempty"`
+	// The creation status of the Provider VDC. Possible values are READY, NOT_READY, ERROR, FAILED.
+	// A Region needs to be ready and enabled to be usable.
+	Status string `json:"status,omitempty"`
+	// A list of supervisors in a region
+
+	Supervisors []OpenApiReference `json:"supervisors,omitempty"`
+	// A list of distinct vCenter storage policy names from the vCenters taking part in this region.
+	// A storage policy with the given name must exist in all the vCenters of this region otherwise
+	// it will not be accepted. Only the storage policies added to a region can be published to the
+	// tenant Virtual Datacenters.
+	StoragePolicies []string `json:"storagePolicies,omitempty"`
+}
