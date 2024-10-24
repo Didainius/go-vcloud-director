@@ -522,6 +522,7 @@ const (
 	OpenApiEndpointRegionStoragePolicies = "regionStoragePolicies/"
 	OpenApiEndpointContentLibraries      = "contentLibraries/"
 	OpenApiEndpointRegions               = "regions/"
+	OpenApiEndpointSupervisors           = "supervisors/"
 )
 
 // Header keys to run operations in tenant context

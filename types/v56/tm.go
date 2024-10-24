@@ -72,7 +72,7 @@ type Region struct {
 	// Total CPU reservation resources in MHz available to this Region.
 	CPUReservationCapacityMHz int `json:"cpuReservationCapacityMHz,omitempty"`
 	// The description of the region.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Whether the region is enabled or not.
 	IsEnabled bool `json:"isEnabled,omitempty"`
 	// Total memory resources (in mebibytes) available to this Region.
@@ -90,4 +90,15 @@ type Region struct {
 	// it will not be accepted. Only the storage policies added to a region can be published to the
 	// tenant Virtual Datacenters.
 	StoragePolicies []string `json:"storagePolicies,omitempty"`
+}
+
+type Supervisor struct {
+	// The immutable identifier of this supervisor.
+	SupervisorID string `json:"supervisorId"`
+	// The name of this supervisor.
+	Name string `json:"name"`
+	// The Region this Supervisor is associated with. If null, it has not been associated with a Region.
+	Region *OpenApiReference `json:"region,omitempty"`
+	// The vCenter this supervisor is associated with.
+	VirtualCenter *OpenApiReference `json:"virtualCenter"`
 }
