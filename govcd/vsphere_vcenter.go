@@ -71,6 +71,34 @@ func (vcdClient *VCDClient) GetVCenterByName(name string) (*VCenter, error) {
 	return singleEntity, nil
 }
 
+// GetVCenterByUrl looks up if there is an existing vCenter added with a given URL
+func (vcdClient *VCDClient) GetVCenterByUrl(vcUrl string) (*VCenter, error) {
+	if vcUrl == "" {
+		return nil, fmt.Errorf("%s lookup requires URL", labelVirtualCenter)
+	}
+
+	// API filtering by URL is not supported so relying on local filtering
+	vCenters, err := vcdClient.GetAllVCenters(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredEntities := make([]*VCenter, 0)
+	for _, vc := range vCenters {
+		if vc.VSphereVCenter.Url == vcUrl {
+			filteredEntities = append(filteredEntities, vc)
+		}
+
+	}
+
+	singleEntity, err := oneOrError("Url", vcUrl, filteredEntities)
+	if err != nil {
+		return nil, err
+	}
+
+	return singleEntity, nil
+}
+
 // GetVCenterById retrieves vCenter server by ID
 func (vcdClient *VCDClient) GetVCenterById(id string) (*VCenter, error) {
 	c := crudConfig{

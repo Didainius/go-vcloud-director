@@ -102,3 +102,26 @@ type Supervisor struct {
 	// The vCenter this supervisor is associated with.
 	VirtualCenter *OpenApiReference `json:"virtualCenter"`
 }
+
+type SupervisorZone struct {
+	ID string `json:"id"`
+	// The name of this zone.
+	Name string `json:"name"`
+	// The supervisor this zone belongs to.
+	Supervisor *OpenApiReference `json:"supervisor"`
+	// The vCenter this supervisor zone is associated with.
+	VirtualCenter *OpenApiReference `json:"virtualCenter"`
+
+	// TotalMemoryCapacityMiB - the memory capacity (in mebibytes) in this zone. Total memory
+	// consumption in this zone cannot cross this limit
+	TotalMemoryCapacityMiB int64 `json:"totalMemoryCapacityMiB"`
+	// TotalCPUCapacityMHz - the CPU capacity (in MHz) in this zone. Total CPU consumption in this
+	// zone cannot cross this limit
+	TotalCPUCapacityMHz int64 `json:"totalCPUCapacityMHz"`
+	// MemoryUsedMiB - total memory used (in mebibytes) in this zone
+	MemoryUsedMiB int64 `json:"memoryUsedMiB"`
+	// CpuUsedMHz - total CPU used (in MHz) in this zone
+	CpuUsedMHz int64 `json:"cpuUsedMHz"`
+
+	// region
+}

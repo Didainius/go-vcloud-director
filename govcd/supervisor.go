@@ -9,7 +9,7 @@ import (
 
 const labelSupervisor = "Supervisor"
 
-// Supervisor is a type for handling VCF Supervisors
+// Supervisor is a type for handling reading available Supervisors
 type Supervisor struct {
 	Supervisor *types.Supervisor
 	vcdClient  *VCDClient
@@ -64,4 +64,26 @@ func (vcdClient *VCDClient) GetSupervisorByName(name string) (*Supervisor, error
 	}
 
 	return singleEntity, nil
+}
+
+// GetAllSupervisors returns all Supervisors that are available in this vCenter
+func (v VCenter) GetAllSupervisors(queryParameters url.Values) ([]*Supervisor, error) {
+	queryParams := copyOrNewUrlValues(queryParameters)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("virtualCenter.id==%s", v.VSphereVCenter.VcId), queryParams)
+	return v.client.GetAllSupervisors(queryParams)
+}
+
+func (v VCenter) GetSupervisorByName(name string) (*Supervisor, error) {
+	if name == "" {
+		return nil, fmt.Errorf("name is required")
+	}
+
+	queryParams := copyOrNewUrlValues(nil)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("name==%s", name), queryParams)
+	s, err := v.GetAllSupervisors(queryParams)
+	if err != nil {
+		return nil, err
+	}
+
+	return oneOrError("name", name, s)
 }

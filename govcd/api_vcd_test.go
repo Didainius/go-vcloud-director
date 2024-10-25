@@ -144,10 +144,12 @@ type TestConfig struct {
 	Tm      struct {
 		RegionStoragePolicy string `yaml:"regionStoragePolicy"`
 
-		CreateVcenter   bool   `yaml:"createVcenter"`
-		VcenterUsername string `yaml:"vcenterUsername"`
-		VcenterPassword string `yaml:"vcenterPassword"`
-		VcenterUrl      string `yaml:"vcenterUrl"`
+		CreateVcenter         bool   `yaml:"createVcenter"`
+		VcenterUsername       string `yaml:"vcenterUsername"`
+		VcenterPassword       string `yaml:"vcenterPassword"`
+		VcenterUrl            string `yaml:"vcenterUrl"`
+		VcenterStorageProfile string `yaml:"vcenterStorageProfile"`
+		VcenterSupervisor     string `yaml:"vcenterSupervisor"`
 
 		CreateNsxtManager   bool   `yaml:"createNsxtManager"`
 		NsxtManagerUsername string `yaml:"nsxtManagerUsername"`

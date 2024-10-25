@@ -74,6 +74,7 @@ func (vcdClient *VCDClient) GetRegionById(id string) (*Region, error) {
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
+// Update Region with new configuration
 func (r *Region) Update(RegionConfig *types.Region) (*Region, error) {
 	c := crudConfig{
 		entityLabel:    labelRegion,
@@ -84,6 +85,7 @@ func (r *Region) Update(RegionConfig *types.Region) (*Region, error) {
 	return updateOuterEntity(&r.vcdClient.Client, outerType, c, RegionConfig)
 }
 
+// Delete Region
 func (r *Region) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelRegion,

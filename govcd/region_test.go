@@ -7,7 +7,7 @@
 package govcd
 
 import (
-	"fmt"
+	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
@@ -17,25 +17,14 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
-	// existingRegion, err := vcd.client.GetRegionByName(check.TestName())
-	// check.Assert(err, IsNil)
-
-	// err = existingRegion.Delete()
-	// check.Assert(err, IsNil)
-
-	// check.Assert(true, Equals, false)
-
-	superVisorName := "vcfcons-mgmt-vc03-wcp"
-	nsxtManagerId := "urn:vcloud:nsxtmanager:1c9d361e-e69b-449e-a8d0-476d59806a06"
-	storagePolicyName := "vSAN Default Storage Policy"
-
-	supervisor, err := vcd.client.GetSupervisorByName(superVisorName)
+	vc, nsxtManager := getOrCreateVcAndNsxtManager(vcd, check)
+	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
 
 	r := &types.Region{
 		Name: check.TestName(),
 		NsxManager: &types.OpenApiReference{
-			ID: nsxtManagerId,
+			ID: nsxtManager.NsxtManagerOpenApi.ID,
 		},
 		Supervisors: []types.OpenApiReference{
 			{
@@ -43,14 +32,13 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 				Name: supervisor.Supervisor.Name,
 			},
 		},
-		StoragePolicies: []string{storagePolicyName},
+		StoragePolicies: []string{vcd.config.Tm.VcenterStorageProfile},
 		IsEnabled:       true,
 	}
 
 	createdRegion, err := vcd.client.CreateRegion(r)
 	check.Assert(err, IsNil)
 	check.Assert(createdRegion.Region, NotNil)
-	fmt.Println(createdRegion.Region.ID)
 	AddToCleanupListOpenApi(createdRegion.Region.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointRegions+createdRegion.Region.ID)
 
 	check.Assert(createdRegion.Region.Status, Equals, "READY") // Region is operational
@@ -64,6 +52,8 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	byId, err := vcd.client.GetRegionById(createdRegion.Region.ID)
 	check.Assert(err, IsNil)
 	check.Assert(byId, NotNil)
+
+	check.Assert(byName.Region, DeepEquals, byId.Region)
 
 	// Get All
 	allRegions, err := vcd.client.GetAllRegions(nil)
@@ -86,18 +76,55 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundByName, IsNil)
 
-	// region, err := vcd.client.GetRegionByName(vcd.config.Tm.Region)
-	// check.Assert(err, IsNil)
-	// check.Assert(region, NotNil)
+}
 
-	// // Get by ID
-	// regionById, err := vcd.client.GetRegionById(region.Region.ID)
-	// check.Assert(err, IsNil)
-	// check.Assert(regionById, NotNil)
+func getOrCreateVcAndNsxtManager(vcd *TestVCD, check *C) (*VCenter, *NsxtManagerOpenApi) {
+	vc, err := vcd.client.GetVCenterByUrl(vcd.config.Tm.VcenterUrl)
+	if ContainsNotFound(err) {
+		vcCfg := &types.VSphereVirtualCenter{
+			Name:      check.TestName() + "-vc",
+			Username:  vcd.config.Tm.VcenterUsername,
+			Password:  vcd.config.Tm.VcenterPassword,
+			Url:       vcd.config.Tm.VcenterUrl,
+			IsEnabled: true,
+		}
+		// Certificate must be trusted before adding vCenter
+		url, err := url.Parse(vcCfg.Url)
+		check.Assert(err, IsNil)
+		trustedCert, err := vcd.client.AutoTrustCertificate(url)
+		check.Assert(err, IsNil)
+		if trustedCert != nil {
+			AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
+		}
 
-	// check.Assert(region.Region, DeepEquals, regionById.Region)
+		vc, err = vcd.client.CreateVcenter(vcCfg)
+		check.Assert(err, IsNil)
+		check.Assert(vc, NotNil)
+		PrependToCleanupListOpenApi(vc.VSphereVCenter.VcId, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+vc.VSphereVCenter.VcId)
 
-	// allTmVdc, err := vcd.client.GetAllRegions(nil)
-	// check.Assert(err, IsNil)
-	// check.Assert(len(allTmVdc) > 0, Equals, true)
+	}
+
+	nsxtManager, err := vcd.client.GetNsxtManagerOpenApiByUrl(vcd.config.Tm.NsxtManagerUrl)
+	if ContainsNotFound(err) {
+		nsxtCfg := &types.NsxtManagerOpenApi{
+			Name:     check.TestName(),
+			Username: vcd.config.Tm.NsxtManagerUsername,
+			Password: vcd.config.Tm.NsxtManagerPassword,
+			Url:      vcd.config.Tm.NsxtManagerUrl,
+		}
+		// Certificate must be trusted before adding NSX-T Manager
+		url, err := url.Parse(nsxtCfg.Url)
+		check.Assert(err, IsNil)
+		trustedCert, err := vcd.client.AutoTrustCertificate(url)
+		check.Assert(err, IsNil)
+		if trustedCert != nil {
+			AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
+		}
+		nsxtManager, err = vcd.client.CreateNsxtManagerOpenApi(nsxtCfg)
+		check.Assert(err, IsNil)
+		check.Assert(nsxtManager, NotNil)
+		PrependToCleanupListOpenApi(nsxtManager.NsxtManagerOpenApi.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointNsxManagers+nsxtManager.NsxtManagerOpenApi.ID)
+	}
+
+	return vc, nsxtManager
 }
