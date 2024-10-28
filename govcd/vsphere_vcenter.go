@@ -169,3 +169,30 @@ func (v VCenter) Refresh() error {
 
 	return nil
 }
+
+// Refresh triggers a refresh operation on vCenter that syncs up vCenter components such as
+// supervisors
+// It uses legacy endpoint as there is no OpenAPI endpoint for this operation
+func (v VCenter) RefreshStorageProfiles() error {
+	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refreshStorageProfiles")
+	if err != nil {
+		return fmt.Errorf("error building storage policy refresh path: %s", err)
+	}
+
+	resp, err := v.client.Client.executeJsonRequest(refreshUrl, http.MethodPost, nil, "error triggering vCenter refresh storage policy: %s")
+	if err != nil {
+		return err
+	}
+	defer closeBody(resp)
+	task := NewTask(&v.client.Client)
+	err = decodeBody(types.BodyTypeJSON, resp, task.Task)
+	if err != nil {
+		return fmt.Errorf("error triggering retrieving task: %s", err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error waiting task completion: %s", err)
+	}
+
+	return nil
+}

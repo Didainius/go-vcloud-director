@@ -17,6 +17,15 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
+	// TODO - remove from here
+	// rCleanup, err := vcd.client.GetRegionByName(check.TestName())
+	// check.Assert(err, IsNil)
+	// check.Assert(rCleanup, NotNil)
+	// err = rCleanup.Delete()
+	// check.Assert(err, IsNil)
+	// check.Assert(true, Equals, false)
+	// TODO - remove until here
+
 	vc, nsxtManager := getOrCreateVcAndNsxtManager(vcd, check)
 	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
@@ -78,8 +87,12 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 
 }
 
+// getOrCreateVcAndNsxtManager will check configuration file
 func getOrCreateVcAndNsxtManager(vcd *TestVCD, check *C) (*VCenter, *NsxtManagerOpenApi) {
 	vc, err := vcd.client.GetVCenterByUrl(vcd.config.Tm.VcenterUrl)
+	if ContainsNotFound(err) && !vcd.config.Tm.CreateVcenter {
+		check.Skip("vCenter is not configured and configuration is not allowed in config file")
+	}
 	if ContainsNotFound(err) {
 		vcCfg := &types.VSphereVirtualCenter{
 			Name:      check.TestName() + "-vc",
@@ -100,11 +113,22 @@ func getOrCreateVcAndNsxtManager(vcd *TestVCD, check *C) (*VCenter, *NsxtManager
 		vc, err = vcd.client.CreateVcenter(vcCfg)
 		check.Assert(err, IsNil)
 		check.Assert(vc, NotNil)
-		PrependToCleanupListOpenApi(vc.VSphereVCenter.VcId, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+vc.VSphereVCenter.VcId)
+		PrependToCleanupList(vcCfg.Name, "OpenApiEntityVcenter", check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+vc.VSphereVCenter.VcId)
 
+		// Refresh connected vCenter to be sure that all artifacts are loaded
+		printVerbose("# Refreshing vCenter %s\n", vc.VSphereVCenter.Url)
+		err = vc.Refresh()
+		check.Assert(err, IsNil)
+
+		printVerbose("# Refreshing Storage Profiles %s\n", vc.VSphereVCenter.Url)
+		err = vc.RefreshStorageProfiles()
+		check.Assert(err, IsNil)
 	}
 
 	nsxtManager, err := vcd.client.GetNsxtManagerOpenApiByUrl(vcd.config.Tm.NsxtManagerUrl)
+	if ContainsNotFound(err) && !vcd.config.Tm.CreateNsxtManager {
+		check.Skip("NSX-T Manager is not configured and configuration is not allowed in config file")
+	}
 	if ContainsNotFound(err) {
 		nsxtCfg := &types.NsxtManagerOpenApi{
 			Name:     check.TestName(),

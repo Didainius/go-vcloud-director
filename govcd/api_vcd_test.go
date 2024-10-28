@@ -956,6 +956,26 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+	case "OpenApiEntityVcenter":
+		vc, err := vcd.client.GetVCenterByName(entity.Name)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		err = vc.Disable()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Error disabling %s '%s': %s\n", entity.EntityType, entity.Name, err)
+			return
+		}
+
+		err = vc.Delete()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	case "vapp":
 		vdc := vcd.vdc
 		var err error
