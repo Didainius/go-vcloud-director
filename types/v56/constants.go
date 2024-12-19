@@ -533,6 +533,7 @@ const (
 	OpenApiEndpointTmIpSpaces              = "ipSpaces/"
 	OpenApiEndpointTmProviderGateways      = "providerGateways/"
 	OpenApiEndpointTmIpSpaceAssociations   = "ipSpaceAssociations/"
+	OpenApiEndpointTmOrgNetworkingSettings = "orgs/%s/networkingSettings/"
 )
 
 // Header keys to run operations in tenant context

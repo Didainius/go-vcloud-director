@@ -407,3 +407,14 @@ type TmIpSpaceAssociation struct {
 	// * UNKNOWN - Current state of entity is unknown.
 	Status string `json:"status,omitempty"`
 }
+
+type TmOrgNetworkingSettings struct {
+	// NetworkingTenancyEnabled defines whether this Organization has tenancy for the network domain
+	// in the backing network provider. If enabled, can only be disabled after all Org VDCs and VDC
+	// Groups that have networking tenancy enabled are deleted. Is disabled by default.
+	NetworkingTenancyEnabled *bool `json:"networkingTenancyEnabled,omitempty"`
+	// OrgNameForLogs is a short (8 char) display name to identify this Organization in the logs of
+	// the backing network provider. Only applies if the Organization is networking tenancy enabled.
+	// This identifier is globally unique.
+	OrgNameForLogs string `json:"orgNameForLogs,omitempty"`
+}
