@@ -31,7 +31,7 @@ func (vcdClient *VCDClient) GetTmOrgNetworkingSettingsByOrgId(orgId string) (*Tm
 		requiresTm:     true,
 	}
 
-	outerType := TmOrgNetworkingSettings{vcdClient: vcdClient}
+	outerType := TmOrgNetworkingSettings{vcdClient: vcdClient, OrgId: orgId}
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
@@ -43,7 +43,7 @@ func (o *TmOrgNetworkingSettings) Update(config *types.TmOrgNetworkingSettings) 
 		endpointParams: []string{o.OrgId},
 		requiresTm:     true,
 	}
-	outerType := TmOrgNetworkingSettings{vcdClient: o.vcdClient}
+	outerType := TmOrgNetworkingSettings{vcdClient: o.vcdClient, OrgId: o.OrgId}
 	return updateOuterEntity(&o.vcdClient.Client, outerType, c, config)
 }
 

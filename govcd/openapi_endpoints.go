@@ -171,6 +171,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways:               "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaceAssociations:            "40.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTmOrgNetworkingSettings: "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkSetting:         "40.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
