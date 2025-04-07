@@ -1,5 +1,5 @@
 // © Broadcom. All Rights Reserved.
-// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package govcd
@@ -7,11 +7,12 @@ package govcd
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
 	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"github.com/vmware/go-vcloud-director/v3/util"
-	"strings"
-	"time"
 )
 
 // CseCreateKubernetesCluster creates a Kubernetes cluster with the data given as input (CseClusterSettings). If the given

@@ -1,17 +1,18 @@
 //go:build unit || ALL
 
 // © Broadcom. All Rights Reserved.
-// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package govcd
 
 import (
-	semver "github.com/hashicorp/go-version"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
+
+	semver "github.com/hashicorp/go-version"
 )
 
 // Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString tests the generateCapiYamlAsJsonString method with a

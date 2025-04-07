@@ -1,18 +1,19 @@
 //go:build unit || ALL
 
 // © Broadcom. All Rights Reserved.
-// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package govcd
 
 import (
-	semver "github.com/hashicorp/go-version"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
+
+	semver "github.com/hashicorp/go-version"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // Test_cseUpdateKubernetesTemplateInYaml tests the update process of the Kubernetes template OVA in a CAPI YAML.

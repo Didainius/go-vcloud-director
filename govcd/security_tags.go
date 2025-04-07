@@ -1,13 +1,14 @@
 // © Broadcom. All Rights Reserved.
-// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"net/url"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // GetAllSecurityTaggedEntities Retrieves the list of entities that have at least one tag assigned to it.

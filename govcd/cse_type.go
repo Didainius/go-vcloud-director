@@ -1,13 +1,14 @@
 // © Broadcom. All Rights Reserved.
-// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package govcd
 
 import (
+	"time"
+
 	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
-	"time"
 )
 
 // CseKubernetesCluster is a type for managing an existing Kubernetes cluster created by the Container Service Extension (CSE)

@@ -1,16 +1,17 @@
 // © Broadcom. All Rights Reserved.
-// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package govcd
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"sigs.k8s.io/yaml"
-	"strconv"
-	"strings"
 )
 
 // updateCapiYaml takes a YAML and modifies its Kubernetes Template OVA, its Control plane, its Worker pools

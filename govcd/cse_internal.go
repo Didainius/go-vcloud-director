@@ -1,5 +1,5 @@
 // © Broadcom. All Rights Reserved.
-// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package govcd
@@ -9,10 +9,11 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	semver "github.com/hashicorp/go-version"
 	"strconv"
 	"strings"
 	"text/template"
+
+	semver "github.com/hashicorp/go-version"
 )
 
 // This collection of files contains all the Go Templates and resources required for the Container Service Extension (CSE) methods

@@ -1,5 +1,5 @@
 // © Broadcom. All Rights Reserved.
-// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package govcd
@@ -7,12 +7,13 @@ package govcd
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"time"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 /*

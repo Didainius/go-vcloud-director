@@ -1,16 +1,17 @@
 //go:build vsphere || functional || ALL
 
 // © Broadcom. All Rights Reserved.
-// The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: MPL-2.0
 
 package govcd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/kr/pretty"
 	. "gopkg.in/check.v1"
-	"strings"
 )
 
 func (vcd *TestVCD) Test_GetResourcePools(check *C) {
