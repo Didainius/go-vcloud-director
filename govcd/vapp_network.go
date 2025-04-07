@@ -1,15 +1,12 @@
-/*
- * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
-	"github.com/vmware/go-vcloud-director/v3/util"
 	"net/http"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
 // UpdateNetworkFirewallRules updates vApp networks firewall rules. It will overwrite existing ones as there is

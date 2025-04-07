@@ -1,18 +1,15 @@
 //go:build system || functional || ALL
 
-/*
- * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
-	. "gopkg.in/check.v1"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	. "gopkg.in/check.v1"
 )
 
 // #nosec G101 -- These credentials are fake for testing purposes

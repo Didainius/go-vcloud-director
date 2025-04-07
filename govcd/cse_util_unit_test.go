@@ -1,16 +1,13 @@
 //go:build unit || ALL
 
-/*
- * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
-	semver "github.com/hashicorp/go-version"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"reflect"
 	"testing"
+
+	semver "github.com/hashicorp/go-version"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 func Test_getCseComponentsVersions(t *testing.T) {

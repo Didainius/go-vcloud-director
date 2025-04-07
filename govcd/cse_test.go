@@ -1,21 +1,18 @@
 //go:build functional || openapi || cse || ALL
 
-/*
- * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"fmt"
-	semver "github.com/hashicorp/go-version"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
-	. "gopkg.in/check.v1"
 	"net/url"
 	"os"
 	"reflect"
 	"strings"
 	"time"
+
+	semver "github.com/hashicorp/go-version"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	. "gopkg.in/check.v1"
 )
 
 func requireCseConfig(check *C, testConfig TestConfig) {

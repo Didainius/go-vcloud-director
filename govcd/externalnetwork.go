@@ -1,15 +1,12 @@
-/*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"github.com/vmware/go-vcloud-director/v3/util"
-	"net/http"
 )
 
 type ExternalNetwork struct {

@@ -1,13 +1,10 @@
 //go:build org || functional || ALL
 
-/*
- * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"fmt"
+
 	"github.com/kr/pretty"
 	. "gopkg.in/check.v1"
 )

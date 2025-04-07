@@ -1,19 +1,16 @@
 package govcd
 
-/*
- * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 import (
 	"errors"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
-	"github.com/vmware/go-vcloud-director/v3/util"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
 const labelContentLibraryItem = "Content Library Item"

@@ -1,16 +1,13 @@
 //go:build functional || openapi || ALL
 
-/*
- * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
-	"strings"
 )
 
 // Test_ApiFilter tests the CRUD operations for the API Filters.

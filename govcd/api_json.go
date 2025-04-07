@@ -1,18 +1,15 @@
-/*
- * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
-	"github.com/vmware/go-vcloud-director/v3/util"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
 // executeJsonRequest is a wrapper around regular API call operations, similar to client.ExecuteRequest, but with JSON payback

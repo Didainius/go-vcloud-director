@@ -1,12 +1,9 @@
-/*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"net/http"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // Deprecated: please use GetExternalNetwork function instead

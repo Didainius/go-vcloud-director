@@ -1,17 +1,14 @@
-/*
- * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // TmLdapConfigure configures LDAP for the Tenant Manager "System" organization. If trustSslCertificate=true,

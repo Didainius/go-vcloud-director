@@ -1,17 +1,14 @@
 //go:build catalog || functional || ALL
 
-/*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"fmt"
-	. "gopkg.in/check.v1"
 	"os"
 	"path"
 	"runtime"
+
+	. "gopkg.in/check.v1"
 )
 
 // Tests System function Delete by creating media item and

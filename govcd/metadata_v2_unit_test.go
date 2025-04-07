@@ -1,15 +1,12 @@
 //go:build unit || ALL
 
-/*
- * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"reflect"
 	"testing"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 func Test_normaliseXmlMetadata(t *testing.T) {

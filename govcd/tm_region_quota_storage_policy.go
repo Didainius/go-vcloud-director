@@ -1,14 +1,11 @@
 package govcd
 
-/*
- * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"net/url"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 const labelRegionQuotaStoragePolicies = "Region Quota Storage Policies"

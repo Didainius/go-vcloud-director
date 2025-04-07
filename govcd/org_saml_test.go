@@ -1,15 +1,12 @@
 //go:build org || functional || ALL
 
-/*
- * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	_ "embed"
 	"encoding/xml"
 	"fmt"
+
 	"github.com/kr/pretty"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"

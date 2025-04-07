@@ -1,15 +1,12 @@
 //go:build tm || functional || ALL
 
-/*
- * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
+	"path/filepath"
+
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
-	"path/filepath"
 )
 
 // TODO: TM: Test upload failures:

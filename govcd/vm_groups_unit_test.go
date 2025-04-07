@@ -1,15 +1,12 @@
 //go:build unit || ALL
 
-/*
- * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"testing"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // TestVmGroupFilterWithResourcePools tests that the filter for VM Groups works correctly, as it depends

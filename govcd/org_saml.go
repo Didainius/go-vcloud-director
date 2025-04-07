@@ -1,7 +1,3 @@
-/*
- * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
@@ -9,13 +5,14 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
-	"github.com/vmware/go-vcloud-director/v3/util"
 	"io"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
 // GetFederationSettings retrieves the current federation (SAML) settings for a given organization

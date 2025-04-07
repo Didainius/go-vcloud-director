@@ -1,15 +1,12 @@
 //go:build network || nsxt || functional || openapi || ALL
 
-/*
- * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"fmt"
-	. "gopkg.in/check.v1"
 	"strings"
+
+	. "gopkg.in/check.v1"
 )
 
 func (vcd *TestVCD) Test_VcenterImportableDvpg(check *C) {

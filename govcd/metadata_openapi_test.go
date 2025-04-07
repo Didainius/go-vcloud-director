@@ -1,17 +1,14 @@
 //go:build metadata || openapi || rde || functional || ALL
 
-/*
- * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
-	. "gopkg.in/check.v1"
 	"regexp"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	. "gopkg.in/check.v1"
 )
 
 func (vcd *TestVCD) TestRdeMetadata(check *C) {

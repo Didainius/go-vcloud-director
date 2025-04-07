@@ -1,13 +1,10 @@
-/*
- * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"net/url"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 const (
