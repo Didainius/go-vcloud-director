@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+#
+# © Broadcom. All Rights Reserved.
+# The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: MPL-2.0
+#
+
 # This test checks that all the build tags defined in api_vcd_test.go
 # can run individually
 
@@ -22,7 +28,7 @@ tags=$(head -n 1 api_vcd_test.go | sed -e 's/^.*build //;s/|| //g')
 echo "=== RUN TagsTest"
 for tag in $tags
 do
-    
+
     go test -tags $tag -timeout 0 -count=0 -check.vv > /dev/null
 
     if [ "$?" == "0" ]

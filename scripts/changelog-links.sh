@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+#
+# © Broadcom. All Rights Reserved.
+# The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: MPL-2.0
+#
+
 # This script rewrites [GH-nnnn]-style references in the CHANGELOG.md file to
 # be Markdown links to the given github issues.
 #

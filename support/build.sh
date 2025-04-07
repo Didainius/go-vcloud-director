@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+#
+# © Broadcom. All Rights Reserved.
+# The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: MPL-2.0
+#
+
 echo "# Build $(date)"
 
 # Print environment information, useful for troubleshooting
@@ -44,7 +50,7 @@ echo "## ls \$HOME"
 ls -l $HOME
 
 echo "## ls -l \$PWD"
-ls -l 
+ls -l
 
 echo "# Test $(date)"
 make vet

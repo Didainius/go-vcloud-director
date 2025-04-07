@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+#
+# © Broadcom. All Rights Reserved.
+# The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: MPL-2.0
+#
+
 # This script collects the single change files and generates CHANGELOG entries
 # for the whole release
 
@@ -29,7 +35,7 @@ function check_eol {
 version=$1
 
 # If no version was provided, we use the current release version
-if [  -z "$version" ] 
+if [  -z "$version" ]
 then
     echo "No version was provided"
     exit 1

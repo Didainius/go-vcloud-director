@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+#
+# © Broadcom. All Rights Reserved.
+# The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: MPL-2.0
+#
+
 # This script will connect to the vCD using username and password,
 # and show the headers that contain a bearer or authorization token.
 #

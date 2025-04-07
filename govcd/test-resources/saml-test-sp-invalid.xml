@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ © Broadcom. All Rights Reserved.
+  ~ The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries.
+  ~ SPDX-License-Identifier: MPL-2.0
+  -->
+
 <EntityDescriptor
                      ID="https___sample.vmware.com_cloud_saml_metadata_alias_vcd"
                      entityID="https://sample.vmware.com/cloud/saml/metadata/alias/vcd">
