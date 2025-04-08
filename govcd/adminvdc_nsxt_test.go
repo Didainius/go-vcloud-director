@@ -1,9 +1,5 @@
 //go:build org || functional || nsxt || ALL
 
-// © Broadcom. All Rights Reserved.
-// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
-// SPDX-License-Identifier: MPL-2.0
-
 package govcd
 
 // This file tests out NSX-T related Org VDC capabilities

@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
 
-#
-# © Broadcom. All Rights Reserved.
-# The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
-# SPDX-License-Identifier: MPL-2.0
-#
-
 # This script is used at the start of a new release cycle, to
 # initialize the CHANGELOG
 # Run at the top of the repository, as

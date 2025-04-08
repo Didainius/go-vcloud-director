@@ -1,8 +1,3 @@
-#
-# © Broadcom. All Rights Reserved.
-# The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
-# SPDX-License-Identifier: MPL-2.0
-#
 
 export STATICCHECK_URL=https://github.com/dominikh/go-tools/releases/download
 export STATICCHECK_VERSION=2025.1

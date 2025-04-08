@@ -4,6 +4,12 @@
   ~ SPDX-License-Identifier: MPL-2.0
   -->
 
+<!--
+  ~ © Broadcom. All Rights Reserved.
+  ~ The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+  ~ SPDX-License-Identifier: MPL-2.0
+  -->
+
 <EntityDescriptor xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:shibmd="urn:mace:shibboleth:metadata:1.0"
                   xmlns:xml="http://www.w3.org/XML/1998/namespace" xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui"
                   xmlns="urn:oasis:names:tc:SAML:2.0:metadata" ID="SAMLtestIdP"

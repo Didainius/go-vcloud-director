@@ -5,6 +5,12 @@
   ~ SPDX-License-Identifier: MPL-2.0
   -->
 
+<!--
+  ~ © Broadcom. All Rights Reserved.
+  ~ The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+  ~ SPDX-License-Identifier: MPL-2.0
+  -->
+
 <md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
                      ID="https___sample.vmware.com_cloud_saml_metadata_alias_vcd"
                      entityID="https://sample.vmware.com/cloud/saml/metadata/alias/vcd">
