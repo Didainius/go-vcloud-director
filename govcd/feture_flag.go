@@ -2,6 +2,10 @@
  * Copyright 2025 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
+// © Broadcom. All Rights Reserved.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// SPDX-License-Identifier: MPL-2.0
+
 package govcd
 
 import (

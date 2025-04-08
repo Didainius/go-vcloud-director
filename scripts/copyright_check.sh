@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+#
+# © Broadcom. All Rights Reserved.
+# The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: MPL-2.0
+#
+
 # This script will find code files that don't have a copyright notice
 # or the ones with an outdated copyright.
 #

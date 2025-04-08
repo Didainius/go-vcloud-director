@@ -1,3 +1,7 @@
+// © Broadcom. All Rights Reserved.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// SPDX-License-Identifier: MPL-2.0
+
 package main
 
 /* This sample program shows how to list organizations, vDCs, vApps, and catalog items
